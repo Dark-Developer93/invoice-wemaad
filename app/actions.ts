@@ -53,15 +53,6 @@ export async function createInvoice(
     return { error: "User not found" };
   }
 
-  const userOrg = await prisma.userOrganization.findFirst({
-    where: { userId: session.user.id },
-    select: { organizationId: true },
-  });
-
-  if (!userOrg) {
-    return { error: "User does not belong to any organization" };
-  }
-
   const submission = parseWithZod(formData, {
     schema: invoiceSchema,
   });
@@ -74,7 +65,6 @@ export async function createInvoice(
     data: {
       ...submission.value,
       userId: session.user.id,
-      organizationId: userOrg?.organizationId as string,
     },
   });
 
@@ -117,15 +107,6 @@ export async function editInvoice(
     return { error: "User not found" };
   }
 
-  const userOrg = await prisma.userOrganization.findFirst({
-    where: { userId: session.user.id },
-    select: { organizationId: true },
-  });
-
-  if (!userOrg) {
-    return { error: "User does not belong to any organization" };
-  }
-
   const submission = parseWithZod(formData, {
     schema: invoiceSchema,
   });
@@ -142,7 +123,6 @@ export async function editInvoice(
     data: {
       ...submission.value,
       userId: session.user.id,
-      organizationId: userOrg?.organizationId as string,
     },
   });
 
