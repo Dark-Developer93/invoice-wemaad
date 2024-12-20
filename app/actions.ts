@@ -10,6 +10,7 @@ import prisma from "@/lib/db";
 import { emailClient } from "@/lib/mailtrap";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
+import { toast } from "sonner";
 
 export async function onboardUser(
   _prevState: SubmissionResult<string[]> | null | undefined,
@@ -199,4 +200,45 @@ export async function MarkAsPaidAction(invoiceId: string) {
   });
 
   return redirect("/dashboard/invoices");
+}
+
+export async function updateProfile(
+  _prevState: SubmissionResult<string[]> | null | undefined,
+  formData: FormData
+): Promise<
+  { status: "error"; error: Record<string, string[]> } | { status: "success" }
+> {
+  try {
+    const session = await requireUser();
+
+    if (!session.user?.id) {
+      return {
+        status: "error",
+        error: { "": ["User not found"] },
+      };
+    }
+
+    const parsed = onboardingSchema.safeParse(Object.fromEntries(formData));
+
+    if (!parsed.success) {
+      return {
+        status: "error",
+        error: parsed.error.flatten().fieldErrors,
+      };
+    }
+
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: parsed.data,
+    });
+
+    toast.success("Profile updated successfully");
+    return { status: "success" };
+  } catch (error) {
+    console.error(error);
+    return {
+      status: "error",
+      error: { form: ["Failed to update profile"] },
+    };
+  }
 }
