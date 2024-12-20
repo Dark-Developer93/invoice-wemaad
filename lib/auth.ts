@@ -6,6 +6,11 @@ import prisma from "@/lib/db";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: "database",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
+  },
   providers: [
     Nodemailer({
       server: {
@@ -21,5 +26,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   pages: {
     verifyRequest: "/verify",
+  },
+  callbacks: {
+    session: async ({ session, user }) => {
+      if (session?.user) {
+        session.user.id = user.id;
+      }
+      return session;
+    },
   },
 });
