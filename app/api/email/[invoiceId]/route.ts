@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/session";
 import { emailClient } from "@/lib/mailtrap";
 
 export async function POST(
-  request: Request,
+  _request: Request,
   {
     params,
   }: {
@@ -15,12 +15,16 @@ export async function POST(
   try {
     const session = await requireUser();
 
+    if (!session.user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const { invoiceId } = await params;
 
     const invoiceData = await prisma.invoice.findUnique({
       where: {
         id: invoiceId,
-        userId: session.user?.id,
+        userId: session.user.id,
       },
     });
 
@@ -29,21 +33,18 @@ export async function POST(
     }
 
     const sender = {
-      email: "hello@demomailtrap.com",
-      name: "Jan Marshal",
+      email: process.env.EMAIL_FROM!,
+      name: "Invoice WeMaAd",
     };
 
     emailClient.send({
       from: sender,
-      to: [{ email: "jan@alenix.de" }],
-      template_uuid: "03c0c5ec-3f09-42ab-92c3-9f338f31fe2c",
+      to: [{ email: invoiceData.clientEmail }],
+      template_uuid: "d6457c5f-5ec0-4be2-a674-a68dfa1e2cea",
       template_variables: {
         first_name: invoiceData.clientName,
-        company_info_name: "InvoiceMarshal",
-        company_info_address: "Chad street 124",
-        company_info_city: "Munich",
-        company_info_zip_code: "345345",
-        company_info_country: "Germany",
+        company_info_name: invoiceData.fromName,
+        company_info_address: invoiceData.fromAddress,
       },
     });
 
