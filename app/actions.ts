@@ -12,13 +12,16 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 
 export async function onboardUser(
-  prevState: SubmissionResult<string[]> | { error: string } | undefined,
+  prevState: SubmissionResult<string[]> | null | undefined,
   formData: FormData
-) {
+): Promise<SubmissionResult<string[]>> {
   const session = await requireUser();
 
   if (!session.user?.id) {
-    return { error: "User not found" };
+    return {
+      status: "error",
+      error: { "": ["User not found"] },
+    };
   }
 
   const submission = parseWithZod(formData, {
