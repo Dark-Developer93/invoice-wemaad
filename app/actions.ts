@@ -12,7 +12,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 
 export async function onboardUser(
-  _prevState: SubmissionResult<string[]>,
+  prevState: SubmissionResult<string[]> | { error: string } | undefined,
   formData: FormData
 ) {
   const session = await requireUser();
