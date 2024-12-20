@@ -84,8 +84,6 @@ export default async function DashboardLayout({
               </SheetContent>
             </Sheet>
 
-            <OrganizationSwitcher />
-
             <div className="flex items-center ml-auto gap-2">
               <ThemeToggle />
               <DropdownMenu>
