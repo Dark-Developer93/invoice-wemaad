@@ -43,7 +43,7 @@ export function CreateInvoice({
   firstName,
   lastName,
 }: iAppProps) {
-  const [lastResult, action] = useActionState(createInvoice, {});
+  const [lastResult, action] = useActionState(createInvoice, null);
   const [form, fields] = useForm({
     lastResult,
 
