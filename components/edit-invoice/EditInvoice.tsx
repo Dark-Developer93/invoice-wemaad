@@ -36,7 +36,7 @@ interface iAppProps {
 }
 
 export function EditInvoice({ data }: iAppProps) {
-  const [lastResult, action] = useActionState(editInvoice, {});
+  const [lastResult, action] = useActionState(editInvoice, null);
   const [form, fields] = useForm({
     lastResult,
 
