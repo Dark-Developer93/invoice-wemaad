@@ -11,10 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { requireUser } from "@/lib/session";
+import { auth } from "@/lib/auth";
 
 const Verify = async () => {
-  const session = await requireUser();
+  const session = await auth();
 
   if (session?.user) {
     redirect("/dashboard");
