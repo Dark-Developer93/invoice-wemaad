@@ -18,7 +18,7 @@ import { onboardUser } from "@/app/actions";
 import { onboardingSchema } from "@/lib/zodSchemas";
 
 export default function Onboarding() {
-  const [lastResult, action] = useActionState(onboardUser, undefined);
+  const [lastResult, action] = useActionState(onboardUser, null);
   const [form, fields] = useForm({
     lastResult,
 
