@@ -78,8 +78,8 @@ pnpm run dev
 
 - [ ] Add Stripe integration for payment processing
 - [ ] Add user profile page
-- [ ] Add invoice history
-- [ ] Add invoice templates
+  <!-- - [ ] Add invoice history -->
+  <!-- - [ ] Add invoice templates -->
 - [ ] White label for clients
 - [ ] Make the app SaaS ready like adding organizations, user management, pricing plans, subscription management, etc.
 - [ ] Add a dashboard for clients to manage their invoices
