@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 
 export async function GET(
-  request: Request,
+  _request: Request,
   {
     params,
   }: {

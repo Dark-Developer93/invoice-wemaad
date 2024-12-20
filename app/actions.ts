@@ -97,7 +97,7 @@ export async function createInvoice(
       invoiceLink:
         process.env.NODE_ENV !== "production"
           ? `http://localhost:3000/api/invoice/${data.id}`
-          : `https://invoice-marshal.vercel.app/api/invoice/${data.id}`,
+          : `https://invoice-wemaad.vercel.app/api/invoice/${data.id}`,
     },
   });
 
@@ -158,7 +158,7 @@ export async function editInvoice(
       invoiceLink:
         process.env.NODE_ENV !== "production"
           ? `http://localhost:3000/api/invoice/${data.id}`
-          : `https://invoice-marshal.vercel.app/api/invoice/${data.id}`,
+          : `https://invoice-wemaad.vercel.app/api/invoice/${data.id}`,
     },
   });
 
