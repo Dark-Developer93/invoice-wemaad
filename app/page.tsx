@@ -9,10 +9,12 @@ const Home = () => {
         <div className="absolute bottom-0 left-0 right-0 top-0 bg-[radial-gradient(circle_800px_at_50%_400px,#C9EBFF,transparent)] dark:bg-[radial-gradient(circle_800px_at_50%_400px,#1a3c4d,transparent)]"></div>
       </div>
 
-      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="relative w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <Navbar />
-        <Hero />
-        <PricingSection />
+        <div className="max-w-full overflow-x-hidden">
+          <Hero />
+          <PricingSection />
+        </div>
       </main>
     </div>
   );
