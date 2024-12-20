@@ -76,14 +76,14 @@ export async function createInvoice(
   });
 
   const sender = {
-    email: "hello@demomailtrap.com",
-    name: "Jan Marshal",
+    email: process.env.EMAIL_FROM!,
+    name: "Invoice WeMaAd",
   };
 
   emailClient.send({
     from: sender,
-    to: [{ email: "jan@alenix.de" }],
-    template_uuid: "3c01e4ee-a9ed-4cb6-bbf7-e57c2ced6c94",
+    to: [{ email: submission.value.clientEmail }],
+    template_uuid: "a197c755-ce16-4c63-9652-3ff0f5896c84",
     template_variables: {
       clientName: submission.value.clientName,
       invoiceNumber: submission.value.invoiceNumber,
@@ -105,7 +105,7 @@ export async function createInvoice(
 }
 
 export async function editInvoice(
-  prevState: SubmissionResult<string[]> | null | undefined,
+  _prevState: SubmissionResult<string[]> | null | undefined,
   formData: FormData
 ): Promise<SubmissionResult<string[]>> {
   const session = await requireUser();
@@ -137,14 +137,14 @@ export async function editInvoice(
   });
 
   const sender = {
-    email: "hello@demomailtrap.com",
-    name: "Jan Marshal",
+    email: process.env.EMAIL_FROM!,
+    name: "Invoice WeMaAd",
   };
 
   emailClient.send({
     from: sender,
-    to: [{ email: "jan@alenix.de" }],
-    template_uuid: "9d04aa85-6896-48a8-94e9-b54354a48880",
+    to: [{ email: submission.value.clientEmail }],
+    template_uuid: "a51adc06-0772-49ee-aec0-2e87590908d6",
     template_variables: {
       clientName: submission.value.clientName,
       invoiceNumber: submission.value.invoiceNumber,
