@@ -5,33 +5,33 @@ import HeroImage from "@/public/hero.png";
 
 const Hero = () => {
   return (
-    <section className="relative flex flex-col items-center justify-center py-12 lg:py-20">
-      <div className="text-center">
-        <span className="text-sm text-primary font-medium tracking-tight bg-primary/10 px-4 py-2 rounded-full">
+    <section className="relative flex flex-col items-center justify-center py-8 px-4 md:py-12 lg:py-20">
+      <div className="text-center w-full max-w-[90vw] md:max-w-none">
+        <span className="inline-block text-sm text-primary font-medium tracking-tight bg-primary/10 px-4 py-2 rounded-full">
           Introducing InvoiceWeMaAd 1.0
         </span>
-        <h1 className="mt-8 text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold tracking-tighter text-foreground">
+        <h1 className="mt-6 md:mt-8 text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tighter text-foreground">
           Invoicing made{" "}
-          <span className="block -mt-2 bg-gradient-to-l from-blue-500 via-teal-500 to-green-500 text-transparent bg-clip-text">
+          <span className="block mt-1 md:-mt-2 bg-gradient-to-l from-blue-500 via-teal-500 to-green-500 text-transparent bg-clip-text">
             super easy!
           </span>
         </h1>
 
-        <p className="max-w-xl mx-auto mt-4 lg:text-lg text-muted-foreground">
+        <p className="max-w-[90vw] sm:max-w-xl mx-auto mt-4 text-base lg:text-lg text-muted-foreground px-4 md:px-0">
           Creating Invoices can be a pain! We at InvoiceWeMaAd make it super
           easy for you to get paid in time!
         </p>
 
-        <div className="mt-7 mb-12">
+        <div className="mt-7 mb-8 md:mb-12">
           <Link href="/login">
             <ColoredButton>Get Unlimted Access</ColoredButton>
           </Link>
         </div>
       </div>
 
-      <div className="relative items-center w-full py-12 mx-auto mt-12">
+      <div className="relative w-full px-4 md:px-8 lg:px-12 py-8 md:py-12">
         <svg
-          className="absolute inset-0 -mt-24 blur-3xl"
+          className="absolute inset-0 -mt-12 md:-mt-24 blur-3xl"
           style={{ zIndex: -1 }}
           fill="none"
           viewBox="0 0 400 400"
@@ -83,11 +83,14 @@ const Hero = () => {
             </filter>
           </defs>
         </svg>
-        <Image
-          src={HeroImage}
-          alt="Hero image"
-          className="relative object-cover w-full border rounded-lg lg:rounded-2xl shadow-2xl dark:border-border"
-        />
+        <div className="max-w-[95vw] mx-auto">
+          <Image
+            src={HeroImage}
+            alt="Hero image"
+            className="relative object-contain w-full border rounded-lg lg:rounded-2xl shadow-2xl dark:border-border"
+            priority
+          />
+        </div>
       </div>
     </section>
   );
