@@ -61,15 +61,15 @@ const PricingSection = () => {
     setIsYearly(parseInt(value) === 1);
 
   return (
-    <section className="relative flex flex-col items-center justify-center py-24">
-      <div className="text-center mb-12">
-        <span className="text-sm text-primary font-medium tracking-tight bg-primary/10 px-4 py-2 rounded-full">
+    <section className="relative flex flex-col items-center justify-center py-12 md:py-24 px-4 md:px-6">
+      <div className="text-center mb-8 md:mb-12">
+        <span className="inline-block text-sm text-primary font-medium tracking-tight bg-primary/10 px-4 py-2 rounded-full">
           Simple Pricing
         </span>
-        <h2 className="mt-8 text-4xl sm:text-5xl font-bold tracking-tight">
+        <h2 className="mt-6 md:mt-8 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
           Choose your plan
         </h2>
-        <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="mt-4 text-base md:text-lg text-muted-foreground max-w-[90vw] md:max-w-2xl mx-auto">
           Start with our free tier and upgrade as you grow. All plans include
           14-day free trial.
         </p>
@@ -81,24 +81,24 @@ const PricingSection = () => {
         onValueChange={togglePricingPeriod}
       >
         <TabsList className="grid w-full grid-cols-2 h-11">
-          <TabsTrigger value="0" className="text-base">
+          <TabsTrigger value="0" className="text-sm md:text-base">
             Monthly
           </TabsTrigger>
-          <TabsTrigger value="1" className="text-base">
+          <TabsTrigger value="1" className="text-sm md:text-base">
             Yearly
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
-      <div className="grid md:grid-cols-3 gap-8 mt-8 max-w-6xl mx-auto px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mt-8 w-full max-w-6xl mx-auto">
         {plans.map((plan) => (
           <Card
             key={plan.title}
             className={cn(
-              "relative flex flex-col justify-between transition-all hover:scale-105",
+              "relative flex flex-col justify-between transition-all hover:scale-105 w-full max-w-sm mx-auto",
               {
                 "border-primary/50 shadow-xl shadow-primary/10": plan.popular,
-                "rounded-lg border text-card-foreground shadow-sm w-72 flex flex-col justify-between py-1 border-zinc-700 mx-auto sm:mx-0 animate-background-shine bg-white dark:bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] transition-colors":
+                "rounded-lg border text-card-foreground shadow-sm py-1 border-zinc-700 animate-background-shine bg-white dark:bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] transition-colors":
                   plan.exclusive,
               }
             )}
@@ -162,44 +162,45 @@ const PricingSection = () => {
         ))}
       </div>
 
-      {/* Comparison table with updated styling to match DashboardBlocks */}
-      <div className="mt-24 max-w-6xl mx-auto px-4 w-full">
-        <Card>
+      <div className="mt-16 md:mt-24 w-full max-w-6xl mx-auto">
+        <Card className="overflow-x-auto">
           <CardHeader>
             <CardTitle>Compare Plans</CardTitle>
             <CardDescription>See which plan is right for you</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4">
-              {[
-                "Users",
-                "Storage",
-                "Support",
-                "Analytics",
-                "Custom domains",
-                "Team collaboration",
-                "Custom integrations",
-                "SLA",
-              ].map((feature) => (
-                <div
-                  key={feature}
-                  className="grid grid-cols-4 items-center gap-4"
-                >
-                  <span className="text-sm font-medium">{feature}</span>
-                  {plans.map((plan) => (
-                    <div
-                      key={`${plan.title}-${feature}`}
-                      className="flex justify-center"
-                    >
-                      {plan.features.includes(feature) ? (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ))}
+            <div className="min-w-[600px]">
+              <div className="grid gap-4">
+                {[
+                  "Users",
+                  "Storage",
+                  "Support",
+                  "Analytics",
+                  "Custom domains",
+                  "Team collaboration",
+                  "Custom integrations",
+                  "SLA",
+                ].map((feature) => (
+                  <div
+                    key={feature}
+                    className="grid grid-cols-4 items-center gap-4"
+                  >
+                    <span className="text-sm font-medium">{feature}</span>
+                    {plans.map((plan) => (
+                      <div
+                        key={`${plan.title}-${feature}`}
+                        className="flex justify-center"
+                      >
+                        {plan.features.includes(feature) ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
