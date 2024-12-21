@@ -87,7 +87,7 @@ export function CreateInvoice({
                 name={fields.invoiceName.name}
                 key={fields.invoiceName.key}
                 defaultValue={fields.invoiceName.initialValue}
-                placeholder="Test 123"
+                placeholder="Enter invoice name"
               />
             </div>
             <p className="text-sm text-red-500">{fields.invoiceName.errors}</p>
