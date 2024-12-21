@@ -4,6 +4,7 @@ import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 async function getData(userId: string) {
   const data = await prisma.invoice.findMany({
@@ -61,3 +62,27 @@ export async function RecentInvoices() {
     </Card>
   );
 }
+
+function RecentInvoicesSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-[140px]" />
+      </CardHeader>
+      <CardContent className="flex flex-col gap-8">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div className="flex items-center gap-4" key={i}>
+            <Skeleton className="hidden sm:flex size-9 rounded-full" />
+            <div className="flex flex-col gap-1">
+              <Skeleton className="h-4 w-[120px]" />
+              <Skeleton className="h-3 w-[150px]" />
+            </div>
+            <Skeleton className="h-4 w-[80px] ml-auto" />
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+export { RecentInvoicesSkeleton };
