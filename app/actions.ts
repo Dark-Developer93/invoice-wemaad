@@ -7,7 +7,7 @@ import { SubmissionResult } from "@conform-to/react";
 import { requireUser } from "@/lib/session";
 import { invoiceSchema, onboardingSchema } from "@/lib/zodSchemas";
 import prisma from "@/lib/db";
-import { emailClient } from "@/lib/mailtrap";
+import { sendEmail } from "@/lib/email/index";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 import { toast } from "sonner";
@@ -75,18 +75,12 @@ export async function createInvoice(
     },
   });
 
-  const sender = {
-    email: process.env.EMAIL_FROM!,
-    name: "Invoice WeMaAd",
-  };
-
-  emailClient.send({
-    from: sender,
-    to: [{ email: submission.value.clientEmail }],
-    template_uuid: "a197c755-ce16-4c63-9652-3ff0f5896c84",
-    template_variables: {
+  await sendEmail({
+    to: submission.value.clientEmail,
+    templateName: "newInvoice",
+    variables: {
       clientName: submission.value.clientName,
-      invoiceNumber: submission.value.invoiceNumber,
+      invoiceNumber: submission.value.invoiceNumber.toString(),
       invoiceDueDate: new Intl.DateTimeFormat("en-US", {
         dateStyle: "long",
       }).format(new Date(submission.value.date)),
@@ -136,18 +130,12 @@ export async function editInvoice(
     },
   });
 
-  const sender = {
-    email: process.env.EMAIL_FROM!,
-    name: "Invoice WeMaAd",
-  };
-
-  emailClient.send({
-    from: sender,
-    to: [{ email: submission.value.clientEmail }],
-    template_uuid: "a51adc06-0772-49ee-aec0-2e87590908d6",
-    template_variables: {
+  await sendEmail({
+    to: submission.value.clientEmail,
+    templateName: "updatedInvoice",
+    variables: {
       clientName: submission.value.clientName,
-      invoiceNumber: submission.value.invoiceNumber,
+      invoiceNumber: submission.value.invoiceNumber.toString(),
       invoiceDueDate: new Intl.DateTimeFormat("en-US", {
         dateStyle: "long",
       }).format(new Date(submission.value.date)),
