@@ -10,7 +10,6 @@ import prisma from "@/lib/db";
 import { sendEmail } from "@/lib/email/index";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
-import { toast } from "sonner";
 
 export async function onboardUser(
   _prevState: SubmissionResult<string[]> | null | undefined,
@@ -220,7 +219,6 @@ export async function updateProfile(
       data: parsed.data,
     });
 
-    toast.success("Profile updated successfully");
     return { status: "success" };
   } catch (error) {
     console.error(error);
