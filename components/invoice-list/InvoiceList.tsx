@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state/EmptyState";
 import { Currency } from "@/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 async function getData(userId: string) {
   const data = await prisma.invoice.findMany({
@@ -35,6 +36,41 @@ async function getData(userId: string) {
 
   return data;
 }
+
+function InvoiceListSkeleton() {
+  return (
+    <div className="rounded-md border">
+      {/* Table header */}
+      <div className="border-b">
+        <div className="grid grid-cols-6 p-4">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-24 ml-auto" />
+        </div>
+      </div>
+
+      {/* Table rows */}
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="border-b">
+          <div className="grid grid-cols-6 p-4">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-8 w-20 ml-auto" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export { InvoiceListSkeleton };
+
 export async function InvoiceList() {
   const session = await requireUser();
   const data = await getData(session.user?.id as string);
