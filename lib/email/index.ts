@@ -11,6 +11,15 @@ import {
   ContactFormEmailProps,
 } from "@/types";
 
+if (
+  !process.env.EMAIL_SERVER_HOST ||
+  !process.env.EMAIL_SERVER_PORT ||
+  !process.env.EMAIL_SERVER_USER ||
+  !process.env.EMAIL_SERVER_PASSWORD
+) {
+  throw new Error("Email configuration is incomplete");
+}
+
 export const emailTransporter = nodemailer.createTransport({
   host: process.env.EMAIL_SERVER_HOST,
   port: Number(process.env.EMAIL_SERVER_PORT),
@@ -19,6 +28,14 @@ export const emailTransporter = nodemailer.createTransport({
     user: process.env.EMAIL_SERVER_USER,
     pass: process.env.EMAIL_SERVER_PASSWORD,
   },
+});
+
+emailTransporter.verify(function (error) {
+  if (error) {
+    console.log("Email transport error:", error);
+  } else {
+    console.log("Server is ready to take our messages");
+  }
 });
 
 interface SendEmailProps {
