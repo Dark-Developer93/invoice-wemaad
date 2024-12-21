@@ -19,7 +19,7 @@ const Navbar = () => {
         <ThemeToggle />
         <Link href="/login">
           <ColoredButton>
-            <span className="hidden sm:inline">Get Started</span>
+            <span className="hidden sm:inline">Try for Free</span>
             <span className="sm:hidden">Start</span>
           </ColoredButton>
         </Link>
