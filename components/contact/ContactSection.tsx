@@ -1,31 +1,28 @@
 "use client";
 
 import { Mail, MapPin, Phone } from "lucide-react";
-import { useActionState } from "react";
-import { useForm } from "@conform-to/react";
+import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import SubmitButton from "@/components/submit-button/SubmitButton";
 import { submitContactForm } from "@/app/actions/contact";
+import { ContactFormSubmit } from "./ContactFormSubmit";
 
-const ContactSection = () => {
-  const [lastResult, action] = useActionState(submitContactForm, null);
-  const [form, fields] = useForm({
-    lastResult,
-    shouldValidate: "onBlur",
-    shouldRevalidate: "onInput",
-  });
-
+export default function ContactSection() {
   return (
-    <section className="py-20">
+    <section className="py-20" aria-labelledby="contact-heading">
       <div className="text-center mb-12">
         <span className="inline-block text-sm text-primary font-medium tracking-tight bg-primary/10 px-4 py-2 rounded-full">
           Get in Touch
         </span>
-        <h2 className="mt-6 text-3xl font-bold tracking-tight">Contact Us</h2>
+        <h2
+          id="contact-heading"
+          className="mt-6 text-3xl font-bold tracking-tight"
+        >
+          Contact Us
+        </h2>
         <p className="mt-4 text-lg text-muted-foreground">
           Have questions? We&apos;re here to help you
         </p>
@@ -35,65 +32,61 @@ const ContactSection = () => {
         <Card className="lg:col-span-2">
           <CardContent className="p-6">
             <form
+              action={async (formData: FormData) => {
+                const result = await submitContactForm(formData);
+                if (result.success) {
+                  toast.success("Your message has been sent successfully!");
+                } else {
+                  toast.error(result.error);
+                }
+              }}
               className="space-y-6"
-              id={form.id}
-              action={action}
-              onSubmit={form.onSubmit}
-              noValidate
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>First Name</Label>
+                  <Label htmlFor="firstName">First Name</Label>
                   <Input
-                    name={fields.firstName.name}
-                    key={fields.firstName.key}
-                    defaultValue={fields.firstName.initialValue as string}
+                    id="firstName"
+                    name="firstName"
                     placeholder="John"
+                    required
                   />
-                  <p className="text-red-500 text-sm">
-                    {fields.firstName.errors}
-                  </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Last Name</Label>
+                  <Label htmlFor="lastName">Last Name</Label>
                   <Input
-                    name={fields.lastName.name}
-                    key={fields.lastName.key}
-                    defaultValue={fields.lastName.initialValue as string}
+                    id="lastName"
+                    name="lastName"
                     placeholder="Doe"
+                    required
                   />
-                  <p className="text-red-500 text-sm">
-                    {fields.lastName.errors}
-                  </p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  name={fields.email.name}
-                  key={fields.email.key}
-                  defaultValue={fields.email.initialValue as string}
+                  id="email"
+                  name="email"
                   type="email"
                   placeholder="john@example.com"
+                  required
                 />
-                <p className="text-red-500 text-sm">{fields.email.errors}</p>
               </div>
 
               <div className="space-y-2">
-                <Label>Message</Label>
+                <Label htmlFor="message">Message</Label>
                 <Textarea
-                  name={fields.message.name}
-                  key={fields.message.key}
-                  defaultValue={fields.message.initialValue as string}
+                  id="message"
+                  name="message"
                   placeholder="Tell us how we can help..."
                   className="min-h-[150px]"
+                  required
                 />
-                <p className="text-red-500 text-sm">{fields.message.errors}</p>
               </div>
 
               <div className="flex justify-end">
-                <SubmitButton text="Send Message" />
+                <ContactFormSubmit />
               </div>
             </form>
           </CardContent>
@@ -141,6 +134,4 @@ const ContactSection = () => {
       </div>
     </section>
   );
-};
-
-export default ContactSection;
+}
