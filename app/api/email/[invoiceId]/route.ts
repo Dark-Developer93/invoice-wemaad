@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { format, addDays } from "date-fns";
 
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
@@ -34,15 +35,18 @@ export async function POST(
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
+    const dueDate = addDays(
+      new Date(invoiceData.date),
+      parseInt(invoiceData.dueDate.toString())
+    );
+
     await sendEmail({
       to: invoiceData.clientEmail,
       templateName: "reminderInvoice",
       variables: {
         clientName: invoiceData.clientName,
         invoiceNumber: invoiceData.invoiceNumber.toString(),
-        invoiceDueDate: new Intl.DateTimeFormat("en-US", {
-          dateStyle: "long",
-        }).format(new Date(invoiceData.dueDate)),
+        invoiceDueDate: format(dueDate, "PPP"),
         invoiceAmount: formatCurrency({
           amount: invoiceData.total,
           currency: invoiceData.currency as Currency,
