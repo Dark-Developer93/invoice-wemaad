@@ -1,8 +1,14 @@
+import Features from "@/components/features/Features";
 import Hero from "@/components/hero/Hero";
 import Navbar from "@/components/navbar/Navbar";
 import PricingSection from "@/components/pricing/PricingSection";
+import ContactSection from "@/components/contact/ContactSection";
+import { auth } from "@/lib/auth";
 
-const Home = () => {
+const Home = async () => {
+  const session = await auth();
+  const isAuthenticated = !!session;
+
   return (
     <div className="min-h-screen relative">
       <div className="absolute inset-0 -z-10 h-full w-full bg-background dark:bg-background bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:6rem_4rem]">
@@ -13,7 +19,9 @@ const Home = () => {
         <Navbar />
         <div className="max-w-full overflow-x-hidden">
           <Hero />
-          <PricingSection />
+          <Features />
+          <PricingSection isAuthenticated={isAuthenticated} />
+          <ContactSection />
         </div>
       </main>
     </div>
