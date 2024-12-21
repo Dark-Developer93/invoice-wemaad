@@ -8,6 +8,8 @@ import {
 import { Graph } from "@/components/graph/Graph";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
+import { subDays } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
 
 async function getInvoices(userId: string) {
   const rawData = await prisma.invoice.findMany({
@@ -16,7 +18,7 @@ async function getInvoices(userId: string) {
       userId: userId,
       createdAt: {
         lte: new Date(),
-        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        gte: subDays(new Date(), 30),
       },
     },
     select: {
@@ -28,34 +30,23 @@ async function getInvoices(userId: string) {
     },
   });
 
-  //Group and aggregate data by date
+  // Group and aggregate data by date
   const aggregatedData = rawData.reduce(
-    (acc: { [key: string]: number }, curr) => {
-      const date = new Date(curr.createdAt).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-
-      acc[date] = (acc[date] || 0) + curr.total;
-
+    (acc: { [key: number]: number }, curr) => {
+      const timestamp = new Date(curr.createdAt).getTime();
+      acc[timestamp] = (acc[timestamp] || 0) + curr.total;
       return acc;
     },
     {}
   );
-  //Convert to array and from the object
-  const transformedData = Object.entries(aggregatedData)
-    .map(([date, amount]) => ({
-      date,
-      amount,
-      originalDate: new Date(date + ", " + new Date().getFullYear()),
-    }))
-    .sort((a, b) => a.originalDate.getTime() - b.originalDate.getTime())
-    .map(({ date, amount }) => ({
-      date,
-      amount,
-    }));
 
-  return transformedData;
+  // Convert to array format and sort by date
+  return Object.entries(aggregatedData)
+    .map(([date, amount]) => ({
+      date: Number(date),
+      amount,
+    }))
+    .sort((a, b) => a.date - b.date);
 }
 
 export async function InvoiceGraph() {
@@ -76,3 +67,19 @@ export async function InvoiceGraph() {
     </Card>
   );
 }
+
+function InvoiceGraphSkeleton() {
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <Skeleton className="h-6 w-[140px] mb-2" />
+        <Skeleton className="h-4 w-[250px]" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-[350px] w-full" />
+      </CardContent>
+    </Card>
+  );
+}
+
+export { InvoiceGraphSkeleton };
