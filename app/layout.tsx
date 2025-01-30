@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 
-import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import "./globals.css";
 
@@ -39,12 +38,6 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
-        <Toaster
-          richColors
-          closeButton
-          theme="system"
-          position="bottom-center"
-        />
       </body>
     </html>
   );
