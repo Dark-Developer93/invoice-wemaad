@@ -3,7 +3,7 @@
 import { useActionState, useState, startTransition } from "react";
 import { useForm } from "@conform-to/react";
 import { parseWithZod } from "@conform-to/zod";
-import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import {
   Card,
@@ -31,7 +31,6 @@ export function ProfileForm({
   address: initialAddress,
   email,
 }: ProfileFormProps) {
-  const router = useRouter();
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
   const [address, setAddress] = useState(initialAddress);
@@ -41,17 +40,25 @@ export function ProfileForm({
   const [form, fields] = useForm({
     lastResult,
     onValidate({ formData }) {
-      return parseWithZod(formData, {
-        schema: onboardingSchema,
-      });
+      return parseWithZod(formData, { schema: onboardingSchema });
     },
     shouldValidate: "onBlur",
     shouldRevalidate: "onInput",
     onSubmit(event) {
       event.preventDefault();
-      startTransition(() => {
-        action(new FormData(event.currentTarget));
-        router.refresh();
+      startTransition(async () => {
+        const formData = new FormData(event.currentTarget);
+        await action(formData);
+
+        if (!lastResult) return;
+
+        if (lastResult.status === "success") {
+          toast.success("Profile updated successfully");
+        } else if (lastResult.status === "error" && lastResult.error) {
+          toast.error(Object.values(lastResult.error).flat().join(", "));
+        } else {
+          toast.error("An error occurred");
+        }
       });
     },
   });

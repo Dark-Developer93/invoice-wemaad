@@ -2,29 +2,35 @@ import ColoredButton from "@/components/ui/ColoredButton";
 import Image from "next/image";
 import Link from "next/link";
 import HeroImage from "@/public/hero.png";
+import { Button } from "@/components/ui/button";
 
 const Hero = () => {
   return (
     <section className="relative flex flex-col items-center justify-center py-8 px-4 md:py-12 lg:py-20">
       <div className="text-center w-full max-w-[90vw] md:max-w-none">
         <span className="inline-block text-sm text-primary font-medium tracking-tight bg-primary/10 px-4 py-2 rounded-full">
-          Introducing InvoiceWeMaAd 1.0
+          Streamline Your Invoicing Process
         </span>
         <h1 className="mt-6 md:mt-8 text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tighter text-foreground">
-          Invoicing made{" "}
+          Professional Invoicing{" "}
           <span className="block mt-1 md:-mt-2 bg-gradient-to-l from-blue-500 via-teal-500 to-green-500 text-transparent bg-clip-text">
-            super easy!
+            made simple
           </span>
         </h1>
 
         <p className="max-w-[90vw] sm:max-w-xl mx-auto mt-4 text-base lg:text-lg text-muted-foreground px-4 md:px-0">
-          Creating Invoices can be a pain! We at InvoiceWeMaAd make it super
-          easy for you to get paid in time!
+          Create, send, and track invoices with ease. Automated email reminders
+          ensure you get paid on time, every time.
         </p>
 
-        <div className="mt-7 mb-8 md:mb-12">
+        <div className="mt-7 mb-8 md:mb-12 flex items-center justify-center gap-4">
           <Link href="/login">
-            <ColoredButton>Get Unlimted Access</ColoredButton>
+            <ColoredButton>Start Free Trial</ColoredButton>
+          </Link>
+          <Link href="#pricing">
+            <Button variant="outline" className="h-[44px] w-[171px] rounded-xl">
+              View Pricing
+            </Button>
           </Link>
         </div>
       </div>

@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { format, addDays } from "date-fns";
 
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { emailClient } from "@/lib/mailtrap";
+import { sendEmail } from "@/lib/email";
+import { formatCurrency } from "@/lib/formatCurrency";
+import { Currency } from "@/types";
 
 export async function POST(
   _request: Request,
@@ -32,19 +35,26 @@ export async function POST(
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    const sender = {
-      email: process.env.EMAIL_FROM!,
-      name: "Invoice WeMaAd",
-    };
+    const dueDate = addDays(
+      new Date(invoiceData.date),
+      parseInt(invoiceData.dueDate.toString())
+    );
 
-    emailClient.send({
-      from: sender,
-      to: [{ email: invoiceData.clientEmail }],
-      template_uuid: "d6457c5f-5ec0-4be2-a674-a68dfa1e2cea",
-      template_variables: {
-        first_name: invoiceData.clientName,
-        company_info_name: invoiceData.fromName,
-        company_info_address: invoiceData.fromAddress,
+    await sendEmail({
+      to: invoiceData.clientEmail,
+      templateName: "reminderInvoice",
+      variables: {
+        clientName: invoiceData.clientName,
+        invoiceNumber: invoiceData.invoiceNumber.toString(),
+        invoiceDueDate: format(dueDate, "PPP"),
+        invoiceAmount: formatCurrency({
+          amount: invoiceData.total,
+          currency: invoiceData.currency as Currency,
+        }),
+        invoiceLink:
+          process.env.NODE_ENV !== "production"
+            ? `http://localhost:3000/api/invoice/${invoiceData.id}`
+            : `https://invoice-wemaad.vercel.app/api/invoice/${invoiceData.id}`, // TODO: change to production url
       },
     });
 

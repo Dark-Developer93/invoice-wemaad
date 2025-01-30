@@ -1,9 +1,18 @@
 import { Suspense } from "react";
 
-import { DashboardBlocks } from "@/components/dashboard-blocks/DashboardBlocks";
+import {
+  DashboardBlocks,
+  DashboardBlocksSkeleton,
+} from "@/components/dashboard-blocks/DashboardBlocks";
 import { EmptyState } from "@/components/empty-state/EmptyState";
-import { InvoiceGraph } from "@/components/invoice-graph/InvoiceGraph";
-import { RecentInvoices } from "@/components/recent-invoices/RecentInvoices";
+import {
+  InvoiceGraph,
+  InvoiceGraphSkeleton,
+} from "@/components/invoice-graph/InvoiceGraph";
+import {
+  RecentInvoices,
+  RecentInvoicesSkeleton,
+} from "@/components/recent-invoices/RecentInvoices";
 import { Skeleton } from "@/components/ui/skeleton";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
@@ -35,10 +44,16 @@ export default async function DashboardRoute() {
         />
       ) : (
         <Suspense fallback={<Skeleton className="w-full h-full flex-1" />}>
-          <DashboardBlocks />
+          <Suspense fallback={<DashboardBlocksSkeleton />}>
+            <DashboardBlocks />
+          </Suspense>
           <div className="grid gap-4 lg:grid-cols-3 md:gap-8">
-            <InvoiceGraph />
-            <RecentInvoices />
+            <Suspense fallback={<InvoiceGraphSkeleton />}>
+              <InvoiceGraph />
+            </Suspense>
+            <Suspense fallback={<RecentInvoicesSkeleton />}>
+              <RecentInvoices />
+            </Suspense>
           </div>
         </Suspense>
       )}

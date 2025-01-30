@@ -45,8 +45,7 @@ export default async function DashboardLayout({
   children: ReactNode;
 }) {
   const session = await requireUser();
-  const data = await getUser(session.user?.id as string);
-  console.log(data);
+  await getUser(session.user?.id as string);
 
   return (
     <>
@@ -129,7 +128,7 @@ export default async function DashboardLayout({
           </main>
         </div>
       </div>
-      <Toaster richColors closeButton theme="light" />
+      <Toaster richColors closeButton theme="system" />
     </>
   );
 }

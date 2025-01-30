@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { JSX, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -12,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import ColoredButton from "../ui/ColoredButton";
 import { cn } from "@/lib/utils";
 
 const plans = [
@@ -20,48 +21,165 @@ const plans = [
     title: "Free",
     monthlyPrice: 0,
     yearlyPrice: 0,
-    description: "Perfect for trying out our service",
-    features: ["1 user", "Basic support", "1GB storage", "Basic analytics"],
+    description: "Perfect for freelancers just starting out",
+    features: [
+      "5 invoices per month",
+      "20 emails per month",
+      "Basic invoice management",
+      "Email support",
+      "Basic invoice templates",
+    ],
+  },
+  {
+    title: "Starter",
+    monthlyPrice: 9,
+    yearlyPrice: 90,
+    description: "Great for growing businesses",
+    features: [
+      "25 invoices per month",
+      "50 emails per month",
+      "Full invoice management",
+      "Priority email support",
+      "Custom invoice templates",
+      "Basic analytics",
+    ],
   },
   {
     title: "Pro",
-    monthlyPrice: 15,
-    yearlyPrice: 150,
-    description: "Ideal for professionals and growing teams",
+    monthlyPrice: 29,
+    yearlyPrice: 290,
+    description: "For established businesses",
     features: [
-      "5 users",
+      "100 invoices per month",
+      "500 emails per month",
+      "Full invoice management",
       "Priority support",
-      "10GB storage",
+      "Custom invoice templates",
       "Advanced analytics",
-      "Custom domains",
+      "Basic API access",
+      "Custom branding",
       "Team collaboration",
     ],
     popular: true,
   },
   {
-    title: "Enterprise",
-    description: "For large-scale organizations",
+    title: "Business",
+    description: "For large organizations",
     features: [
-      "Unlimited users",
-      "24/7 support",
-      "Unlimited storage",
+      "Unlimited invoices",
+      "Unlimited emails",
+      "Full invoice management",
+      "Dedicated support",
+      "Custom invoice templates",
       "Advanced analytics",
-      "Custom domains",
+      "Advanced API access",
+      "Full custom branding",
       "Team collaboration",
+      "Multi-user access",
       "Custom integrations",
-      "SLA",
+      "SLA guarantee",
     ],
     exclusive: true,
   },
 ];
 
-const PricingSection = () => {
+const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   const [isYearly, setIsYearly] = useState(false);
-  const togglePricingPeriod = (value: string) =>
-    setIsYearly(parseInt(value) === 1);
+
+  const getFeatureValue = (plan: (typeof plans)[0], feature: string) => {
+    switch (feature) {
+      case "Monthly invoices":
+        if (plan.title === "Free") return "5";
+        if (plan.title === "Starter") return "25";
+        if (plan.title === "Pro") return "100";
+        return "Unlimited";
+      case "Monthly emails":
+        if (plan.title === "Free") return "20";
+        if (plan.title === "Starter") return "50";
+        if (plan.title === "Pro") return "500";
+        return "Unlimited";
+      default:
+        const featureMap: Record<string, string | JSX.Element> = {
+          "Invoice management":
+            plan.features
+              .find((f) => f.includes("invoice management"))
+              ?.split(" ")[0] || "—",
+          "Email support":
+            plan.features.find((f) => f.includes("support"))?.split(" ")[0] ||
+            "—",
+          "Invoice templates": plan.features.find((f) =>
+            f.includes("template")
+          ) ? (
+            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
+          ) : (
+            "—"
+          ),
+          Analytics: plan.features.find((f) => f.includes("analytics")) ? (
+            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
+          ) : (
+            "—"
+          ),
+          "API access": plan.features.find((f) => f.includes("API")) ? (
+            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
+          ) : (
+            "—"
+          ),
+          "Custom branding": plan.features.find((f) =>
+            f.includes("branding")
+          ) ? (
+            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
+          ) : (
+            "—"
+          ),
+          "Team collaboration": plan.features.find((f) =>
+            f.includes("collaboration")
+          ) ? (
+            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
+          ) : (
+            "—"
+          ),
+          "Multi-user access": plan.features.find((f) =>
+            f.includes("Multi-user")
+          ) ? (
+            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
+          ) : (
+            "—"
+          ),
+          "Custom integrations": plan.features.find((f) =>
+            f.includes("integrations")
+          ) ? (
+            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
+          ) : (
+            "—"
+          ),
+          "SLA guarantee": plan.features.find((f) => f.includes("SLA")) ? (
+            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
+          ) : (
+            "—"
+          ),
+        };
+        return featureMap[feature] || "—";
+    }
+  };
+
+  const getButtonConfig = (plan: (typeof plans)[0]) => {
+    if (plan.exclusive) {
+      return {
+        text: "Contact Sales",
+        href: isAuthenticated ? "/dashboard/billing" : "/login",
+      };
+    }
+    return {
+      text: isAuthenticated ? "Upgrade Plan" : "Get Started",
+      href: isAuthenticated ? "/dashboard/billing" : "/login",
+    };
+  };
 
   return (
-    <section className="relative flex flex-col items-center justify-center py-12 md:py-24 px-4 md:px-6">
+    <section
+      id="pricing"
+      className="relative flex flex-col items-center justify-center py-12 md:py-24 px-4 md:px-6"
+    >
       <div className="text-center mb-8 md:mb-12">
         <span className="inline-block text-sm text-primary font-medium tracking-tight bg-primary/10 px-4 py-2 rounded-full">
           Simple Pricing
@@ -78,7 +196,7 @@ const PricingSection = () => {
       <Tabs
         defaultValue="0"
         className="w-40 mx-auto"
-        onValueChange={togglePricingPeriod}
+        onValueChange={(value) => setIsYearly(value === "1")}
       >
         <TabsList className="grid w-full grid-cols-2 h-11">
           <TabsTrigger value="0" className="text-sm md:text-base">
@@ -90,7 +208,7 @@ const PricingSection = () => {
         </TabsList>
       </Tabs>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mt-8 w-full max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mt-8 w-full max-w-7xl mx-auto">
         {plans.map((plan) => (
           <Card
             key={plan.title}
@@ -98,7 +216,7 @@ const PricingSection = () => {
               "relative flex flex-col justify-between transition-all hover:scale-105 w-full max-w-sm mx-auto",
               {
                 "border-primary/50 shadow-xl shadow-primary/10": plan.popular,
-                "rounded-lg border text-card-foreground shadow-sm py-1 border-zinc-700 animate-background-shine bg-white dark:bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] transition-colors":
+                "rounded-lg border text-card-foreground shadow-sm py-1 border-zinc-700 animate-background-shine bg-white dark:bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%]":
                   plan.exclusive,
               }
             )}
@@ -153,10 +271,11 @@ const PricingSection = () => {
             </div>
 
             <CardFooter className="mt-2">
-              <Button className="relative inline-flex w-full items-center justify-center rounded-md bg-primary text-primary-foreground px-6 font-medium transition-colors">
-                <div className="absolute -inset-0.5 -z-10 rounded-lg bg-gradient-to-b from-[#c7d2fe] to-[#8678f9] opacity-75 blur" />
-                {plan.exclusive ? "Contact Sales" : "Get Started"}
-              </Button>
+              <Link href={getButtonConfig(plan).href} className="w-full">
+                <ColoredButton className="relative inline-flex w-full items-center justify-center rounded-md bg-primary text-primary-foreground px-6 font-medium transition-colors">
+                  {getButtonConfig(plan).text}
+                </ColoredButton>
+              </Link>
             </CardFooter>
           </Card>
         ))}
@@ -169,39 +288,40 @@ const PricingSection = () => {
             <CardDescription>See which plan is right for you</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="min-w-[600px]">
-              <div className="grid gap-4">
+            <table className="w-full min-w-[600px]">
+              <tbody className="divide-y">
                 {[
-                  "Users",
-                  "Storage",
-                  "Support",
+                  "Monthly invoices",
+                  "Monthly emails",
+                  "Invoice management",
+                  "Email support",
+                  "Invoice templates",
                   "Analytics",
-                  "Custom domains",
+                  "API access",
+                  "Custom branding",
                   "Team collaboration",
+                  "Multi-user access",
                   "Custom integrations",
-                  "SLA",
+                  "SLA guarantee",
                 ].map((feature) => (
-                  <div
-                    key={feature}
-                    className="grid grid-cols-4 items-center gap-4"
-                  >
-                    <span className="text-sm font-medium">{feature}</span>
+                  <tr key={feature}>
+                    <td className="py-4 text-sm font-medium w-[200px]">
+                      {feature}
+                    </td>
                     {plans.map((plan) => (
-                      <div
+                      <td
                         key={`${plan.title}-${feature}`}
-                        className="flex justify-center"
+                        className="py-4 text-center"
                       >
-                        {plan.features.includes(feature) ? (
-                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </div>
+                        <span className="text-sm">
+                          {getFeatureValue(plan, feature)}
+                        </span>
+                      </td>
                     ))}
-                  </div>
+                  </tr>
                 ))}
-              </div>
-            </div>
+              </tbody>
+            </table>
           </CardContent>
         </Card>
       </div>
