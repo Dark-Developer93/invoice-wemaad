@@ -33,11 +33,32 @@ export default function ContactSection() {
           <CardContent className="p-6">
             <form
               action={async (formData: FormData) => {
-                const result = await submitContactForm(formData);
-                if (result.success) {
-                  toast.success("Your message has been sent successfully!");
-                } else {
-                  toast.error(result.error);
+                try {
+                  // Validate required fields
+                  const firstName = formData.get("firstName")?.toString();
+                  const lastName = formData.get("lastName")?.toString();
+                  const email = formData.get("email")?.toString();
+                  const message = formData.get("message")?.toString();
+
+                  if (!firstName || !lastName || !email || !message) {
+                    toast.error("Please fill in all required fields");
+                    return;
+                  }
+
+                  const result = await submitContactForm(formData);
+
+                  if (result.success) {
+                    toast.success("Your message has been sent successfully!");
+                  } else {
+                    toast.error(
+                      result.error || "Something went wrong. Please try again."
+                    );
+                  }
+                } catch (error) {
+                  console.error("Contact form submission error:", error);
+                  toast.error(
+                    "Failed to send message. Please try again later."
+                  );
                 }
               }}
               className="space-y-6"
