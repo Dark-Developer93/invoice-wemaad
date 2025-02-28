@@ -20,14 +20,15 @@ async function getData(userId: string) {
     where: {
       userId: userId,
     },
-    select: {
-      id: true,
-      clientName: true,
-      total: true,
-      createdAt: true,
-      status: true,
-      invoiceNumber: true,
-      currency: true,
+    include: {
+      client: {
+        select: {
+          name: true,
+          email: true,
+          addresses: true,
+          contactPersons: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -99,7 +100,7 @@ export async function InvoiceList() {
             {data.map((invoice) => (
               <TableRow key={invoice.id}>
                 <TableCell>#{invoice.invoiceNumber}</TableCell>
-                <TableCell>{invoice.clientName}</TableCell>
+                <TableCell>{invoice.client?.name || "—"}</TableCell>
                 <TableCell>
                   {formatCurrency({
                     amount: invoice.total,
@@ -115,7 +116,7 @@ export async function InvoiceList() {
                   }).format(invoice.createdAt)}
                 </TableCell>
                 <TableCell className="text-right">
-                  <InvoiceActions status={invoice.status} id={invoice.id} />
+                  <InvoiceActions invoice={invoice} />
                 </TableCell>
               </TableRow>
             ))}
