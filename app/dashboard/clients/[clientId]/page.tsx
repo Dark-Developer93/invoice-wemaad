@@ -17,12 +17,13 @@ export const metadata: Metadata = {
   description: "View client details and information",
 };
 
-type Props = {
-  params: { clientId: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-};
+interface PageProps {
+  params: {
+    clientId: string;
+  };
+}
 
-export default async function ClientDetailPage({ params }: Props) {
+export default async function ClientDetailPage({ params }: PageProps) {
   const session = await auth();
 
   if (!session?.user?.id) {
