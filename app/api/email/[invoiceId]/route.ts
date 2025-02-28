@@ -29,10 +29,29 @@ export async function POST(
         id: invoiceId,
         userId: session.user.id,
       },
+      include: {
+        client: {
+          include: {
+            contactPersons: {
+              where: {
+                isPrimary: true,
+              },
+              take: 1,
+            },
+          },
+        },
+      },
     });
 
-    if (!invoiceData) {
-      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    if (
+      !invoiceData ||
+      !invoiceData.client ||
+      !invoiceData.client.contactPersons[0]
+    ) {
+      return NextResponse.json(
+        { error: "Invoice or client contact not found" },
+        { status: 404 }
+      );
     }
 
     const dueDate = addDays(
@@ -41,10 +60,10 @@ export async function POST(
     );
 
     await sendEmail({
-      to: invoiceData.clientEmail,
+      to: invoiceData.client.contactPersons[0].email,
       templateName: "reminderInvoice",
       variables: {
-        clientName: invoiceData.clientName,
+        clientName: invoiceData.client.name,
         invoiceNumber: invoiceData.invoiceNumber.toString(),
         invoiceDueDate: format(dueDate, "PPP"),
         invoiceAmount: formatCurrency({
