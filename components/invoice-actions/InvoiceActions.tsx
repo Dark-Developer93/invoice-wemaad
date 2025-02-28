@@ -62,23 +62,28 @@ export function InvoiceActions({ invoice }: iAppProps) {
   const handleDownload = async () => {
     try {
       setIsLoading(true);
-      const arrayBuffer = await generateInvoicePDF(invoice.id);
+      await toast.promise(
+        (async () => {
+          const arrayBuffer = await generateInvoicePDF(invoice.id);
+          const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+          const url = window.URL.createObjectURL(blob);
 
-      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
-
-      // Create temporary link and trigger download
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `invoice-${invoice.invoiceName}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      toast.success("Invoice downloaded successfully");
+          // Create temporary link and trigger download
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `invoice-${invoice.invoiceName}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        })(),
+        {
+          loading: "Preparing your invoice...",
+          success: "Invoice downloaded successfully",
+          error: "Failed to download invoice",
+        }
+      );
     } catch (error) {
-      toast.error("Failed to download invoice");
       console.error(error);
     } finally {
       setIsLoading(false);
