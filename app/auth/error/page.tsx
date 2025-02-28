@@ -11,13 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default async function AuthError({
-  searchParams,
-}: {
-  searchParams: { error?: string };
-}) {
-  const error = searchParams?.error;
-
+export default function AuthError() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center">
       <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem]">
@@ -33,9 +27,7 @@ export default async function AuthError({
             Authentication Error
           </CardTitle>
           <CardDescription>
-            {error === "Verification"
-              ? "The sign in link is no longer valid. It may have been used already or it may have expired."
-              : "Something went wrong while trying to authenticate you."}
+            Something went wrong while trying to authenticate you.
           </CardDescription>
         </CardHeader>
         <CardContent>
