@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
+
 import { generateInvoicePDF } from "@/app/actions/generate-invoice";
 
 export async function GET(
-  request: Request,
-  { params }: { params: { invoiceId: string } }
+  _request: Request,
+  {
+    params,
+  }: {
+    params: Promise<{ invoiceId: string }>;
+  }
 ) {
   try {
-    const { invoiceId } = params;
+    const { invoiceId } = await params;
 
     // Find the invoice without requiring user authentication
     const invoice = await prisma.invoice.findUnique({
