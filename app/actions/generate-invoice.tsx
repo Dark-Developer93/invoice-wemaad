@@ -93,8 +93,6 @@ export async function generateInvoicePDF(
       throw new Error("Invoice not found");
     }
 
-    console.log("Invoice data:", JSON.stringify(data, null, 2));
-
     const pdfDoc = await pdf(<InvoicePDF invoice={data} />);
     const blob = await pdfDoc.toBlob();
     const arrayBuffer = await blob.arrayBuffer();
