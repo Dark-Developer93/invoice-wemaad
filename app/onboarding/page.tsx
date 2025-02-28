@@ -18,7 +18,7 @@ import { onboardUser } from "@/app/actions/onboarding";
 import { onboardingSchema } from "@/lib/zodSchemas";
 
 export default function Onboarding() {
-  const [lastResult, action] = useActionState(onboardUser, null);
+  const [lastResult, action, isPending] = useActionState(onboardUser, null);
   const [form, fields] = useForm({
     lastResult,
 
@@ -87,7 +87,7 @@ export default function Onboarding() {
               <p className="text-red-500 text-sm">{fields.address.errors}</p>
             </div>
 
-            <SubmitButton text="Finish onboarding" />
+            <SubmitButton text="Finish onboarding" isLoading={isPending} />
           </form>
         </CardContent>
       </Card>
