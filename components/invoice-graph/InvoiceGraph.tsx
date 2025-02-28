@@ -7,11 +7,10 @@ import {
 } from "@/components/ui/card";
 import { Graph } from "@/components/graph/Graph";
 import prisma from "@/lib/db";
-import { requireUser } from "@/lib/session";
 import { subDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
-async function getInvoices(userId: string) {
+export async function getInvoiceData(userId: string) {
   const rawData = await prisma.invoice.findMany({
     where: {
       status: "PAID",
@@ -49,10 +48,14 @@ async function getInvoices(userId: string) {
     .sort((a, b) => a.date - b.date);
 }
 
-export async function InvoiceGraph() {
-  const session = await requireUser();
-  const data = await getInvoices(session.user?.id as string);
+interface InvoiceGraphProps {
+  data: Array<{
+    date: number;
+    amount: number;
+  }>;
+}
 
+export function InvoiceGraph({ data }: InvoiceGraphProps) {
   return (
     <Card className="lg:col-span-2">
       <CardHeader>

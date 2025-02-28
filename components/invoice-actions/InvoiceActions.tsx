@@ -1,15 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import {
   CheckCircle,
   DownloadCloudIcon,
+  Eye,
   Mail,
   MoreHorizontal,
   Pencil,
   Trash,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Prisma } from "@prisma/client";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,15 +20,32 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { InvoiceDialog } from "../invoice-dialog/InvoiceDialog";
+import Link from "next/link";
+import { ViewInvoiceDialog } from "../invoice-dialog/ViewInvoiceDialog";
+import { generateInvoicePDF } from "@/app/actions/generate-invoice";
 
 interface iAppProps {
-  id: string;
-  status: string;
+  invoice: Prisma.InvoiceGetPayload<{
+    include: {
+      client: {
+        select: {
+          name: true;
+          email: true;
+          addresses: true;
+          contactPersons: true;
+        };
+      };
+    };
+  }>;
 }
-export function InvoiceActions({ id, status }: iAppProps) {
+
+export function InvoiceActions({ invoice }: iAppProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleSendReminder = () => {
     toast.promise(
-      fetch(`/api/email/${id}`, {
+      fetch(`/api/email/${invoice.id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -40,6 +59,32 @@ export function InvoiceActions({ id, status }: iAppProps) {
     );
   };
 
+  const handleDownload = async () => {
+    try {
+      setIsLoading(true);
+      const arrayBuffer = await generateInvoicePDF(invoice.id);
+
+      const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+
+      // Create temporary link and trigger download
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `invoice-${invoice.invoiceName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Invoice downloaded successfully");
+    } catch (error) {
+      toast.error("Failed to download invoice");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -48,27 +93,40 @@ export function InvoiceActions({ id, status }: iAppProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem asChild>
-          <Link href={`/dashboard/invoices/${id}`}>
-            <Pencil className="size-4 mr-2" /> Edit Invoice
-          </Link>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <ViewInvoiceDialog
+            invoice={invoice}
+            trigger={
+              <div className="flex items-center w-full">
+                <Eye className="size-4 mr-2" /> View Invoice
+              </div>
+            }
+          />
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <InvoiceDialog
+            invoice={invoice}
+            trigger={
+              <div className="flex items-center w-full">
+                <Pencil className="size-4 mr-2" /> Edit Invoice
+              </div>
+            }
+          />
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDownload} disabled={isLoading}>
+          <DownloadCloudIcon className="size-4 mr-2" /> Download Invoice
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={`/api/invoice/${id}`} target="_blank">
-            <DownloadCloudIcon className="size-4 mr-2" /> Download Invoice
+          <Link href={`/dashboard/invoices/${invoice.id}/delete`}>
+            <Trash className="size-4 mr-2" /> Delete Invoice
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSendReminder}>
           <Mail className="size-4 mr-2" /> Reminder Email
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href={`/dashboard/invoices/${id}/delete`}>
-            <Trash className="size-4 mr-2" /> Delete Invoice
-          </Link>
-        </DropdownMenuItem>
-        {status !== "PAID" && (
+        {invoice.status !== "PAID" && (
           <DropdownMenuItem asChild>
-            <Link href={`/dashboard/invoices/${id}/paid`}>
+            <Link href={`/dashboard/invoices/${invoice.id}/paid`}>
               <CheckCircle className="size-4 mr-2" /> Mark as Paid
             </Link>
           </DropdownMenuItem>

@@ -13,9 +13,14 @@ import {
 import WarningGif from "@/public/warning-gif.gif";
 import { buttonVariants } from "@/components/ui/button";
 import SubmitButton from "@/components/submit-button/SubmitButton";
-import { DeleteInvoice } from "@/app/actions";
+import { deleteInvoice } from "@/app/actions/invoices";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
+
+export const metadata = {
+  title: "Delete Invoice | WeMaAd Invoice",
+  description: "Delete an invoice from your account",
+};
 
 async function Authorize(invoiceId: string, userId: string) {
   const data = await prisma.invoice.findUnique({
@@ -61,7 +66,7 @@ export default async function DeleteInvoiceRoute({
           <form
             action={async () => {
               "use server";
-              await DeleteInvoice(invoiceId);
+              await deleteInvoice(invoiceId);
             }}
           >
             <SubmitButton text="Delete Invoice" variant={"destructive"} />
