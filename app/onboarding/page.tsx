@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import SubmitButton from "@/components/submit-button/SubmitButton";
-import { onboardUser } from "@/app/actions";
+import { onboardUser } from "@/app/actions/onboarding";
 import { onboardingSchema } from "@/lib/zodSchemas";
 
 export default function Onboarding() {

@@ -1,41 +1,55 @@
-import { Suspense } from "react";
+import { unstable_cache } from "next/cache";
 
-import {
-  DashboardBlocks,
-  DashboardBlocksSkeleton,
-} from "@/components/dashboard-blocks/DashboardBlocks";
+import { DashboardBlocks } from "@/components/dashboard-blocks/DashboardBlocks";
 import { EmptyState } from "@/components/empty-state/EmptyState";
 import {
   InvoiceGraph,
-  InvoiceGraphSkeleton,
+  getInvoiceData,
 } from "@/components/invoice-graph/InvoiceGraph";
-import {
-  RecentInvoices,
-  RecentInvoicesSkeleton,
+import RecentInvoices, {
+  getRecentInvoices,
 } from "@/components/recent-invoices/RecentInvoices";
-import { Skeleton } from "@/components/ui/skeleton";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 
-async function getData(userId: string) {
-  const data = await prisma.invoice.findMany({
-    where: {
-      userId: userId,
-    },
-    select: {
-      id: true,
-    },
-  });
+// Cache the invoice check for 1 minute
+const getHasInvoices = unstable_cache(
+  async (userId: string) => {
+    const count = await prisma.invoice.count({
+      where: { userId },
+    });
+    return count > 0;
+  },
+  ["has-invoices"],
+  { revalidate: 60 }
+);
 
-  return data;
-}
+// Add metadata for better SEO and caching
+export const metadata = {
+  title: "Dashboard | WeMaAd Invoice",
+  description: "View your invoice dashboard",
+};
+
+// Change to ISR with 1 minute revalidation
+export const revalidate = 60;
 
 export default async function DashboardRoute() {
   const session = await requireUser();
-  const data = await getData(session.user?.id as string);
+
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  // Fetch all data in parallel
+  const [hasInvoices, invoiceGraphData, recentInvoices] = await Promise.all([
+    getHasInvoices(session.user.id),
+    getInvoiceData(session.user.id),
+    getRecentInvoices(session.user.id),
+  ]);
+
   return (
-    <>
-      {data.length < 1 ? (
+    <main className="p-4 flex flex-col gap-5">
+      {!hasInvoices ? (
         <EmptyState
           title="No invoices found"
           description="Create an invoice to see it right here"
@@ -43,20 +57,14 @@ export default async function DashboardRoute() {
           href="/dashboard/invoices/create"
         />
       ) : (
-        <Suspense fallback={<Skeleton className="w-full h-full flex-1" />}>
-          <Suspense fallback={<DashboardBlocksSkeleton />}>
-            <DashboardBlocks />
-          </Suspense>
+        <>
+          <DashboardBlocks />
           <div className="grid gap-4 lg:grid-cols-3 md:gap-8">
-            <Suspense fallback={<InvoiceGraphSkeleton />}>
-              <InvoiceGraph />
-            </Suspense>
-            <Suspense fallback={<RecentInvoicesSkeleton />}>
-              <RecentInvoices />
-            </Suspense>
+            <InvoiceGraph data={invoiceGraphData} />
+            <RecentInvoices data={recentInvoices} />
           </div>
-        </Suspense>
+        </>
       )}
-    </>
+    </main>
   );
 }
