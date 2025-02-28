@@ -17,13 +17,10 @@ export const metadata: Metadata = {
   description: "View client details and information",
 };
 
-interface PageProps {
-  params: {
-    clientId: string;
-  };
-}
+type Params = Promise<{ clientId: string }>;
 
-export default async function ClientDetailPage({ params }: PageProps) {
+async function ClientDetailPage({ params }: { params: Params }) {
+  const { clientId } = await params;
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -33,7 +30,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
   const [client, user, allClients] = await Promise.all([
     prisma.client.findUnique({
       where: {
-        id: params.clientId,
+        id: clientId,
         userId: session.user.id,
       },
       include: {
@@ -338,3 +335,5 @@ export default async function ClientDetailPage({ params }: PageProps) {
     </div>
   );
 }
+
+export default ClientDetailPage;
