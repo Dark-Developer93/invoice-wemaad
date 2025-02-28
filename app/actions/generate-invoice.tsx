@@ -33,17 +33,25 @@ export type InvoiceWithRelations = Prisma.InvoiceGetPayload<{
   };
 }>;
 
-export async function generateInvoicePDF(invoiceId: string) {
+export async function generateInvoicePDF(
+  invoiceId: string,
+  skipAuthCheck: boolean = false
+) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      throw new Error("Unauthorized");
+    let userId: string | undefined;
+
+    if (!skipAuthCheck) {
+      const session = await auth();
+      if (!session?.user?.id) {
+        throw new Error("Unauthorized");
+      }
+      userId = session.user.id;
     }
 
     const data = (await prisma.invoice.findUnique({
       where: {
         id: invoiceId,
-        userId: session.user.id,
+        ...(userId ? { userId } : {}),
       },
       include: {
         client: {

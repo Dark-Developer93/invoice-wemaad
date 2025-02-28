@@ -3,21 +3,41 @@ import NextAuth from "next-auth";
 import Nodemailer from "next-auth/providers/nodemailer";
 import { render } from "@react-email/render";
 import WelcomeEmail from "./email/templates/welcomeEmail";
-import type { NextAuthConfig } from "next-auth";
 
 import prisma from "@/lib/db";
 
 const THIRTY_DAYS = 30 * 24 * 60 * 60;
 const TWENTY_FOUR_HOURS = 24 * 60 * 60;
 
+// Create a custom adapter that extends PrismaAdapter
+const customPrismaAdapter = () => {
+  const adapter = PrismaAdapter(prisma);
+  return {
+    ...adapter,
+    deleteSession: async (sessionToken: string) => {
+      // Check if session exists first
+      const session = await prisma.session.findUnique({
+        where: { sessionToken },
+      });
+
+      if (!session) {
+        return null;
+      }
+
+      return prisma.session.delete({
+        where: { sessionToken },
+      });
+    },
+  };
+};
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: customPrismaAdapter(),
   session: {
-    strategy: "jwt",
+    strategy: "database",
     maxAge: THIRTY_DAYS,
     updateAge: TWENTY_FOUR_HOURS,
   },
-  debug: process.env.NODE_ENV === "development",
   providers: [
     Nodemailer({
       server: {
@@ -63,27 +83,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     error: "/auth/error",
   },
   callbacks: {
-    async session({ session, token, user }) {
-      try {
-        if (session?.user) {
-          session.user.id = token.sub || user?.id;
-        }
-        return session;
-      } catch (error) {
-        console.error("Session callback error:", error);
-        return session;
+    session: async ({ session, user }) => {
+      if (session?.user) {
+        session.user.id = user.id;
       }
-    },
-    async jwt({ token, user }) {
-      try {
-        if (user) {
-          token.id = user.id;
-        }
-        return token;
-      } catch (error) {
-        console.error("JWT callback error:", error);
-        return token;
-      }
+      return session;
     },
   },
-} satisfies NextAuthConfig);
+});
