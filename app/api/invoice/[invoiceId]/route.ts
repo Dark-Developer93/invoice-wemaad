@@ -3,12 +3,8 @@ import prisma from "@/lib/db";
 import { generateInvoicePDF } from "@/app/actions/generate-invoice";
 
 export async function GET(
-  _request: Request,
-  {
-    params,
-  }: {
-    params: { invoiceId: string };
-  }
+  request: Request,
+  { params }: { params: { invoiceId: string } }
 ) {
   try {
     const { invoiceId } = params;
