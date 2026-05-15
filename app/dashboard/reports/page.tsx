@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { subMonths, startOfMonth, endOfMonth, format } from "date-fns";
+import { subMonths, format } from "date-fns";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,6 @@ export default async function ReportsPage() {
 
   const userId = session.user.id;
   const now = new Date();
-  const yearStart = subMonths(now, 11);
 
   const [allInvoices, clientInvoices] = await Promise.all([
     prisma.invoice.findMany({
