@@ -39,6 +39,10 @@ model User {
   Authenticator     Authenticator[]
   invoices          Invoice[]
   clients           Client[]
+  emailLogs         EmailLog[]
+
+  plan          PlanType  @default(FREE)
+  planUpdatedAt DateTime  @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -181,6 +185,13 @@ enum AddressType {
   OTHER
 }
 
+enum PlanType {
+  FREE
+  STARTER
+  PRO
+  BUSINESS
+}
+
 model Invoice {
   id String @id @default(uuid())
 
@@ -212,4 +223,15 @@ model Invoice {
 enum InvoiceStatus {
   PAID
   PENDING
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  userId    String
+  sentAt    DateTime @default(now())
+  emailType String
+  invoiceId String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sentAt])
 }

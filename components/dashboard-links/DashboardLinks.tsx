@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, FileText, Users2 } from "lucide-react";
+import { HomeIcon, FileText, Users2, CreditCard } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,12 @@ export const dashboardLinks = [
     name: "Clients",
     href: "/dashboard/clients",
     icon: Users2,
+  },
+  {
+    id: 3,
+    name: "Billing",
+    href: "/dashboard/billing",
+    icon: CreditCard,
   },
 ];
 

@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/session";
 import { sendEmail } from "@/lib/email";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
+import { getUserUsage, logEmailSent } from "@/lib/usage";
 
 export async function POST(
   _request: Request,
@@ -54,6 +55,14 @@ export async function POST(
       );
     }
 
+    const emailUsage = await getUserUsage(session.user.id!);
+    if (emailUsage.emailLimit !== null && emailUsage.emailsThisMonth >= emailUsage.emailLimit) {
+      return NextResponse.json(
+        { error: `Monthly email limit (${emailUsage.emailLimit}) reached on the ${emailUsage.plan} plan. Upgrade your plan to send more emails.` },
+        { status: 429 }
+      );
+    }
+
     const dueDate = addDays(
       new Date(invoiceData.date),
       parseInt(invoiceData.dueDate.toString())
@@ -76,6 +85,8 @@ export async function POST(
             : `https://invoice-wemaad.vercel.app/api/invoice/${invoiceData.id}`, // TODO: change to production url
       },
     });
+
+    await logEmailSent(session.user.id!, "reminderInvoice", invoiceId);
 
     return NextResponse.json({ success: true });
   } catch (error) {
