@@ -45,7 +45,7 @@ export async function createInvoice(
   }
 
   try {
-    // Create invoice first.
+    // Create invoice first
     const data = await prisma.invoice.create({
       data: {
         ...submission.value,
