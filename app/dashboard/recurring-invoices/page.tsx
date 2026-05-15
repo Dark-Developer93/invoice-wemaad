@@ -12,7 +12,9 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RecurringInvoiceDialog } from "@/components/recurring-invoice-dialog/RecurringInvoiceDialog";
+
 import { RecurringInvoiceList } from "@/components/recurring-invoice-list/RecurringInvoiceList";
+import { UpgradePrompt } from "@/components/upgrade-prompt/UpgradePrompt";
 import { getUserUsage } from "@/lib/usage";
 import { PLAN_FEATURES } from "@/lib/plans";
 
@@ -30,25 +32,16 @@ export default async function RecurringInvoicesPage() {
 
   if (!hasAccess) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <RefreshCw className="size-5" /> Recurring Invoices
-          </CardTitle>
-          <CardDescription>
-            Automate your billing with recurring invoice templates.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-          <p className="text-muted-foreground max-w-sm">
+      <UpgradePrompt
+        title="Recurring Invoices"
+        description="Automate your billing with recurring invoice templates."
+        message={
+          <>
             Recurring invoices are available on the <strong>Starter</strong> plan and
             above. Upgrade to automate your billing cycles.
-          </p>
-          <Button asChild>
-            <a href="/dashboard/billing">Upgrade Plan</a>
-          </Button>
-        </CardContent>
-      </Card>
+          </>
+        }
+      />
     );
   }
 

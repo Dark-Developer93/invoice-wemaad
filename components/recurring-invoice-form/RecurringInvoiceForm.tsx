@@ -332,11 +332,6 @@ export function RecurringInvoiceForm({
           />
         </div>
 
-        <input type="hidden" name="total" value={form.watch("total")} />
-        <input type="hidden" name="invoiceItemQuantity" value={form.watch("invoiceItemQuantity")} />
-        <input type="hidden" name="invoiceItemRate" value={form.watch("invoiceItemRate")} />
-        <input type="hidden" name="dueDate" value={form.watch("dueDate")} />
-
         <FormField
           control={form.control}
           name="note"

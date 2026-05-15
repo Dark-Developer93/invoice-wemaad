@@ -83,7 +83,7 @@ export async function toggleRecurringInvoice(id: string) {
   if (!current) return { error: "Not found" };
 
   await prisma.recurringInvoice.update({
-    where: { id },
+    where: { id, userId: session.user.id },
     data: { isActive: !current.isActive },
   });
 
@@ -109,77 +109,105 @@ export async function processRecurringInvoices() {
     include: { client: { include: { contactPersons: { where: { isPrimary: true }, take: 1 } } } },
   });
 
+  // Batch usage checks — one lookup per unique user, not one per invoice.
+  const userIds = [...new Set(due.map((r) => r.userId).filter(Boolean) as string[])];
+  const usageMap = Object.fromEntries(
+    await Promise.all(userIds.map(async (uid) => [uid, await getUserUsage(uid)] as const))
+  );
+
+  // Batch last invoice numbers per user to avoid N queries in the loop.
+  const lastInvoiceMap = Object.fromEntries(
+    await Promise.all(
+      userIds.map(async (uid) => {
+        const last = await prisma.invoice.findFirst({
+          where: { userId: uid },
+          orderBy: { invoiceNumber: "desc" },
+          select: { invoiceNumber: true },
+        });
+        return [uid, last?.invoiceNumber ?? 0] as const;
+      })
+    )
+  );
+
   for (const recurring of due) {
     if (!recurring.userId) continue;
 
-    const usage = await getUserUsage(recurring.userId);
+    const usage = usageMap[recurring.userId];
     const atLimit =
       usage.invoiceLimit !== null && usage.invoicesThisMonth >= usage.invoiceLimit;
-
     if (atLimit) continue;
 
-    const lastInvoice = await prisma.invoice.findFirst({
-      where: { userId: recurring.userId },
-      orderBy: { invoiceNumber: "desc" },
-      select: { invoiceNumber: true },
-    });
+    try {
+      const invoiceNumber = ++lastInvoiceMap[recurring.userId];
 
-    const invoiceNumber = (lastInvoice?.invoiceNumber ?? 0) + 1;
+      // Atomic: create invoice + advance schedule in one transaction.
+      const nextRunAt = computeNextRunAt(now, recurring.interval);
+      const expired = !!recurring.endDate && nextRunAt > recurring.endDate;
 
-    const invoice = await prisma.invoice.create({
-      data: {
-        invoiceName: recurring.invoiceName,
-        total: recurring.total,
-        status: "PENDING",
-        date: now,
-        dueDate: recurring.dueDate,
-        fromName: recurring.fromName,
-        fromEmail: recurring.fromEmail,
-        fromAddress: recurring.fromAddress,
-        currency: recurring.currency,
-        invoiceNumber,
-        invoiceNote: recurring.invoiceNote,
-        invoiceItemDescription: recurring.invoiceItemDescription,
-        invoiceItemQuantity: recurring.invoiceItemQuantity,
-        invoiceItemRate: recurring.invoiceItemRate,
-        clientId: recurring.clientId,
-        userId: recurring.userId,
-        recurringInvoiceId: recurring.id,
-      },
-    });
+      const invoice = await prisma.$transaction(async (tx) => {
+        const created = await tx.invoice.create({
+          data: {
+            invoiceName: recurring.invoiceName,
+            total: recurring.total,
+            status: "PENDING",
+            date: now,
+            dueDate: recurring.dueDate,
+            fromName: recurring.fromName,
+            fromEmail: recurring.fromEmail,
+            fromAddress: recurring.fromAddress,
+            currency: recurring.currency,
+            invoiceNumber,
+            invoiceNote: recurring.invoiceNote,
+            invoiceItemDescription: recurring.invoiceItemDescription,
+            invoiceItemQuantity: recurring.invoiceItemQuantity,
+            invoiceItemRate: recurring.invoiceItemRate,
+            clientId: recurring.clientId,
+            userId: recurring.userId,
+            recurringInvoiceId: recurring.id,
+          },
+        });
 
-    const contact = recurring.client?.contactPersons[0];
-    const emailLimitOk =
-      usage.emailLimit === null || usage.emailsThisMonth < usage.emailLimit;
+        await tx.recurringInvoice.update({
+          where: { id: recurring.id },
+          data: { nextRunAt, isActive: !expired },
+        });
 
-    if (contact && emailLimitOk) {
-      sendEmail({
-        to: contact.email,
-        templateName: "newInvoice",
-        variables: {
-          clientName: recurring.client!.name,
-          invoiceNumber: invoiceNumber.toString(),
-          invoiceDueDate: new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(now),
-          invoiceAmount: formatCurrency({
-            amount: recurring.total,
-            currency: recurring.currency as Currency,
-          }),
-          invoiceLink:
-            process.env.NODE_ENV !== "production"
-              ? `http://localhost:3000/api/invoice/${invoice.id}`
-              : `https://invoice-wemaad.vercel.app/api/invoice/${invoice.id}`,
-        },
-      })
-        .then(() => logEmailSent(recurring.userId!, "recurringInvoice", invoice.id))
-        .catch(console.error);
+        return created;
+      });
+
+      // Update local usage so subsequent invoices for the same user see the new count.
+      usage.invoicesThisMonth++;
+
+      const contact = recurring.client?.contactPersons[0];
+      const emailLimitOk =
+        usage.emailLimit === null || usage.emailsThisMonth < usage.emailLimit;
+
+      if (contact && emailLimitOk) {
+        sendEmail({
+          to: contact.email,
+          templateName: "newInvoice",
+          variables: {
+            clientName: recurring.client!.name,
+            invoiceNumber: invoiceNumber.toString(),
+            invoiceDueDate: new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(now),
+            invoiceAmount: formatCurrency({
+              amount: recurring.total,
+              currency: recurring.currency as Currency,
+            }),
+            invoiceLink:
+              process.env.NODE_ENV !== "production"
+                ? `http://localhost:3000/api/invoice/${invoice.id}`
+                : `https://invoice-wemaad.vercel.app/api/invoice/${invoice.id}`,
+          },
+        })
+          .then(() => {
+            logEmailSent(recurring.userId!, "recurringInvoice", invoice.id);
+            usage.emailsThisMonth++;
+          })
+          .catch(console.error);
+      }
+    } catch (err) {
+      console.error(`Failed to process recurring invoice ${recurring.id}:`, err);
     }
-
-    const nextRunAt = computeNextRunAt(now, recurring.interval);
-    const expired = recurring.endDate && nextRunAt > recurring.endDate;
-
-    await prisma.recurringInvoice.update({
-      where: { id: recurring.id },
-      data: { nextRunAt, isActive: !expired },
-    });
   }
 }

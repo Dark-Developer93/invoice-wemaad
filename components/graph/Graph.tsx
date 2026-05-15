@@ -23,9 +23,10 @@ interface DataPoint {
   amount: number;
 }
 
-interface iAppProps {
+interface GraphProps {
   data: DataPoint[];
   chartType?: ChartType;
+  currency?: string;
 }
 
 const PIE_COLORS = [
@@ -39,9 +40,11 @@ const PIE_COLORS = [
 function AmountTooltip({
   active,
   payload,
+  currency = "USD",
 }: {
   active?: boolean;
   payload?: { payload: DataPoint; value: number }[];
+  currency?: string;
 }) {
   if (!active || !payload?.length) return null;
   return (
@@ -56,7 +59,7 @@ function AmountTooltip({
         <div className="flex flex-col">
           <span className="text-[0.70rem] uppercase text-muted-foreground">Amount</span>
           <span className="font-bold">
-            {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+            {new Intl.NumberFormat("en-US", { style: "currency", currency }).format(
               payload[0].value
             )}
           </span>
@@ -66,7 +69,7 @@ function AmountTooltip({
   );
 }
 
-export function Graph({ data, chartType = "line" }: iAppProps) {
+export function Graph({ data, chartType = "line", currency = "USD" }: GraphProps) {
   const chartConfig = {
     amount: { label: "Amount", color: "hsl(var(--primary))" },
   };
@@ -96,7 +99,7 @@ export function Graph({ data, chartType = "line" }: iAppProps) {
                     <p>
                       {new Intl.NumberFormat("en-US", {
                         style: "currency",
-                        currency: "USD",
+                        currency,
                       }).format(payload[0].value as number)}
                     </p>
                   </div>
@@ -117,7 +120,7 @@ export function Graph({ data, chartType = "line" }: iAppProps) {
             <XAxis dataKey="date" tickFormatter={(v) => format(v, "MMM d")} />
             <YAxis />
             <ChartTooltip content={({ active, payload }) => (
-              <AmountTooltip active={active} payload={payload as { payload: DataPoint; value: number }[]} />
+              <AmountTooltip active={active} payload={payload as { payload: DataPoint; value: number }[]} currency={currency} />
             )} />
             <Bar dataKey="amount" fill="var(--color-amount)" radius={[4, 4, 0, 0]} />
           </BarChart>
@@ -133,7 +136,7 @@ export function Graph({ data, chartType = "line" }: iAppProps) {
           <XAxis dataKey="date" tickFormatter={(value) => format(value, "MMM d")} />
           <YAxis />
           <ChartTooltip content={({ active, payload }) => (
-            <AmountTooltip active={active} payload={payload as { payload: DataPoint; value: number }[]} />
+            <AmountTooltip active={active} payload={payload as { payload: DataPoint; value: number }[]} currency={currency} />
           )} />
           <Line
             type="monotone"

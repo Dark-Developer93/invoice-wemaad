@@ -3,17 +3,11 @@ import { subMonths, format } from "date-fns";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { RevenueSummaryCard } from "@/components/reports/RevenueSummaryCard";
 import { StatusBreakdownCard } from "@/components/reports/StatusBreakdownCard";
 import { ClientRevenueTable } from "@/components/reports/ClientRevenueTable";
 import { OutstandingInvoicesCard } from "@/components/reports/OutstandingInvoicesCard";
+import { UpgradePrompt } from "@/components/upgrade-prompt/UpgradePrompt";
 import { getUserUsage } from "@/lib/usage";
 import { PLAN_FEATURES } from "@/lib/plans";
 
@@ -29,47 +23,37 @@ export default async function ReportsPage() {
   const usage = await getUserUsage(session.user.id);
   if (!PLAN_FEATURES[usage.plan].analytics) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Reports</CardTitle>
-          <CardDescription>Financial insights and analytics</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-          <p className="text-muted-foreground max-w-sm">
+      <UpgradePrompt
+        title="Reports"
+        description="Financial insights and analytics"
+        message={
+          <>
             Reports are available on the <strong>Starter</strong> plan and above.
             Upgrade to unlock financial insights.
-          </p>
-          <Button asChild>
-            <a href="/dashboard/billing">Upgrade Plan</a>
-          </Button>
-        </CardContent>
-      </Card>
+          </>
+        }
+      />
     );
   }
 
   const userId = session.user.id;
   const now = new Date();
 
-  const [allInvoices, clientInvoices] = await Promise.all([
-    prisma.invoice.findMany({
-      where: { userId },
-      select: {
-        id: true,
-        invoiceName: true,
-        total: true,
-        status: true,
-        date: true,
-        dueDate: true,
-        currency: true,
-        createdAt: true,
-        client: { select: { id: true, name: true } },
-      },
-    }),
-    prisma.invoice.findMany({
-      where: { userId, clientId: { not: null } },
-      select: { total: true, clientId: true, client: { select: { name: true } } },
-    }),
-  ]);
+  const allInvoices = await prisma.invoice.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      invoiceName: true,
+      total: true,
+      status: true,
+      date: true,
+      dueDate: true,
+      currency: true,
+      createdAt: true,
+      clientId: true,
+      client: { select: { id: true, name: true } },
+    },
+  });
 
   // Monthly revenue (last 12 months)
   const monthlyMap: Record<string, number> = {};
@@ -94,9 +78,9 @@ export default async function ReportsPage() {
     .filter((i) => i.status === "PENDING")
     .reduce((a, i) => a + i.total, 0);
 
-  // Client revenue (top 10)
+  // Client revenue (top 10) — derived from the already-loaded allInvoices slice
   const clientMap: Record<string, { name: string; total: number; count: number }> = {};
-  for (const inv of clientInvoices) {
+  for (const inv of allInvoices) {
     if (!inv.clientId || !inv.client) continue;
     if (!clientMap[inv.clientId]) {
       clientMap[inv.clientId] = { name: inv.client.name, total: 0, count: 0 };

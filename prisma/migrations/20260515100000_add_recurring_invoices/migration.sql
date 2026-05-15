@@ -31,6 +31,9 @@ CREATE TABLE "RecurringInvoice" (
     CONSTRAINT "RecurringInvoice_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateIndex (supports the daily cron query: WHERE isActive=true AND nextRunAt<=now)
+CREATE INDEX "RecurringInvoice_isActive_nextRunAt_idx" ON "RecurringInvoice"("isActive", "nextRunAt");
+
 -- AddForeignKey
 ALTER TABLE "Invoice" ADD CONSTRAINT "Invoice_recurringInvoiceId_fkey" FOREIGN KEY ("recurringInvoiceId") REFERENCES "RecurringInvoice"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 

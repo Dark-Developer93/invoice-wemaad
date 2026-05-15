@@ -276,4 +276,6 @@ model RecurringInvoice {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([isActive, nextRunAt])
 }

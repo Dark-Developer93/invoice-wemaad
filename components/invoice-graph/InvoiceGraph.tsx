@@ -27,19 +27,21 @@ export function InvoiceGraph() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("PAID");
   const [data, setData] = useState<DataPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       const params = new URLSearchParams({
         range: dateRange.toString(),
         status: statusFilter === "ALL" ? "" : statusFilter,
       });
       const res = await fetch(`/api/dashboard/chart-data?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json);
-      }
+      if (!res.ok) throw new Error("Failed to fetch chart data");
+      setData(await res.json());
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -97,6 +99,10 @@ export function InvoiceGraph() {
       <CardContent>
         {loading ? (
           <Skeleton className="h-[300px] w-full" />
+        ) : error ? (
+          <p className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
+            Failed to load chart data. Please try again.
+          </p>
         ) : (
           <Graph data={data} chartType={chartType} />
         )}

@@ -50,7 +50,7 @@ export function ToggleGroupItem({ value, children, className }: ToggleGroupItemP
       type="button"
       onClick={() => ctx.onValueChange(value)}
       className={cn(
-        "flex-1 font-medium transition-colors focus:outline-none",
+        "flex-1 font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
         isSmall ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm",
         isActive
           ? "bg-primary text-primary-foreground"
