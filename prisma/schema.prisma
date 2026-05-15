@@ -40,6 +40,7 @@ model User {
   invoices          Invoice[]
   clients           Client[]
   emailLogs         EmailLog[]
+  recurringInvoices RecurringInvoice[]
 
   plan          PlanType  @default(FREE)
   planUpdatedAt DateTime  @default(now())
@@ -116,10 +117,11 @@ model Client {
   category String?
 
   // Relations
-  addresses      Address[]
-  contactPersons ContactPerson[]
-  invoices       Invoice[]
-  customFields   ClientCustomField[]
+  addresses         Address[]
+  contactPersons    ContactPerson[]
+  invoices          Invoice[]
+  customFields      ClientCustomField[]
+  recurringInvoices RecurringInvoice[]
 
   // Metadata
   createdAt DateTime @default(now())
@@ -214,6 +216,9 @@ model Invoice {
   client   Client? @relation(fields: [clientId], references: [id])
   clientId String?
 
+  recurringInvoice   RecurringInvoice? @relation(fields: [recurringInvoiceId], references: [id])
+  recurringInvoiceId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   User      User?    @relation(fields: [userId], references: [id])
@@ -234,4 +239,43 @@ model EmailLog {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, sentAt])
+}
+
+enum RecurrenceInterval {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model RecurringInvoice {
+  id        String             @id @default(uuid())
+  isActive  Boolean            @default(true)
+  interval  RecurrenceInterval
+  startDate DateTime
+  endDate   DateTime?
+  nextRunAt DateTime
+
+  invoiceName            String
+  invoiceItemDescription String
+  invoiceItemQuantity    Int
+  invoiceItemRate        Int
+  total                  Int
+  currency               String
+  dueDate                Int
+  fromName               String
+  fromEmail              String
+  fromAddress            String
+  invoiceNote            String?
+
+  client   Client? @relation(fields: [clientId], references: [id])
+  clientId String?
+  User     User?   @relation(fields: [userId], references: [id])
+  userId   String?
+
+  generatedInvoices Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, nextRunAt])
 }

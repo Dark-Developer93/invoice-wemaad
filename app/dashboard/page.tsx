@@ -3,10 +3,7 @@ import { unstable_cache } from "next/cache";
 
 import { DashboardBlocks } from "@/components/dashboard-blocks/DashboardBlocks";
 import { EmptyState } from "@/components/empty-state/EmptyState";
-import {
-  InvoiceGraph,
-  getInvoiceData,
-} from "@/components/invoice-graph/InvoiceGraph";
+import { InvoiceGraph } from "@/components/invoice-graph/InvoiceGraph";
 import RecentInvoices, {
   getRecentInvoices,
 } from "@/components/recent-invoices/RecentInvoices";
@@ -43,10 +40,8 @@ export default async function DashboardRoute() {
     return null;
   }
 
-  // Fetch all data in parallel
-  const [hasInvoices, invoiceGraphData, recentInvoices, user] = await Promise.all([
+  const [hasInvoices, recentInvoices, user] = await Promise.all([
     getHasInvoices(session.user.id),
-    getInvoiceData(session.user.id),
     getRecentInvoices(session.user.id),
     prisma.user.findUniqueOrThrow({ where: { id: session.user.id }, select: { plan: true } }),
   ]);
@@ -67,7 +62,7 @@ export default async function DashboardRoute() {
           <DashboardBlocks />
           {planFeatures.analytics ? (
             <div className="grid gap-4 lg:grid-cols-3 md:gap-8">
-              <InvoiceGraph data={invoiceGraphData} />
+              <InvoiceGraph />
               <RecentInvoices data={recentInvoices} />
             </div>
           ) : (
