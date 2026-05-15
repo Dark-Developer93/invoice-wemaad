@@ -2,7 +2,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { format } from "date-fns";
 
 import { requireUser } from "@/lib/session";
-import { getUserUsage, UserUsage } from "@/lib/usage";
+import { getUserUsage } from "@/lib/usage";
 import { PLAN_FEATURES, PLAN_LIMITS, PLAN_PRICE, PlanType, PLAN_ORDER } from "@/lib/plans";
 import { updateUserPlan } from "@/app/actions/billing";
 import {
