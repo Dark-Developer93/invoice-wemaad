@@ -7,10 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { auth, signIn } from "@/lib/auth";
-import SubmitButton from "@/components/submit-button/SubmitButton";
+import { auth } from "@/lib/auth";
+import { LoginForm } from "./LoginForm";
 
 const LoginPage = async () => {
   const session = await auth();
@@ -32,24 +30,7 @@ const LoginPage = async () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form
-              action={async (formData) => {
-                "use server";
-                await signIn("nodemailer", formData);
-              }}
-              className="flex flex-col gap-y-4"
-            >
-              <div className="flex flex-col gap-y-2">
-                <Label>Email</Label>
-                <Input
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="hello@hello.com"
-                />
-              </div>
-              <SubmitButton text="Login" />
-            </form>
+            <LoginForm />
           </CardContent>
         </Card>
       </div>
