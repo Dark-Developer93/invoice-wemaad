@@ -10,6 +10,7 @@ import prisma from "@/lib/db";
 import { sendEmail } from "@/lib/email/index";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
+import { getUserUsage, logEmailSent } from "@/lib/usage";
 
 export async function createInvoice(
   _prevState: SubmissionResult<string[]> | null | undefined,
@@ -21,6 +22,14 @@ export async function createInvoice(
     return {
       status: "error",
       error: { "": ["User not found"] },
+    };
+  }
+
+  const usage = await getUserUsage(session.user.id);
+  if (usage.invoiceLimit !== null && usage.invoicesThisMonth >= usage.invoiceLimit) {
+    return {
+      status: "error",
+      error: { "": [`Monthly invoice limit (${usage.invoiceLimit}) reached on the ${usage.plan} plan. Upgrade to create more.`] },
     };
   }
 
@@ -44,7 +53,7 @@ export async function createInvoice(
       },
     });
 
-    // Send email asynchronously without waiting
+    // Send email asynchronously without waiting.
     const client = await prisma.client.findUnique({
       where: {
         id: submission.value.clientId,
@@ -61,29 +70,32 @@ export async function createInvoice(
     });
 
     if (client && client.contactPersons[0]) {
-      // Fire and forget email sending
-      sendEmail({
-        to: client.contactPersons[0].email,
-        templateName: "newInvoice",
-        variables: {
-          clientName: client.name,
-          invoiceNumber: submission.value.invoiceNumber.toString(),
-          invoiceDueDate: new Intl.DateTimeFormat("en-US", {
-            dateStyle: "long",
-          }).format(new Date(submission.value.date)),
-          invoiceAmount: formatCurrency({
-            amount: submission.value.total,
-            currency: submission.value.currency as Currency,
-          }),
-          invoiceLink:
-            process.env.NODE_ENV !== "production"
-              ? `http://localhost:3000/api/invoice/${data.id}`
-              : `https://invoice-wemaad.vercel.app/api/invoice/${data.id}`,
-        },
-      }).catch((error) => {
-        console.error("Failed to send invoice email:", error);
-        // Don't throw error as invoice is already created
-      });
+      const emailUsage = await getUserUsage(session.user.id);
+      if (emailUsage.emailLimit === null || emailUsage.emailsThisMonth < emailUsage.emailLimit) {
+        sendEmail({
+          to: client.contactPersons[0].email,
+          templateName: "newInvoice",
+          variables: {
+            clientName: client.name,
+            invoiceNumber: submission.value.invoiceNumber.toString(),
+            invoiceDueDate: new Intl.DateTimeFormat("en-US", {
+              dateStyle: "long",
+            }).format(new Date(submission.value.date)),
+            invoiceAmount: formatCurrency({
+              amount: submission.value.total,
+              currency: submission.value.currency as Currency,
+            }),
+            invoiceLink:
+              process.env.NODE_ENV !== "production"
+                ? `http://localhost:3000/api/invoice/${data.id}`
+                : `https://invoice-wemaad.vercel.app/api/invoice/${data.id}`,
+          },
+        })
+          .then(() => logEmailSent(session.user!.id!, "newInvoice", data.id))
+          .catch((error) => {
+            console.error("Failed to send invoice email:", error);
+          });
+      }
     }
 
     return { status: "success", error: {} };
@@ -147,29 +159,32 @@ export async function editInvoice(
     });
 
     if (client && client.contactPersons[0]) {
-      // Fire and forget email sending
-      sendEmail({
-        to: client.contactPersons[0].email,
-        templateName: "updatedInvoice",
-        variables: {
-          clientName: client.name,
-          invoiceNumber: submission.value.invoiceNumber.toString(),
-          invoiceDueDate: new Intl.DateTimeFormat("en-US", {
-            dateStyle: "long",
-          }).format(new Date(submission.value.date)),
-          invoiceAmount: formatCurrency({
-            amount: submission.value.total,
-            currency: submission.value.currency as Currency,
-          }),
-          invoiceLink:
-            process.env.NODE_ENV !== "production"
-              ? `http://localhost:3000/api/invoice/${data.id}`
-              : `https://invoice-wemaad.vercel.app/api/invoice/${data.id}`,
-        },
-      }).catch((error) => {
-        console.error("Failed to send invoice update email:", error);
-        // Don't throw error as invoice is already updated
-      });
+      const emailUsage = await getUserUsage(session.user.id);
+      if (emailUsage.emailLimit === null || emailUsage.emailsThisMonth < emailUsage.emailLimit) {
+        sendEmail({
+          to: client.contactPersons[0].email,
+          templateName: "updatedInvoice",
+          variables: {
+            clientName: client.name,
+            invoiceNumber: submission.value.invoiceNumber.toString(),
+            invoiceDueDate: new Intl.DateTimeFormat("en-US", {
+              dateStyle: "long",
+            }).format(new Date(submission.value.date)),
+            invoiceAmount: formatCurrency({
+              amount: submission.value.total,
+              currency: submission.value.currency as Currency,
+            }),
+            invoiceLink:
+              process.env.NODE_ENV !== "production"
+                ? `http://localhost:3000/api/invoice/${data.id}`
+                : `https://invoice-wemaad.vercel.app/api/invoice/${data.id}`,
+          },
+        })
+          .then(() => logEmailSent(session.user!.id!, "updatedInvoice", data.id))
+          .catch((error) => {
+            console.error("Failed to send invoice update email:", error);
+          });
+      }
     }
 
     return { status: "success", error: {} };
