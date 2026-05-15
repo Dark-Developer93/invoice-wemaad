@@ -53,7 +53,7 @@ export async function createInvoice(
       },
     });
 
-    // Send email asynchronously without waiting
+    // Send email asynchronously without waiting.
     const client = await prisma.client.findUnique({
       where: {
         id: submission.value.clientId,
