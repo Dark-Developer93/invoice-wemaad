@@ -81,7 +81,8 @@ export default async function BillingPage() {
   const currentFeatures = PLAN_FEATURES[currentPlan];
 
   const lockedFeatures: string[] = [];
-  if (!currentFeatures.analytics) lockedFeatures.push("Analytics");
+  if (!currentFeatures.recurringInvoices) lockedFeatures.push("Recurring invoices");
+  if (!currentFeatures.analytics) lockedFeatures.push("Analytics & reports");
   if (!currentFeatures.customBranding) lockedFeatures.push("Custom branding");
   if (!currentFeatures.teamCollaboration) lockedFeatures.push("Team collaboration");
   if (!currentFeatures.apiAccess) lockedFeatures.push("API access");
@@ -187,12 +188,20 @@ export default async function BillingPage() {
                   <p>{limits.invoices ?? "Unlimited"} invoices/mo</p>
                   <p>{limits.emails ?? "Unlimited"} emails/mo</p>
                   <p className="flex items-center gap-1">
+                    {PLAN_FEATURES[plan].recurringInvoices ? (
+                      <CheckCircle2 className="size-3.5 text-emerald-500" />
+                    ) : (
+                      <XCircle className="size-3.5 text-muted-foreground/50" />
+                    )}
+                    Recurring invoices
+                  </p>
+                  <p className="flex items-center gap-1">
                     {PLAN_FEATURES[plan].analytics ? (
                       <CheckCircle2 className="size-3.5 text-emerald-500" />
                     ) : (
                       <XCircle className="size-3.5 text-muted-foreground/50" />
                     )}
-                    Analytics
+                    Analytics & reports
                   </p>
                   <p className="flex items-center gap-1">
                     {PLAN_FEATURES[plan].customBranding ? (

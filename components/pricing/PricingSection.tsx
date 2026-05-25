@@ -25,8 +25,9 @@ const plans = [
     features: [
       "5 invoices per month",
       "20 emails per month",
-      "Basic invoice management",
-      "Email support",
+      "Client management",
+      "PDF generation & secure sharing",
+      "Automated invoice emails",
       "Basic invoice templates",
     ],
   },
@@ -38,10 +39,10 @@ const plans = [
     features: [
       "25 invoices per month",
       "50 emails per month",
-      "Full invoice management",
+      "Everything in Free",
+      "Recurring invoices automation",
+      "Financial reports & analytics",
       "Priority email support",
-      "Custom invoice templates",
-      "Basic analytics",
     ],
   },
   {
@@ -52,13 +53,12 @@ const plans = [
     features: [
       "100 invoices per month",
       "500 emails per month",
-      "Full invoice management",
-      "Priority support",
-      "Custom invoice templates",
+      "Everything in Starter",
       "Advanced analytics",
-      "Basic API access",
       "Custom branding",
       "Team collaboration",
+      "Basic API access",
+      "Priority support",
     ],
     popular: true,
   },
@@ -68,15 +68,12 @@ const plans = [
     features: [
       "Unlimited invoices",
       "Unlimited emails",
-      "Full invoice management",
-      "Dedicated support",
-      "Custom invoice templates",
-      "Advanced analytics",
+      "Everything in Pro",
+      "Multi-user access",
       "Advanced API access",
       "Full custom branding",
-      "Team collaboration",
-      "Multi-user access",
       "Custom integrations",
+      "Dedicated support",
       "SLA guarantee",
     ],
     exclusive: true,
@@ -86,7 +83,12 @@ const plans = [
 const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   const [isYearly, setIsYearly] = useState(false);
 
-  const getFeatureValue = (plan: (typeof plans)[0], feature: string) => {
+  const check = <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />;
+  const dash = "—";
+  const has = (plan: (typeof plans)[0], keyword: string) =>
+    plan.features.some((f) => f.toLowerCase().includes(keyword.toLowerCase()));
+
+  const getFeatureValue = (plan: (typeof plans)[0], feature: string): string | JSX.Element => {
     switch (feature) {
       case "Monthly invoices":
         if (plan.title === "Free") return "5";
@@ -98,67 +100,19 @@ const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
         if (plan.title === "Starter") return "50";
         if (plan.title === "Pro") return "500";
         return "Unlimited";
-      default:
-        const featureMap: Record<string, string | JSX.Element> = {
-          "Invoice management":
-            plan.features
-              .find((f) => f.includes("invoice management"))
-              ?.split(" ")[0] || "—",
-          "Email support":
-            plan.features.find((f) => f.includes("support"))?.split(" ")[0] ||
-            "—",
-          "Invoice templates": plan.features.find((f) =>
-            f.includes("template")
-          ) ? (
-            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
-          ) : (
-            "—"
-          ),
-          Analytics: plan.features.find((f) => f.includes("analytics")) ? (
-            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
-          ) : (
-            "—"
-          ),
-          "API access": plan.features.find((f) => f.includes("API")) ? (
-            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
-          ) : (
-            "—"
-          ),
-          "Custom branding": plan.features.find((f) =>
-            f.includes("branding")
-          ) ? (
-            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
-          ) : (
-            "—"
-          ),
-          "Team collaboration": plan.features.find((f) =>
-            f.includes("collaboration")
-          ) ? (
-            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
-          ) : (
-            "—"
-          ),
-          "Multi-user access": plan.features.find((f) =>
-            f.includes("Multi-user")
-          ) ? (
-            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
-          ) : (
-            "—"
-          ),
-          "Custom integrations": plan.features.find((f) =>
-            f.includes("integrations")
-          ) ? (
-            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
-          ) : (
-            "—"
-          ),
-          "SLA guarantee": plan.features.find((f) => f.includes("SLA")) ? (
-            <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
-          ) : (
-            "—"
-          ),
-        };
-        return featureMap[feature] || "—";
+      case "Client management":        return check;
+      case "PDF generation":           return check;
+      case "Automated emails":         return check;
+      case "Invoice templates":        return has(plan, "template") ? check : dash;
+      case "Recurring invoices":       return has(plan, "recurring") ? check : dash;
+      case "Analytics & reports":      return has(plan, "analytics") ? check : dash;
+      case "Custom branding":          return has(plan, "branding") ? check : dash;
+      case "API access":               return has(plan, "api") ? check : dash;
+      case "Team collaboration":       return has(plan, "collaboration") ? check : dash;
+      case "Multi-user access":        return has(plan, "multi-user") ? check : dash;
+      case "Custom integrations":      return has(plan, "integrations") ? check : dash;
+      case "SLA guarantee":            return has(plan, "sla") ? check : dash;
+      default:                         return dash;
     }
   };
 
@@ -293,12 +247,14 @@ const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
                 {[
                   "Monthly invoices",
                   "Monthly emails",
-                  "Invoice management",
-                  "Email support",
+                  "Client management",
+                  "PDF generation",
+                  "Automated emails",
                   "Invoice templates",
-                  "Analytics",
-                  "API access",
+                  "Recurring invoices",
+                  "Analytics & reports",
                   "Custom branding",
+                  "API access",
                   "Team collaboration",
                   "Multi-user access",
                   "Custom integrations",

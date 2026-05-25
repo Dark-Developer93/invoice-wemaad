@@ -28,7 +28,7 @@ export default async function RecurringInvoicesPage() {
   if (!session?.user?.id) redirect("/login");
 
   const usage = await getUserUsage(session.user.id);
-  const hasAccess = PLAN_FEATURES[usage.plan].analytics;
+  const hasAccess = PLAN_FEATURES[usage.plan].recurringInvoices;
 
   if (!hasAccess) {
     return (
