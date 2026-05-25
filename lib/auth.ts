@@ -86,6 +86,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     session: async ({ session, user }) => {
       if (session?.user) {
         session.user.id = user.id;
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { isAdmin: true },
+        });
+        session.user.isAdmin = dbUser?.isAdmin ?? false;
       }
       return session;
     },
