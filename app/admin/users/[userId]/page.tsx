@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { requireAdmin } from "@/lib/session";
 import { adminGetUser } from "@/app/actions/admin";
 import { AdminUserActions } from "./AdminUserActions";
 
@@ -19,7 +18,6 @@ export default async function AdminUserDetailPage({
 }: {
   params: Promise<{ userId: string }>;
 }) {
-  await requireAdmin();
   const { userId } = await params;
   const user = await adminGetUser(userId);
 

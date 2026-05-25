@@ -83,6 +83,7 @@ export function AdminUserActions({ user }: { user: User }) {
         await adminDeleteUser(user.id);
         toast.success("User deleted.");
         setDeleteDialogOpen(false);
+        router.push("/admin/users");
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Failed to delete user.";

@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { requireAdmin } from "@/lib/session";
 import { adminGetAllUsers } from "@/app/actions/admin";
 
 const PLAN_COLORS: Record<string, string> = {
@@ -20,7 +19,6 @@ const PLAN_COLORS: Record<string, string> = {
 };
 
 export default async function AdminUsersPage() {
-  await requireAdmin();
   const users = await adminGetAllUsers();
 
   const totalUsers = users.length;

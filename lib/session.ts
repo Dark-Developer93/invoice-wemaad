@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
-import prisma from "./db";
 
 export async function requireUser() {
   const session = await auth();
@@ -9,12 +8,7 @@ export async function requireUser() {
     redirect("/login");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id as string },
-    select: { isActive: true },
-  });
-
-  if (!user?.isActive) {
+  if (!session.user.isActive) {
     redirect("/login?error=AccountDeactivated");
   }
 
@@ -22,11 +16,7 @@ export async function requireUser() {
 }
 
 export async function requireAdmin() {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login");
-  }
+  const session = await requireUser();
 
   if (!session.user.isAdmin) {
     redirect("/dashboard");
