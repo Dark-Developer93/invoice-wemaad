@@ -30,6 +30,7 @@ import { clientFormSchema } from "@/lib/zodSchemas";
 import { createClient, editClient } from "@/app/actions/clients";
 import { useRouter } from "next/navigation";
 import SubmitButton from "@/components/submit-button/SubmitButton";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useState } from "react";
 
 type ClientFormValues = z.infer<typeof clientFormSchema>;
@@ -68,6 +69,7 @@ interface ClientFormProps {
 export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
     defaultValues: client
@@ -667,7 +669,11 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
         <div className="flex items-center justify-end mt-6">
           <div className="flex justify-end gap-4">
             {onClose && (
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowCancelConfirm(true)}
+              >
                 Cancel
               </Button>
             )}
@@ -678,6 +684,16 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
           </div>
         </div>
       </form>
+
+      <ConfirmDialog
+        open={showCancelConfirm}
+        onOpenChange={setShowCancelConfirm}
+        title="Discard changes?"
+        description="Your unsaved changes will be lost. This action cannot be undone."
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        onConfirm={() => onClose?.()}
+      />
     </Form>
   );
 }

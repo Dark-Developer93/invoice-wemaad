@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import SubmitButton from "@/components/submit-button/SubmitButton";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { createInvoice, editInvoice } from "@/app/actions/invoices";
 import { invoiceSchema } from "@/lib/zodSchemas";
 import { formatCurrency } from "@/lib/formatCurrency";
@@ -112,6 +113,7 @@ export function InvoiceForm({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [sendEmail, setSendEmail] = useState(true);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [localTotal, setLocalTotal] = useState(
     mode === "edit" ? Number(data?.total) || 0 : 0
   );
@@ -634,10 +636,7 @@ export function InvoiceForm({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => {
-                      toast.info("Invoice discarded. Your changes have not been saved.");
-                      onClose();
-                    }}
+                    onClick={() => setShowCancelConfirm(true)}
                     className="flex-1 sm:flex-none"
                   >
                     Cancel
@@ -660,6 +659,16 @@ export function InvoiceForm({
           </form>
         </Form>
       </CardContent>
+
+      <ConfirmDialog
+        open={showCancelConfirm}
+        onOpenChange={setShowCancelConfirm}
+        title="Discard changes?"
+        description="Your unsaved changes will be lost. This action cannot be undone."
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        onConfirm={() => onClose?.()}
+      />
     </Card>
   );
 }

@@ -2,40 +2,54 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <Skeleton className="h-9 w-32 mb-2" />
-          <Skeleton className="h-5 w-64" />
+    <div className="space-y-4">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="space-y-1">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-4 w-48" />
         </div>
-        <Skeleton className="h-10 w-[140px]" />
+        <Skeleton className="h-9 w-full sm:w-36" />
       </div>
 
       <div className="rounded-md border">
-        {/* Table Header */}
-        <div className="border-b p-4">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-8 w-[200px]" />
-            <Skeleton className="h-8 w-[150px]" />
-          </div>
+        {/* Toolbar: search + filter */}
+        <div className="border-b p-4 flex flex-col sm:flex-row gap-3">
+          <Skeleton className="h-9 w-full sm:w-56" />
+          <Skeleton className="h-9 w-full sm:w-40" />
         </div>
 
-        {/* Table Body */}
-        <div className="relative w-full overflow-auto">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="border-b p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex gap-4 items-center">
-                  <Skeleton className="h-4 w-[200px]" /> {/* Name */}
-                  <Skeleton className="h-4 w-[180px]" /> {/* Email */}
-                  <Skeleton className="h-4 w-[120px]" /> {/* Phone */}
-                  <Skeleton className="h-4 w-[150px]" /> {/* Category */}
-                </div>
-                <Skeleton className="h-8 w-8" /> {/* Actions button */}
-              </div>
-            </div>
-          ))}
+        {/* Table header row */}
+        <div className="hidden sm:grid sm:grid-cols-[1fr_1fr_auto_auto_auto] border-b px-4 py-3 gap-4">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-14" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-8" />
         </div>
+
+        {/* Table rows */}
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="px-4 py-3 border-b last:border-0">
+            {/* Mobile: name + actions only */}
+            <div className="flex items-center justify-between sm:hidden">
+              <div className="space-y-1">
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+              <Skeleton className="h-8 w-8 shrink-0" />
+            </div>
+
+            {/* Desktop: all columns */}
+            <div className="hidden sm:grid sm:grid-cols-[1fr_1fr_auto_auto_auto] items-center gap-4">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-44" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-6 w-16 rounded-full" />
+              <Skeleton className="h-8 w-8" />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
