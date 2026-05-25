@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 
@@ -99,6 +100,104 @@ export async function adminToggleUserActive(userId: string, isActive: boolean) {
       data: { isActive: false },
     });
   }
+}
+
+export async function adminToggleUserAdmin(userId: string, makeAdmin: boolean) {
+  const session = await requireAdmin();
+
+  if (session.user!.id === userId && !makeAdmin) {
+    throw new Error("You cannot remove your own admin privileges.");
+  }
+
+  const result = await prisma.user.updateMany({
+    where: { id: userId },
+    data: { isAdmin: makeAdmin },
+  });
+
+  if (result.count === 0) throw new Error("User not found.");
+
+  revalidatePath(`/admin/users/${userId}`);
+  revalidatePath("/admin/users");
+}
+
+export async function adminGetPendingUpgradeRequests() {
+  await requireAdmin();
+
+  return prisma.planUpgradeRequest.findMany({
+    where: { status: "PENDING" },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          plan: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export async function adminGetUserUpgradeRequests(userId: string) {
+  await requireAdmin();
+
+  return prisma.planUpgradeRequest.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+}
+
+export async function adminApproveUpgradeRequest(requestId: string) {
+  await requireAdmin();
+
+  const request = await prisma.planUpgradeRequest.findUnique({
+    where: { id: requestId },
+  });
+
+  if (!request || request.status !== "PENDING") {
+    throw new Error("Request not found or already resolved.");
+  }
+
+  await prisma.$transaction([
+    prisma.planUpgradeRequest.update({
+      where: { id: requestId },
+      data: { status: "APPROVED" },
+    }),
+    prisma.user.update({
+      where: { id: request.userId },
+      data: { plan: request.requestedPlan, planUpdatedAt: new Date() },
+    }),
+  ]);
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${request.userId}`);
+}
+
+export async function adminRejectUpgradeRequest(requestId: string, adminNote?: string) {
+  await requireAdmin();
+
+  if (adminNote && adminNote.length > 1000) {
+    throw new Error("Admin note cannot exceed 1000 characters.");
+  }
+
+  const request = await prisma.planUpgradeRequest.findUnique({
+    where: { id: requestId },
+  });
+
+  if (!request || request.status !== "PENDING") {
+    throw new Error("Request not found or already resolved.");
+  }
+
+  await prisma.planUpgradeRequest.update({
+    where: { id: requestId },
+    data: { status: "REJECTED", adminNote: adminNote || null },
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${request.userId}`);
 }
 
 export async function adminDeleteUser(userId: string) {

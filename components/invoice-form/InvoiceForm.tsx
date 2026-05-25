@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Prisma, Client } from "@prisma/client";
 import { format } from "date-fns";
@@ -36,6 +36,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch";
 import SubmitButton from "@/components/submit-button/SubmitButton";
 import { createInvoice, editInvoice } from "@/app/actions/invoices";
 import { invoiceSchema } from "@/lib/zodSchemas";
@@ -44,12 +45,10 @@ import { Currency } from "@/types";
 import { useRouter } from "next/navigation";
 import * as z from "zod";
 
-// Define the form values type based on the zod schema
 type InvoiceFormValues = z.infer<typeof invoiceSchema>;
 
 interface InvoiceFormProps {
   mode: "create" | "edit";
-  // Create mode props
   firstName?: string;
   lastName?: string;
   address?: string;
@@ -79,7 +78,6 @@ interface InvoiceFormProps {
       isPrimary: boolean;
     }>;
   })[];
-  // Edit mode props
   data?: Prisma.InvoiceGetPayload<{
     include: {
       client: {
@@ -117,15 +115,14 @@ export function InvoiceForm({
 }: InvoiceFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [sendEmail, setSendEmail] = useState(true);
   const [localTotal, setLocalTotal] = useState(
     mode === "edit" ? Number(data?.total) || 0 : 0
   );
 
-  // Initialize form with react-hook-form
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
-      // Set default values based on mode and provided data
       invoiceName: mode === "edit" ? data?.invoiceName || "" : "",
       invoiceNumber: mode === "edit" ? Number(data?.invoiceNumber) || 1 : 1,
       currency: mode === "edit" ? data?.currency || "USD" : "USD",
@@ -161,27 +158,24 @@ export function InvoiceForm({
     },
   });
 
-  // Get the selected client based on clientId - memoized
   const selectedClient = useMemo(() => {
-    const clientId = form.watch("clientId");
+    const clientId = form.getValues("clientId");
     return clientId ? clients.find((c) => c.id === clientId) : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.watch("clientId"), clients]);
 
-  // Calculate total whenever quantity or rate changes
   const currency = form.watch("currency") as Currency;
 
-  // Debounced calculation of total
   const updateTotal = useMemo(
     () =>
       debounce((quantity: number, rate: number) => {
-        const calculatedTotal = quantity * rate;
+        const calculatedTotal = Math.round(quantity * rate * 100) / 100;
         setLocalTotal(calculatedTotal);
         form.setValue("total", calculatedTotal, { shouldValidate: true });
       }, 300),
     [form]
   );
 
-  // Watch for changes in quantity and rate
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (name === "invoiceItemQuantity" || name === "invoiceItemRate") {
@@ -193,11 +187,10 @@ export function InvoiceForm({
 
     return () => {
       subscription.unsubscribe();
-      updateTotal.cancel(); // Cancel any pending debounced updates
+      updateTotal.cancel();
     };
   }, [form, updateTotal]);
 
-  // Initial total calculation
   useEffect(() => {
     const quantity = form.getValues("invoiceItemQuantity") || 0;
     const rate = form.getValues("invoiceItemRate") || 0;
@@ -207,15 +200,15 @@ export function InvoiceForm({
   async function onSubmit(formData: InvoiceFormValues) {
     try {
       setIsLoading(true);
-      // Convert form data to FormData for server action
       const submitFormData = new FormData();
 
-      // Add all form fields to FormData
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
           submitFormData.append(key, value.toString());
         }
       });
+
+      submitFormData.append("sendEmail", sendEmail ? "true" : "false");
 
       if (mode === "edit") {
         submitFormData.append("id", data?.id || "");
@@ -227,7 +220,8 @@ export function InvoiceForm({
           : await editInvoice(null, submitFormData);
 
       if (result.status === "error") {
-        toast.error(JSON.stringify(result.error));
+        const msgs = Object.values(result.error ?? {}).flat();
+        toast.error(msgs[0] ?? "Failed to save invoice");
         return;
       }
 
@@ -248,139 +242,134 @@ export function InvoiceForm({
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardContent className="p-6">
+    <Card className="w-full">
+      <CardContent className="p-4 sm:p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
-            <div className="flex flex-col gap-1 w-fit mb-6">
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Draft</Badge>
-                <FormField
-                  control={form.control}
-                  name="invoiceName"
-                  render={({ field }) => (
-                    <FormItem>
+            {/* Invoice name + badge */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+              <Badge variant="secondary" className="w-fit">Draft</Badge>
+              <FormField
+                control={form.control}
+                name="invoiceName"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input
+                        placeholder="Enter invoice name"
+                        className="w-full"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Invoice number, currency, date */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+              <FormField
+                control={form.control}
+                name="invoiceNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Invoice No.</FormLabel>
+                    <div className="flex">
+                      <span className="px-3 border border-r-0 rounded-l-md bg-muted flex items-center text-sm">
+                        #
+                      </span>
                       <FormControl>
-                        <Input placeholder="Enter invoice name" {...field} />
+                        <Input
+                          className="rounded-l-none"
+                          placeholder="5"
+                          type="number"
+                          min="1"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Currency</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Currency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="USD">United States Dollar -- USD</SelectItem>
+                        <SelectItem value="EUR">Euro -- EUR</SelectItem>
+                        <SelectItem value="EGP">Egyptian Pound -- EGP</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className="w-full text-left justify-start"
+                          >
+                            <CalendarIcon className="mr-2 size-4" />
+                            {field.value ? (
+                              format(new Date(field.value), "PPP")
+                            ) : (
+                              <span>Pick a Date</span>
+                            )}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={new Date(field.value)}
+                          onSelect={(date) =>
+                            field.onChange(
+                              date ? date.toISOString() : new Date().toISOString()
+                            )
+                          }
+                          initialFocus
+                          fromDate={new Date()}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 mb-6">
+            {/* From / To */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
-                <FormField
-                  control={form.control}
-                  name="invoiceNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Invoice No.</FormLabel>
-                      <div className="flex">
-                        <span className="px-3 border border-r-0 rounded-l-md bg-muted flex items-center">
-                          #
-                        </span>
-                        <FormControl>
-                          <Input
-                            className="rounded-l-none"
-                            placeholder="5"
-                            type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
-                          />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div>
-                <FormField
-                  control={form.control}
-                  name="currency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Currency</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Currency" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="USD">
-                            United States Dollar -- USD
-                          </SelectItem>
-                          <SelectItem value="EUR">Euro -- EUR</SelectItem>
-                          <SelectItem value="EGP">
-                            Egyptian Pound -- EGP
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div>
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className="w-full text-left justify-start"
-                            >
-                              <CalendarIcon className="mr-2 size-4" />
-                              {field.value ? (
-                                format(new Date(field.value), "PPP")
-                              ) : (
-                                <span>Pick a Date</span>
-                              )}
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={new Date(field.value)}
-                            onSelect={(date) =>
-                              field.onChange(
-                                date
-                                  ? date.toISOString()
-                                  : new Date().toISOString()
-                              )
-                            }
-                            initialFocus
-                            fromDate={new Date()}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <Label>From</Label>
+                <Label className="mb-2 block">From</Label>
                 <div className="space-y-2">
                   <FormField
                     control={form.control}
@@ -394,7 +383,6 @@ export function InvoiceForm({
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="fromEmail"
@@ -407,7 +395,6 @@ export function InvoiceForm({
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="fromAddress"
@@ -424,7 +411,7 @@ export function InvoiceForm({
               </div>
 
               <div>
-                <Label>To</Label>
+                <Label className="mb-2 block">To</Label>
                 <div className="space-y-2">
                   {mode === "create" ? (
                     <>
@@ -478,21 +465,12 @@ export function InvoiceForm({
                   ) : (
                     <>
                       <input type="hidden" {...form.register("clientId")} />
-                      <Input
-                        value={data?.client?.name ?? ""}
-                        disabled
-                        placeholder="Client Name"
-                      />
-                      <Input
-                        value={data?.client?.email ?? ""}
-                        disabled
-                        placeholder="Client Email"
-                      />
+                      <Input value={data?.client?.name ?? ""} disabled placeholder="Client Name" />
+                      <Input value={data?.client?.email ?? ""} disabled placeholder="Client Email" />
                       <Input
                         value={
                           data?.client?.addresses.find(
-                            (a: { isDefault: boolean; street: string }) =>
-                              a.isDefault
+                            (a: { isDefault: boolean; street: string }) => a.isDefault
                           )?.street ?? ""
                         }
                         disabled
@@ -504,16 +482,18 @@ export function InvoiceForm({
               </div>
             </div>
 
-            <div>
-              <div className="grid grid-cols-12 gap-4 mb-2 font-medium">
+            {/* Invoice items — responsive: stacked on mobile, grid on md+ */}
+            <div className="mb-4">
+              <div className="hidden md:grid md:grid-cols-12 gap-4 mb-2 font-medium text-sm">
                 <p className="col-span-6">Description</p>
                 <p className="col-span-2">Quantity</p>
                 <p className="col-span-2">Rate</p>
                 <p className="col-span-2">Amount</p>
               </div>
 
-              <div className="grid grid-cols-12 gap-4 mb-4">
-                <div className="col-span-6">
+              <div className="flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4">
+                <div className="md:col-span-6">
+                  <Label className="md:hidden mb-1 block text-sm">Description</Label>
                   <FormField
                     control={form.control}
                     name="invoiceItemDescription"
@@ -522,7 +502,9 @@ export function InvoiceForm({
                         <FormControl>
                           <Textarea
                             placeholder="Item name & description"
+                            className="resize-none"
                             {...field}
+                            onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -530,84 +512,89 @@ export function InvoiceForm({
                     )}
                   />
                 </div>
-                <div className="col-span-2">
-                  <FormField
-                    control={form.control}
-                    name="invoiceItemQuantity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(Number(e.target.value) || 0);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <FormField
-                    control={form.control}
-                    name="invoiceItemRate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(Number(e.target.value) || 0);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Input
-                    value={formatCurrency({
-                      amount: localTotal,
-                      currency,
-                    })}
-                    disabled
-                  />
+
+                <div className="grid grid-cols-3 gap-3 md:contents">
+                  <div className="md:col-span-2">
+                    <Label className="md:hidden mb-1 block text-sm">Quantity</Label>
+                    <FormField
+                      control={form.control}
+                      name="invoiceItemQuantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="1"
+                              step="any"
+                              min="0.01"
+                              {...field}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === "" ? 0 : parseFloat(val) || 0);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label className="md:hidden mb-1 block text-sm">Rate</Label>
+                    <FormField
+                      control={form.control}
+                      name="invoiceItemRate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="0.00"
+                              step="any"
+                              min="0.01"
+                              {...field}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === "" ? 0 : parseFloat(val) || 0);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label className="md:hidden mb-1 block text-sm">Amount</Label>
+                    <Input
+                      value={formatCurrency({ amount: localTotal, currency })}
+                      disabled
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end">
-              <div className="w-1/3">
-                <div className="flex justify-between py-2">
+            {/* Totals */}
+            <div className="flex justify-end mb-6">
+              <div className="w-full sm:w-1/2 md:w-1/3">
+                <div className="flex justify-between py-2 text-sm">
                   <span>Subtotal</span>
-                  <span>
-                    {formatCurrency({
-                      amount: localTotal,
-                      currency,
-                    })}
-                  </span>
+                  <span>{formatCurrency({ amount: localTotal, currency })}</span>
                 </div>
-                <div className="flex justify-between py-2 border-t">
+                <div className="flex justify-between py-2 border-t text-sm">
                   <span>Total ({currency})</span>
                   <span className="font-medium underline underline-offset-2">
-                    {formatCurrency({
-                      amount: localTotal,
-                      currency,
-                    })}
+                    {formatCurrency({ amount: localTotal, currency })}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div>
+            {/* Note */}
+            <div className="mb-6">
               <FormField
                 control={form.control}
                 name="note"
@@ -618,6 +605,7 @@ export function InvoiceForm({
                       <Textarea
                         placeholder="Add your Note/s right here..."
                         {...field}
+                        onChange={(e) => field.onChange(e.target.value)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -626,17 +614,44 @@ export function InvoiceForm({
               />
             </div>
 
-            <div className="flex items-center justify-end mt-6">
-              <div className="flex justify-end gap-4">
+            {/* Email toggle + actions */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="send-email"
+                  checked={sendEmail}
+                  onCheckedChange={setSendEmail}
+                />
+                <div className="flex items-center gap-1.5">
+                  <Mail className="size-4 text-muted-foreground" />
+                  <label
+                    htmlFor="send-email"
+                    className="text-sm cursor-pointer select-none"
+                  >
+                    {sendEmail ? "Send email to client" : "Don't send email"}
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-3 w-full sm:w-auto">
                 {onClose && (
-                  <Button type="button" variant="outline" onClick={onClose}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    className="flex-1 sm:flex-none"
+                  >
                     Cancel
                   </Button>
                 )}
                 <SubmitButton
                   text={
                     mode === "create"
-                      ? "Send Invoice to Client"
+                      ? sendEmail
+                        ? "Send Invoice to Client"
+                        : "Create Invoice"
+                      : sendEmail
+                      ? "Update & Notify Client"
                       : "Update Invoice"
                   }
                   isLoading={isLoading}

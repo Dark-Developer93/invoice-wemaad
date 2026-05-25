@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, UserCheck, UserX, Crown } from "lucide-react";
+import { Users, UserCheck, UserX, Crown, Clock } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { adminGetAllUsers } from "@/app/actions/admin";
+import { adminGetAllUsers, adminGetPendingUpgradeRequests } from "@/app/actions/admin";
 
 const PLAN_COLORS: Record<string, string> = {
   FREE: "secondary",
@@ -19,7 +19,10 @@ const PLAN_COLORS: Record<string, string> = {
 };
 
 export default async function AdminUsersPage() {
-  const users = await adminGetAllUsers();
+  const [users, pendingRequests] = await Promise.all([
+    adminGetAllUsers(),
+    adminGetPendingUpgradeRequests(),
+  ]);
 
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.isActive).length;
@@ -35,8 +38,44 @@ export default async function AdminUsersPage() {
         </p>
       </div>
 
+      {/* Pending upgrade requests */}
+      {pendingRequests.length > 0 && (
+        <Card className="border-yellow-500/50 bg-yellow-500/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="size-4 text-yellow-600" />
+              Pending Plan Upgrade Requests
+              <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                {pendingRequests.length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {pendingRequests.map((req) => (
+                <div key={req.id} className="flex items-center justify-between gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">
+                      {req.user.firstName && req.user.lastName
+                        ? `${req.user.firstName} ${req.user.lastName}`
+                        : req.user.email}
+                    </span>
+                    <span className="text-muted-foreground ml-2">
+                      {req.user.plan} → <span className="font-semibold text-foreground">{req.requestedPlan}</span>
+                    </span>
+                  </div>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/admin/users/${req.user.id}`}>Review</Link>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -85,7 +124,7 @@ export default async function AdminUsersPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground text-left">
                   <th className="pb-3 pr-4 font-medium">Name</th>

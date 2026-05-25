@@ -79,10 +79,7 @@ export async function POST(
           amount: invoiceData.total,
           currency: invoiceData.currency as Currency,
         }),
-        invoiceLink:
-          process.env.NODE_ENV !== "production"
-            ? `http://localhost:3000/api/invoice/${invoiceData.id}`
-            : `https://invoice-wemaad.vercel.app/api/invoice/${invoiceData.id}`, // TODO: change to production url
+        invoiceLink: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/invoice/${invoiceData.id}`,
       },
     });
 

@@ -69,7 +69,9 @@ export async function createInvoice(
       },
     });
 
-    if (client && client.contactPersons[0]) {
+    const shouldSendEmail = formData.get("sendEmail") !== "false";
+
+    if (shouldSendEmail && client && client.contactPersons[0]) {
       const emailUsage = await getUserUsage(session.user.id);
       if (emailUsage.emailLimit === null || emailUsage.emailsThisMonth < emailUsage.emailLimit) {
         sendEmail({
@@ -85,10 +87,7 @@ export async function createInvoice(
               amount: submission.value.total,
               currency: submission.value.currency as Currency,
             }),
-            invoiceLink:
-              process.env.NODE_ENV !== "production"
-                ? `http://localhost:3000/api/invoice/${data.id}`
-                : `https://invoice-wemaad.vercel.app/api/invoice/${data.id}`,
+            invoiceLink: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/invoice/${data.id}`,
           },
         })
           .then(() => logEmailSent(session.user!.id!, "newInvoice", data.id))
@@ -158,7 +157,9 @@ export async function editInvoice(
       },
     });
 
-    if (client && client.contactPersons[0]) {
+    const shouldSendEmail = formData.get("sendEmail") !== "false";
+
+    if (shouldSendEmail && client && client.contactPersons[0]) {
       const emailUsage = await getUserUsage(session.user.id);
       if (emailUsage.emailLimit === null || emailUsage.emailsThisMonth < emailUsage.emailLimit) {
         sendEmail({
@@ -174,10 +175,7 @@ export async function editInvoice(
               amount: submission.value.total,
               currency: submission.value.currency as Currency,
             }),
-            invoiceLink:
-              process.env.NODE_ENV !== "production"
-                ? `http://localhost:3000/api/invoice/${data.id}`
-                : `https://invoice-wemaad.vercel.app/api/invoice/${data.id}`,
+            invoiceLink: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/invoice/${data.id}`,
           },
         })
           .then(() => logEmailSent(session.user!.id!, "updatedInvoice", data.id))
