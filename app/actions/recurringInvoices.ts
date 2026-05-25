@@ -202,7 +202,17 @@ export async function processRecurringInvoices() {
             logEmailSent(recurring.userId!, "recurringInvoice", invoice.id);
             usage.emailsThisMonth++;
           })
-          .catch(console.error);
+          .catch((error) => {
+            console.error(`Failed to send recurring invoice email for ${recurring.id}:`, error);
+            prisma.notification.create({
+              data: {
+                userId: recurring.userId!,
+                title: "Recurring invoice email failed",
+                message: `Could not send the auto-generated invoice email to ${recurring.client!.name}. Please resend manually.`,
+                href: "/dashboard/recurring-invoices",
+              },
+            }).catch(() => {});
+          });
       }
     } catch (err) {
       console.error(`Failed to process recurring invoice ${recurring.id}:`, err);

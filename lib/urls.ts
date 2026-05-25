@@ -1,14 +1,12 @@
 import crypto from "crypto";
+import { env } from "@/lib/env";
 
 function hmacToken(invoiceId: string): string {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) throw new Error("AUTH_SECRET is not set");
-  return crypto.createHmac("sha256", secret).update(invoiceId).digest("hex");
+  return crypto.createHmac("sha256", env.AUTH_SECRET).update(invoiceId).digest("hex");
 }
 
 export function getInvoiceUrl(invoiceId: string): string {
-  const base =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
+  const base = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
   const token = hmacToken(invoiceId);
   return `${base}/api/invoice/${invoiceId}?token=${token}`;
 }

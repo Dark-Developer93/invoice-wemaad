@@ -10,23 +10,15 @@ import {
   ReminderInvoiceEmailProps,
   ContactFormEmailProps,
 } from "@/types";
-
-if (
-  !process.env.EMAIL_SERVER_HOST ||
-  !process.env.EMAIL_SERVER_PORT ||
-  !process.env.EMAIL_SERVER_USER ||
-  !process.env.EMAIL_SERVER_PASSWORD
-) {
-  throw new Error("Email configuration is incomplete");
-}
+import { env } from "@/lib/env";
 
 export const emailTransporter = nodemailer.createTransport({
-  host: process.env.EMAIL_SERVER_HOST,
-  port: Number(process.env.EMAIL_SERVER_PORT),
+  host: env.EMAIL_SERVER_HOST,
+  port: env.EMAIL_SERVER_PORT,
   secure: true,
   auth: {
-    user: process.env.EMAIL_SERVER_USER,
-    pass: process.env.EMAIL_SERVER_PASSWORD,
+    user: env.EMAIL_SERVER_USER,
+    pass: env.EMAIL_SERVER_PASSWORD,
   },
 });
 
@@ -88,7 +80,7 @@ export async function sendEmail({
     await emailTransporter.sendMail({
       from: {
         name: "InvoiceWeMaAd",
-        address: process.env.EMAIL_FROM!,
+        address: env.EMAIL_FROM,
       },
       to,
       subject: getEmailSubject(templateName),

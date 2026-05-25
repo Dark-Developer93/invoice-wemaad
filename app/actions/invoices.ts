@@ -91,9 +91,17 @@ export async function createInvoice(
             invoiceLink: getInvoiceUrl(data.id),
           },
         })
-          .then(() => logEmailSent(session.user!.id!, "newInvoice", data.id))
+          .then(() => logEmailSent(session.user.id, "newInvoice", data.id))
           .catch((error) => {
             console.error("Failed to send invoice email:", error);
+            prisma.notification.create({
+              data: {
+                userId: session.user.id,
+                title: "Email delivery failed",
+                message: `Invoice email to ${client.name} could not be sent. Please resend from the invoice page.`,
+                href: "/dashboard/invoices",
+              },
+            }).catch(() => {});
           });
       }
     }
@@ -179,9 +187,17 @@ export async function editInvoice(
             invoiceLink: getInvoiceUrl(data.id),
           },
         })
-          .then(() => logEmailSent(session.user!.id!, "updatedInvoice", data.id))
+          .then(() => logEmailSent(session.user.id, "updatedInvoice", data.id))
           .catch((error) => {
             console.error("Failed to send invoice update email:", error);
+            prisma.notification.create({
+              data: {
+                userId: session.user.id,
+                title: "Email delivery failed",
+                message: `Invoice update email to ${client.name} could not be sent. Please resend from the invoice page.`,
+                href: "/dashboard/invoices",
+              },
+            }).catch(() => {});
           });
       }
     }
