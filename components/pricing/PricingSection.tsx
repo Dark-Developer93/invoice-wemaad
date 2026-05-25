@@ -96,18 +96,18 @@ const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
         return ["5", "25", "100", "Unlimited"][t];
       case "Monthly emails":
         return ["20", "50", "500", "Unlimited"][t];
-      case "Client management":    return check;            // all plans
-      case "PDF generation":       return check;            // all plans
-      case "Automated emails":     return check;            // all plans
-      case "Invoice templates":    return check;            // all plans
-      case "Recurring invoices":   return t >= 1 ? check : dash;  // Starter+
-      case "Analytics & reports":  return t >= 1 ? check : dash;  // Starter+
-      case "Custom branding":      return t >= 2 ? check : dash;  // Pro+
-      case "API access":           return t >= 2 ? check : dash;  // Pro+
-      case "Team collaboration":   return t >= 2 ? check : dash;  // Pro+
-      case "Multi-user access":    return t >= 3 ? check : dash;  // Business only
-      case "Custom integrations":  return t >= 3 ? check : dash;  // Business only
-      case "SLA guarantee":        return t >= 3 ? check : dash;  // Business only
+      case "Client management":    return check;
+      case "PDF generation":       return check;
+      case "Automated emails":     return check;
+      case "Invoice templates":    return check;
+      case "Recurring invoices":   return t >= 1 ? check : dash;
+      case "Analytics & reports":  return t >= 1 ? check : dash;
+      case "Custom branding":      return t >= 2 ? check : dash;
+      case "API access":           return t >= 2 ? check : dash;
+      case "Team collaboration":   return t >= 2 ? check : dash;
+      case "Multi-user access":    return t >= 3 ? check : dash;
+      case "Custom integrations":  return t >= 3 ? check : dash;
+      case "SLA guarantee":        return t >= 3 ? check : dash;
       default:                     return dash;
     }
   };
@@ -238,7 +238,27 @@ const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
             <CardDescription>See which plan is right for you</CardDescription>
           </CardHeader>
           <CardContent>
-            <table className="w-full min-w-[600px]">
+            <table className="w-full min-w-[600px] table-fixed">
+              <colgroup>
+                <col className="w-[220px]" />
+                <col />
+                <col />
+                <col />
+                <col />
+              </colgroup>
+              <thead>
+                <tr className="border-b">
+                  <th className="pb-3 text-left" />
+                  {plans.map((plan) => (
+                    <th
+                      key={plan.title}
+                      className="pb-3 text-center text-sm font-semibold"
+                    >
+                      {plan.title}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
               <tbody className="divide-y">
                 {[
                   "Monthly invoices",
@@ -257,9 +277,7 @@ const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
                   "SLA guarantee",
                 ].map((feature) => (
                   <tr key={feature}>
-                    <td className="py-4 text-sm font-medium w-[200px]">
-                      {feature}
-                    </td>
+                    <td className="py-4 text-sm font-medium">{feature}</td>
                     {plans.map((plan) => (
                       <td
                         key={`${plan.title}-${feature}`}
