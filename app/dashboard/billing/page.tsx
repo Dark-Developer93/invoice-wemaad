@@ -1,10 +1,10 @@
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 
 import { requireUser } from "@/lib/session";
 import { getUserUsage } from "@/lib/usage";
 import { PLAN_FEATURES, PLAN_LIMITS, PLAN_PRICE, PlanType, PLAN_ORDER } from "@/lib/plans";
-import { updateUserPlan } from "@/app/actions/billing";
+import { requestPlanUpgrade, getUserPendingUpgradeRequest } from "@/app/actions/billing";
 import {
   Card,
   CardContent,
@@ -65,12 +65,13 @@ export default async function BillingPage() {
   const session = await requireUser();
   const userId = session.user!.id!;
 
-  const [usage, userData] = await Promise.all([
+  const [usage, userData, pendingRequest] = await Promise.all([
     getUserUsage(userId),
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: { plan: true, planUpdatedAt: true },
     }),
+    getUserPendingUpgradeRequest(userId),
   ]);
 
   const currentPlan = userData.plan as PlanType;
@@ -91,6 +92,26 @@ export default async function BillingPage() {
           Manage your subscription and monitor monthly usage.
         </p>
       </div>
+
+      {/* Pending upgrade request notice */}
+      {pendingRequest && (
+        <Card className="border-yellow-500/50 bg-yellow-500/5">
+          <CardContent className="pt-4 flex items-start gap-3">
+            <Clock className="size-5 text-yellow-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium">
+                Upgrade request pending admin review
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                You requested the{" "}
+                <span className="font-semibold">{PLAN_NAMES[pendingRequest.requestedPlan as PlanType]}</span>{" "}
+                plan on {format(new Date(pendingRequest.createdAt), "MMM d, yyyy")}.
+                The admin will review and activate your upgrade shortly.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Current plan + usage */}
       <Card>
@@ -128,30 +149,34 @@ export default async function BillingPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PLAN_ORDER.map((plan) => {
             const isCurrentPlan = plan === currentPlan;
+            const isPendingPlan = pendingRequest?.requestedPlan === plan;
             const limits = PLAN_LIMITS[plan];
             const price = PLAN_PRICE[plan];
             const isExclusive = plan === "BUSINESS";
+            const isUpgrade = PLAN_ORDER.indexOf(plan) > PLAN_ORDER.indexOf(currentPlan);
 
             return (
               <Card
                 key={plan}
                 className={cn("flex flex-col", {
                   "border-primary shadow-md": isCurrentPlan,
+                  "border-yellow-500/50": isPendingPlan && !isCurrentPlan,
                 })}
               >
                 <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
                     <CardTitle className="text-base">{PLAN_NAMES[plan]}</CardTitle>
-                    {isCurrentPlan && (
-                      <Badge className="text-xs">Current</Badge>
+                    {isCurrentPlan && <Badge className="text-xs">Current</Badge>}
+                    {isPendingPlan && !isCurrentPlan && (
+                      <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-600">
+                        Pending
+                      </Badge>
                     )}
                   </div>
                   <p className="text-2xl font-bold mt-2">
                     {price !== null ? (price === 0 ? "Free" : `$${price}`) : "Custom"}
                     {price !== null && price > 0 && (
-                      <span className="text-sm font-normal text-muted-foreground">
-                        /mo
-                      </span>
+                      <span className="text-sm font-normal text-muted-foreground">/mo</span>
                     )}
                   </p>
                 </CardHeader>
@@ -188,11 +213,13 @@ export default async function BillingPage() {
                     <Button variant="outline" className="w-full" disabled>
                       Current Plan
                     </Button>
+                  ) : isPendingPlan ? (
+                    <Button variant="outline" className="w-full" disabled>
+                      <Clock className="size-3.5 mr-1.5" />
+                      Request Pending
+                    </Button>
                   ) : isExclusive ? (
-                    <a
-                      href="mailto:sales@invoicewemaad.com"
-                      className="w-full"
-                    >
+                    <a href="mailto:sales@invoicewemaad.com" className="w-full">
                       <Button variant="outline" className="w-full">
                         Contact Sales
                       </Button>
@@ -201,23 +228,16 @@ export default async function BillingPage() {
                     <form
                       action={async () => {
                         "use server";
-                        await updateUserPlan(plan);
+                        await requestPlanUpgrade(plan);
                       }}
                       className="w-full"
                     >
                       <Button
                         type="submit"
                         className="w-full"
-                        variant={
-                          PLAN_ORDER.indexOf(plan) >
-                          PLAN_ORDER.indexOf(currentPlan)
-                            ? "default"
-                            : "outline"
-                        }
+                        variant={isUpgrade ? "default" : "outline"}
                       >
-                        {PLAN_ORDER.indexOf(plan) > PLAN_ORDER.indexOf(currentPlan)
-                          ? "Upgrade"
-                          : "Downgrade"}
+                        {isUpgrade ? "Request Upgrade" : "Request Downgrade"}
                       </Button>
                     </form>
                   )}
@@ -234,7 +254,7 @@ export default async function BillingPage() {
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">Not included in your plan:</span>{" "}
-              {lockedFeatures.join(", ")}. Upgrade to unlock these features.
+              {lockedFeatures.join(", ")}. Request an upgrade to unlock these features.
             </p>
           </CardContent>
         </Card>

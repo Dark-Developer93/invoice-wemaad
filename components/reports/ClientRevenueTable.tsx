@@ -40,24 +40,26 @@ export function ClientRevenueTable({ data, currency = "USD" }: ClientRevenueTabl
         {data.length === 0 ? (
           <p className="text-center text-muted-foreground py-6">No client data yet.</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead className="text-right">Invoices</TableHead>
-                <TableHead className="text-right">Revenue</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.map((row) => (
-                <TableRow key={row.clientId}>
-                  <TableCell className="font-medium">{row.clientName}</TableCell>
-                  <TableCell className="text-right">{row.invoiceCount}</TableCell>
-                  <TableCell className="text-right">{fmt(row.total)}</TableCell>
+          <div className="overflow-x-auto">
+            <Table className="min-w-[360px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Client</TableHead>
+                  <TableHead className="text-right">Invoices</TableHead>
+                  <TableHead className="text-right">Revenue</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {data.map((row) => (
+                  <TableRow key={row.clientId}>
+                    <TableCell className="font-medium">{row.clientName}</TableCell>
+                    <TableCell className="text-right">{row.invoiceCount}</TableCell>
+                    <TableCell className="text-right">{fmt(row.total)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>

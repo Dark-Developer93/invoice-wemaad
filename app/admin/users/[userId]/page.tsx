@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { adminGetUser } from "@/app/actions/admin";
+import { adminGetUser, adminGetUserUpgradeRequests } from "@/app/actions/admin";
 import { AdminUserActions } from "./AdminUserActions";
 
 export default async function AdminUserDetailPage({
@@ -19,7 +19,10 @@ export default async function AdminUserDetailPage({
   params: Promise<{ userId: string }>;
 }) {
   const { userId } = await params;
-  const user = await adminGetUser(userId);
+  const [user, upgradeRequests] = await Promise.all([
+    adminGetUser(userId),
+    adminGetUserUpgradeRequests(userId),
+  ]);
 
   if (!user) notFound();
 
@@ -124,7 +127,7 @@ export default async function AdminUserDetailPage({
       </div>
 
       {/* Admin Actions */}
-      <AdminUserActions user={user} />
+      <AdminUserActions user={user} upgradeRequests={upgradeRequests} />
     </div>
   );
 }

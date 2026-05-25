@@ -57,14 +57,14 @@ export function OutstandingInvoicesCard({ invoices }: OutstandingInvoicesCardPro
             }).format(inv.total / 100);
 
             return (
-              <li key={inv.id} className="flex items-center justify-between py-3">
+              <li key={inv.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-3">
                 <div>
                   <p className="font-medium">{inv.invoiceName}</p>
                   <p className="text-sm text-muted-foreground">
                     {inv.clientName ?? "No client"} · Due {format(due, "MMM d, yyyy")}
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                   <span className="font-semibold">{fmt}</span>
                   {isOverdue && <Badge variant="destructive">Overdue</Badge>}
                 </div>

@@ -80,7 +80,7 @@ export default async function InvoicesRoute() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <CardTitle className="text-2xl font-bold">Invoices</CardTitle>
             <CardDescription>Manage your invoices right here</CardDescription>

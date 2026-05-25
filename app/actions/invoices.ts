@@ -69,7 +69,9 @@ export async function createInvoice(
       },
     });
 
-    if (client && client.contactPersons[0]) {
+    const shouldSendEmail = formData.get("sendEmail") !== "false";
+
+    if (shouldSendEmail && client && client.contactPersons[0]) {
       const emailUsage = await getUserUsage(session.user.id);
       if (emailUsage.emailLimit === null || emailUsage.emailsThisMonth < emailUsage.emailLimit) {
         sendEmail({
@@ -158,7 +160,9 @@ export async function editInvoice(
       },
     });
 
-    if (client && client.contactPersons[0]) {
+    const shouldSendEmail = formData.get("sendEmail") !== "false";
+
+    if (shouldSendEmail && client && client.contactPersons[0]) {
       const emailUsage = await getUserUsage(session.user.id);
       if (emailUsage.emailLimit === null || emailUsage.emailsThisMonth < emailUsage.emailLimit) {
         sendEmail({

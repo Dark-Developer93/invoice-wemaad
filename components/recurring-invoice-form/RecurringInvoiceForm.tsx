@@ -85,7 +85,7 @@ export function RecurringInvoiceForm({
   return (
     <Form {...form}>
       <form action={action} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="invoiceName"
@@ -124,7 +124,7 @@ export function RecurringInvoiceForm({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="startDate"
@@ -153,7 +153,7 @@ export function RecurringInvoiceForm({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="fromName"
@@ -196,7 +196,7 @@ export function RecurringInvoiceForm({
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="clientId"
@@ -280,7 +280,7 @@ export function RecurringInvoiceForm({
           )}
         />
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="invoiceItemQuantity"
@@ -290,9 +290,13 @@ export function RecurringInvoiceForm({
                 <FormControl>
                   <Input
                     type="number"
-                    min={1}
+                    min={0.01}
+                    step="any"
                     {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      field.onChange(val === "" ? 0 : parseFloat(val) || 0);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -308,9 +312,13 @@ export function RecurringInvoiceForm({
                 <FormControl>
                   <Input
                     type="number"
-                    min={1}
+                    min={0.01}
+                    step="any"
                     {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      field.onChange(val === "" ? 0 : parseFloat(val) || 0);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />

@@ -61,7 +61,7 @@ export default async function DashboardRoute() {
         <>
           <DashboardBlocks />
           {planFeatures.analytics ? (
-            <div className="grid gap-4 lg:grid-cols-3 md:gap-8">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 md:gap-8">
               <InvoiceGraph />
               <RecentInvoices data={recentInvoices} />
             </div>

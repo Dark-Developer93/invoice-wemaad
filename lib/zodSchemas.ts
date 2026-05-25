@@ -20,7 +20,7 @@ export const onboardingSchema = z.object({
 
 export const invoiceSchema = z.object({
   invoiceName: z.string().min(1, "Invoice Name is required"),
-  total: z.number().min(1, "1$ is minimum"),
+  total: z.number().min(0.01, "$0.01 is minimum"),
 
   status: z.enum(["PAID", "PENDING"]).default("PENDING"),
 
@@ -44,9 +44,9 @@ export const invoiceSchema = z.object({
 
   invoiceItemDescription: z.string().min(1, "Description is required"),
 
-  invoiceItemQuantity: z.number().min(1, "Quantity min 1"),
+  invoiceItemQuantity: z.number().min(0.01, "Quantity must be greater than 0"),
 
-  invoiceItemRate: z.number().min(1, "Rate min 1"),
+  invoiceItemRate: z.number().min(0.01, "Rate must be greater than 0"),
 });
 
 export const recurringInvoiceSchema = z.object({
@@ -61,9 +61,9 @@ export const recurringInvoiceSchema = z.object({
   currency: z.string().min(1, "Currency is required"),
   dueDate: z.number().min(0, "Due date is required"),
   invoiceItemDescription: z.string().min(1, "Description is required"),
-  invoiceItemQuantity: z.number().min(1, "Quantity min 1"),
-  invoiceItemRate: z.number().min(1, "Rate min 1"),
-  total: z.number().min(1, "$1 is minimum"),
+  invoiceItemQuantity: z.number().min(0.01, "Quantity must be greater than 0"),
+  invoiceItemRate: z.number().min(0.01, "Rate must be greater than 0"),
+  total: z.number().min(0.01, "$0.01 is minimum"),
   note: z.string().optional(),
 });
 

@@ -39,8 +39,9 @@ model User {
   Authenticator     Authenticator[]
   invoices          Invoice[]
   clients           Client[]
-  emailLogs         EmailLog[]
-  recurringInvoices RecurringInvoice[]
+  emailLogs            EmailLog[]
+  recurringInvoices    RecurringInvoice[]
+  planUpgradeRequests  PlanUpgradeRequest[]
 
   plan          PlanType  @default(FREE)
   planUpdatedAt DateTime  @default(now())
@@ -201,7 +202,7 @@ model Invoice {
   id String @id @default(uuid())
 
   invoiceName   String
-  total         Int
+  total         Float
   status        InvoiceStatus
   date          DateTime
   dueDate       Int
@@ -213,8 +214,8 @@ model Invoice {
   invoiceNote   String?
 
   invoiceItemDescription String
-  invoiceItemQuantity    Int
-  invoiceItemRate        Int
+  invoiceItemQuantity    Float
+  invoiceItemRate        Float
 
   client   Client? @relation(fields: [clientId], references: [id])
   clientId String?
@@ -231,6 +232,26 @@ model Invoice {
 enum InvoiceStatus {
   PAID
   PENDING
+}
+
+enum UpgradeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model PlanUpgradeRequest {
+  id            String                @id @default(cuid())
+  userId        String
+  requestedPlan PlanType
+  status        UpgradeRequestStatus  @default(PENDING)
+  adminNote     String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
 }
 
 model EmailLog {
@@ -260,9 +281,9 @@ model RecurringInvoice {
 
   invoiceName            String
   invoiceItemDescription String
-  invoiceItemQuantity    Int
-  invoiceItemRate        Int
-  total                  Int
+  invoiceItemQuantity    Float
+  invoiceItemRate        Float
+  total                  Float
   currency               String
   dueDate                Int
   fromName               String
