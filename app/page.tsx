@@ -4,7 +4,6 @@ import Navbar from "@/components/navbar/Navbar";
 import PricingSection from "@/components/pricing/PricingSection";
 import ContactSection from "@/components/contact/ContactSection";
 import { auth } from "@/lib/auth";
-import { Toaster } from "@/components/ui/sonner";
 
 const Home = async () => {
   const session = await auth();
@@ -24,12 +23,6 @@ const Home = async () => {
           <PricingSection isAuthenticated={isAuthenticated} />
           <ContactSection />
         </div>
-        <Toaster
-          richColors
-          closeButton
-          theme="system"
-          position="bottom-right"
-        />
       </main>
     </div>
   );

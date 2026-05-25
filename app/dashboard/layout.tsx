@@ -7,7 +7,6 @@ import { Menu, User2 } from "lucide-react";
 import Logo from "@/public/logo.png";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Toaster } from "@/components/ui/sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,7 +88,7 @@ export default async function DashboardLayout({
 
             <div className="flex items-center ml-auto gap-2">
               <ThemeToggle />
-              <NotificationBell userId={session.user?.id as string} />
+              <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -127,7 +126,6 @@ export default async function DashboardLayout({
           </main>
         </div>
       </div>
-      <Toaster richColors closeButton theme="system" />
     </>
   );
 }

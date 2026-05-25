@@ -1,12 +1,7 @@
-import prisma from "@/lib/db";
+import { getUserNotifications } from "@/app/actions/notifications";
 import { NotificationBellClient } from "./NotificationBellClient";
 
-export async function NotificationBell({ userId }: { userId: string }) {
-  const notifications = await prisma.notification.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-  });
-
+export async function NotificationBell() {
+  const notifications = await getUserNotifications();
   return <NotificationBellClient notifications={notifications} />;
 }
