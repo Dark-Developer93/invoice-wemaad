@@ -96,7 +96,8 @@ export function AdminUserActions({
         await adminUpdateUserPlan(user.id, selectedPlan as User["plan"]);
         toast.success(`Plan updated to ${selectedPlan}`);
         router.refresh();
-      } catch {
+      } catch (err: unknown) {
+        console.error("Failed to update plan:", err);
         toast.error("Failed to update plan.");
       }
     });

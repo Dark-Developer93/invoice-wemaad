@@ -164,10 +164,10 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList>
-            <TabsTrigger value="basic">Basic Information</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
+            <TabsTrigger value="basic">Basic Info</TabsTrigger>
             <TabsTrigger value="addresses">Addresses</TabsTrigger>
-            <TabsTrigger value="contacts">Contact Persons</TabsTrigger>
+            <TabsTrigger value="contacts">Contacts</TabsTrigger>
             <TabsTrigger value="custom">Custom Fields</TabsTrigger>
           </TabsList>
 
@@ -280,7 +280,7 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
                     )}
                   />
 
-                  <div className="col-span-2">
+                  <div className="col-span-1 sm:col-span-2">
                     <FormField
                       control={form.control}
                       name="notes"
@@ -408,7 +408,7 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
                       )}
                     />
 
-                    <div className="col-span-2 flex justify-end gap-2">
+                    <div className="col-span-1 sm:col-span-2 flex justify-end gap-2">
                       {index > 0 && (
                         <Button
                           type="button"
@@ -539,7 +539,7 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
                       )}
                     />
 
-                    <div className="col-span-2 flex justify-end">
+                    <div className="col-span-1 sm:col-span-2 flex justify-end">
                       <Button
                         type="button"
                         variant="destructive"
@@ -621,7 +621,7 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
                       )}
                     />
 
-                    <div className="col-span-2 flex justify-end">
+                    <div className="col-span-1 sm:col-span-2 flex justify-end">
                       <Button
                         type="button"
                         variant="destructive"

@@ -42,6 +42,7 @@ model User {
   emailLogs            EmailLog[]
   recurringInvoices    RecurringInvoice[]
   planUpgradeRequests  PlanUpgradeRequest[]
+  notifications        Notification[]
 
   plan          PlanType  @default(FREE)
   planUpdatedAt DateTime  @default(now())
@@ -252,6 +253,20 @@ model PlanUpgradeRequest {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model EmailLog {

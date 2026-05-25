@@ -72,7 +72,7 @@ export default async function BillingPage() {
       where: { id: userId },
       select: { plan: true, planUpdatedAt: true },
     }),
-    getUserPendingUpgradeRequest(userId),
+    getUserPendingUpgradeRequest(),
   ]);
 
   if (!userData) notFound();

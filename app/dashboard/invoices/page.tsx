@@ -104,7 +104,25 @@ export default async function InvoicesRoute() {
       </CardHeader>
       <CardContent>
         <Suspense fallback={<InvoiceListSkeleton />}>
-          <InvoiceList />
+          <InvoiceList
+            emptyButton={
+              <InvoiceDialog
+                trigger={
+                  <Button>
+                    <PlusIcon className="mr-2 h-4 w-4" /> Create Invoice
+                  </Button>
+                }
+                firstName={user.firstName ?? ""}
+                lastName={user.lastName ?? ""}
+                address={user.address ?? ""}
+                email={user.email ?? ""}
+                companyName={user.companyName ?? ""}
+                companyEmail={user.companyEmail ?? ""}
+                companyAddress={user.companyAddress ?? ""}
+                clients={clients}
+              />
+            }
+          />
         </Suspense>
       </CardContent>
     </Card>

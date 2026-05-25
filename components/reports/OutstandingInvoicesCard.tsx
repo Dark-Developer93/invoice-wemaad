@@ -54,7 +54,7 @@ export function OutstandingInvoicesCard({ invoices }: OutstandingInvoicesCardPro
             const fmt = new Intl.NumberFormat("en-US", {
               style: "currency",
               currency: inv.currency,
-            }).format(inv.total / 100);
+            }).format(inv.total);
 
             return (
               <li key={inv.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-3">

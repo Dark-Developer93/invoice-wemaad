@@ -638,7 +638,10 @@ export function InvoiceForm({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={onClose}
+                    onClick={() => {
+                      toast.info("Invoice discarded. Your changes have not been saved.");
+                      onClose();
+                    }}
                     className="flex-1 sm:flex-none"
                   >
                     Cancel

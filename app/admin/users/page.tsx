@@ -32,8 +32,8 @@ export default async function AdminUsersPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
           Manage all users, their plans, and account status.
         </p>
       </div>
@@ -124,16 +124,16 @@ export default async function AdminUsersPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full min-w-[360px] text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground text-left">
                   <th className="pb-3 pr-4 font-medium">Name</th>
-                  <th className="pb-3 pr-4 font-medium">Email</th>
+                  <th className="pb-3 pr-4 font-medium hidden sm:table-cell">Email</th>
                   <th className="pb-3 pr-4 font-medium">Plan</th>
                   <th className="pb-3 pr-4 font-medium">Status</th>
-                  <th className="pb-3 pr-4 font-medium">Invoices</th>
-                  <th className="pb-3 pr-4 font-medium">Clients</th>
-                  <th className="pb-3 font-medium">Joined</th>
+                  <th className="pb-3 pr-4 font-medium hidden md:table-cell">Invoices</th>
+                  <th className="pb-3 pr-4 font-medium hidden md:table-cell">Clients</th>
+                  <th className="pb-3 font-medium hidden lg:table-cell">Joined</th>
                   <th className="pb-3"></th>
                 </tr>
               </thead>
@@ -141,7 +141,7 @@ export default async function AdminUsersPage() {
                 {users.map((user) => (
                   <tr key={user.id} className="hover:bg-muted/40 transition-colors">
                     <td className="py-3 pr-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium">
                           {user.firstName && user.lastName
                             ? `${user.firstName} ${user.lastName}`
@@ -157,7 +157,7 @@ export default async function AdminUsersPage() {
                         <div className="text-xs text-muted-foreground">{user.companyName}</div>
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-muted-foreground">{user.email}</td>
+                    <td className="py-3 pr-4 text-muted-foreground hidden sm:table-cell">{user.email}</td>
                     <td className="py-3 pr-4">
                       <Badge variant={PLAN_COLORS[user.plan] as "default" | "secondary" | "outline" | "destructive"}>
                         {user.plan}
@@ -172,9 +172,9 @@ export default async function AdminUsersPage() {
                         <Badge variant="destructive">Inactive</Badge>
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-center">{user._count.invoices}</td>
-                    <td className="py-3 pr-4 text-center">{user._count.clients}</td>
-                    <td className="py-3 pr-4 text-muted-foreground text-xs">
+                    <td className="py-3 pr-4 text-center hidden md:table-cell">{user._count.invoices}</td>
+                    <td className="py-3 pr-4 text-center hidden md:table-cell">{user._count.clients}</td>
+                    <td className="py-3 pr-4 text-muted-foreground text-xs hidden lg:table-cell">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-3">

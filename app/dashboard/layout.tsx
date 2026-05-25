@@ -2,12 +2,10 @@ import { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Menu, User2 } from "lucide-react";
+import { User2 } from "lucide-react";
 
 import Logo from "@/public/logo.png";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Toaster } from "@/components/ui/sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +15,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DashboardLinks } from "@/components/dashboard-links/DashboardLinks";
+import { NavSheet } from "@/components/nav-sheet/NavSheet";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { signOut } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
@@ -73,21 +73,11 @@ export default async function DashboardLayout({
 
         <div className="flex flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden">
-                  <Menu className="size-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left">
-                <nav className="grid gap-2 mt-10">
-                  <DashboardLinks isAdmin={userData?.isAdmin} />
-                </nav>
-              </SheetContent>
-            </Sheet>
+            <NavSheet isAdmin={userData?.isAdmin} className="md:hidden" />
 
             <div className="flex items-center ml-auto gap-2">
               <ThemeToggle />
+              <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -102,16 +92,7 @@ export default async function DashboardLayout({
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard">Dashboard</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
                     <Link href="/dashboard/profile">Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/invoices">Invoices</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/clients">Clients</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -134,7 +115,6 @@ export default async function DashboardLayout({
           </main>
         </div>
       </div>
-      <Toaster richColors closeButton theme="system" />
     </>
   );
 }

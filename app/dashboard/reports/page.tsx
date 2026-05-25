@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
 import { subMonths, format } from "date-fns";
-import { auth } from "@/lib/auth";
+import { requireUser } from "@/lib/session";
 import prisma from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { RevenueSummaryCard } from "@/components/reports/RevenueSummaryCard";
@@ -17,10 +16,9 @@ export const metadata = {
 };
 
 export default async function ReportsPage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const session = await requireUser();
 
-  const usage = await getUserUsage(session.user.id);
+  const usage = await getUserUsage(session.user!.id!);
   if (!PLAN_FEATURES[usage.plan].analytics) {
     return (
       <UpgradePrompt
@@ -36,7 +34,7 @@ export default async function ReportsPage() {
     );
   }
 
-  const userId = session.user.id;
+  const userId = session.user!.id!;
   const now = new Date();
 
   const allInvoices = await prisma.invoice.findMany({
