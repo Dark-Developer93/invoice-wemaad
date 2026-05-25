@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Logo from "@/public/logo.png";
-import { AdminNavLinks } from "./AdminNavLinks";
+import { DashboardLinks } from "@/components/dashboard-links/DashboardLinks";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   await requireAdmin();
@@ -27,8 +27,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <nav className="px-2 lg:px-4 mt-2">
-          <AdminNavLinks />
+        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 mt-2">
+          <DashboardLinks isAdmin={true} />
         </nav>
       </div>
     </div>
