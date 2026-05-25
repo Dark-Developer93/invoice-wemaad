@@ -85,34 +85,30 @@ const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
 
   const check = <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />;
   const dash = "—";
-  const has = (plan: (typeof plans)[0], keyword: string) =>
-    plan.features.some((f) => f.toLowerCase().includes(keyword.toLowerCase()));
+  const tier = (plan: (typeof plans)[0]) =>
+    ["Free", "Starter", "Pro", "Business"].indexOf(plan.title);
 
+  // Use plan tier rather than keyword scanning — higher plans inherit all lower features
   const getFeatureValue = (plan: (typeof plans)[0], feature: string): string | JSX.Element => {
+    const t = tier(plan);
     switch (feature) {
       case "Monthly invoices":
-        if (plan.title === "Free") return "5";
-        if (plan.title === "Starter") return "25";
-        if (plan.title === "Pro") return "100";
-        return "Unlimited";
+        return ["5", "25", "100", "Unlimited"][t];
       case "Monthly emails":
-        if (plan.title === "Free") return "20";
-        if (plan.title === "Starter") return "50";
-        if (plan.title === "Pro") return "500";
-        return "Unlimited";
-      case "Client management":        return check;
-      case "PDF generation":           return check;
-      case "Automated emails":         return check;
-      case "Invoice templates":        return has(plan, "template") ? check : dash;
-      case "Recurring invoices":       return has(plan, "recurring") ? check : dash;
-      case "Analytics & reports":      return has(plan, "analytics") ? check : dash;
-      case "Custom branding":          return has(plan, "branding") ? check : dash;
-      case "API access":               return has(plan, "api") ? check : dash;
-      case "Team collaboration":       return has(plan, "collaboration") ? check : dash;
-      case "Multi-user access":        return has(plan, "multi-user") ? check : dash;
-      case "Custom integrations":      return has(plan, "integrations") ? check : dash;
-      case "SLA guarantee":            return has(plan, "sla") ? check : dash;
-      default:                         return dash;
+        return ["20", "50", "500", "Unlimited"][t];
+      case "Client management":    return check;            // all plans
+      case "PDF generation":       return check;            // all plans
+      case "Automated emails":     return check;            // all plans
+      case "Invoice templates":    return check;            // all plans
+      case "Recurring invoices":   return t >= 1 ? check : dash;  // Starter+
+      case "Analytics & reports":  return t >= 1 ? check : dash;  // Starter+
+      case "Custom branding":      return t >= 2 ? check : dash;  // Pro+
+      case "API access":           return t >= 2 ? check : dash;  // Pro+
+      case "Team collaboration":   return t >= 2 ? check : dash;  // Pro+
+      case "Multi-user access":    return t >= 3 ? check : dash;  // Business only
+      case "Custom integrations":  return t >= 3 ? check : dash;  // Business only
+      case "SLA guarantee":        return t >= 3 ? check : dash;  // Business only
+      default:                     return dash;
     }
   };
 
