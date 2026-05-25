@@ -7,6 +7,8 @@ import { requireAdmin } from "@/lib/session";
 
 const planSchema = z.enum(["FREE", "STARTER", "PRO", "BUSINESS"]);
 
+const ADMIN_NOTE_MAX_LENGTH = 1000;
+
 export async function adminGetAllUsers() {
   await requireAdmin();
 
@@ -188,8 +190,8 @@ export async function adminApproveUpgradeRequest(requestId: string) {
 export async function adminRejectUpgradeRequest(requestId: string, adminNote?: string) {
   await requireAdmin();
 
-  if (adminNote && adminNote.length > 1000) {
-    throw new Error("Admin note cannot exceed 1000 characters.");
+  if (adminNote && adminNote.length > ADMIN_NOTE_MAX_LENGTH) {
+    throw new Error(`Admin note cannot exceed ${ADMIN_NOTE_MAX_LENGTH} characters.`);
   }
 
   const request = await prisma.planUpgradeRequest.findUnique({

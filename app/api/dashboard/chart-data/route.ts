@@ -3,6 +3,10 @@ import { subDays } from "date-fns";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 
+const CHART_RANGE_DEFAULT = 30;
+const CHART_RANGE_MIN = 1;
+const CHART_RANGE_MAX = 365;
+
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -10,7 +14,10 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const range = Math.min(Math.max(parseInt(searchParams.get("range") ?? "30", 10), 1), 365);
+  const range = Math.min(
+    Math.max(parseInt(searchParams.get("range") ?? String(CHART_RANGE_DEFAULT), 10), CHART_RANGE_MIN),
+    CHART_RANGE_MAX
+  );
   const statusParam = searchParams.get("status") ?? "PAID";
 
   type InvoiceStatus = "PAID" | "PENDING";
