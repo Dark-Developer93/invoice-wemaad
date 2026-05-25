@@ -5,6 +5,7 @@ import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { sendEmail } from "@/lib/email";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { getInvoiceUrl } from "@/lib/urls";
 import { Currency } from "@/types";
 import { getUserUsage, logEmailSent } from "@/lib/usage";
 
@@ -79,7 +80,7 @@ export async function POST(
           amount: invoiceData.total,
           currency: invoiceData.currency as Currency,
         }),
-        invoiceLink: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/invoice/${invoiceData.id}`,
+        invoiceLink: getInvoiceUrl(invoiceData.id),
       },
     });
 
