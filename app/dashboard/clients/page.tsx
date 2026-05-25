@@ -1,10 +1,10 @@
 import { Metadata } from "next";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import prisma from "@/lib/db";
+import { requireUser } from "@/lib/session";
 import { DataTable } from "./data-table";
 import { columns } from "./columns";
 import { ClientDialog } from "@/components/client-form/clientDialog";
+import { EmptyState } from "@/components/empty-state/EmptyState";
 
 export const metadata: Metadata = {
   title: "Clients | WeMaAd Invoice",
@@ -12,17 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default async function ClientsPage() {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    redirect("/login");
-  }
+  const session = await requireUser();
 
   const [clients, user] = await Promise.all([
     prisma.client.findMany({
-      where: {
-        userId: session.user.id,
-      },
+      where: { userId: session.user!.id! },
       select: {
         id: true,
         name: true,
@@ -37,9 +31,7 @@ export default async function ClientsPage() {
         notes: true,
         tags: true,
         addresses: {
-          where: {
-            isDefault: true,
-          },
+          where: { isDefault: true },
           select: {
             id: true,
             type: true,
@@ -53,9 +45,7 @@ export default async function ClientsPage() {
           take: 1,
         },
         contactPersons: {
-          where: {
-            isPrimary: true,
-          },
+          where: { isPrimary: true },
           select: {
             id: true,
             firstName: true,
@@ -68,45 +58,38 @@ export default async function ClientsPage() {
           take: 1,
         },
         customFields: {
-          select: {
-            id: true,
-            key: true,
-            value: true,
-          },
+          select: { id: true, key: true, value: true },
         },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     }),
     prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        firstName: true,
-        lastName: true,
-        address: true,
-        email: true,
-      },
+      where: { id: session.user!.id! },
+      select: { firstName: true, lastName: true, address: true, email: true },
     }),
   ]);
 
-  if (!user) {
-    redirect("/login");
-  }
-
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex items-center justify-between mb-8">
+    <div className="flex flex-col gap-4 sm:gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Clients</h1>
+          <p className="text-sm text-muted-foreground">
             Manage your client directory and their information.
           </p>
         </div>
         <ClientDialog />
       </div>
 
-      <DataTable columns={columns} data={clients} userData={user} />
+      {clients.length === 0 ? (
+        <EmptyState
+          title="No clients found"
+          description="Add your first client to start creating invoices."
+          button={<ClientDialog />}
+        />
+      ) : (
+        <DataTable columns={columns} data={clients} userData={user ?? { firstName: null, lastName: null, address: null, email: "" }} />
+      )}
     </div>
   );
 }

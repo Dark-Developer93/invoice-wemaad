@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state/EmptyState";
 import { Currency } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ReactNode } from "react";
 
 async function getData(userId: string) {
   const data = await prisma.invoice.findMany({
@@ -72,7 +73,7 @@ function InvoiceListSkeleton() {
 
 export { InvoiceListSkeleton };
 
-export async function InvoiceList() {
+export async function InvoiceList({ emptyButton }: { emptyButton?: ReactNode }) {
   const session = await requireUser();
   const data = await getData(session.user?.id as string);
   return (
@@ -81,6 +82,7 @@ export async function InvoiceList() {
         <EmptyState
           title="No invoices found"
           description="Create an invoice to get started"
+          button={emptyButton}
           buttontext="Create invoice"
           href="/dashboard/invoices/create"
         />

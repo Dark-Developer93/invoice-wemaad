@@ -141,7 +141,7 @@ export function ProfileForm({
             className="space-y-6"
           >
             <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto gap-1">
                 <TabsTrigger value="basic">Basic Information</TabsTrigger>
                 <TabsTrigger value="company">Company Details</TabsTrigger>
                 <TabsTrigger value="bank">Bank Details</TabsTrigger>
