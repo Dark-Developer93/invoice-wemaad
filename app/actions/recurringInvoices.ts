@@ -10,6 +10,7 @@ import { PLAN_FEATURES } from "@/lib/plans";
 import { getUserUsage, logEmailSent } from "@/lib/usage";
 import { sendEmail } from "@/lib/email/index";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatDate } from "@/lib/formatDate";
 import { Currency } from "@/types";
 import prisma from "@/lib/db";
 import { getInvoiceUrl } from "@/lib/urls";
@@ -76,30 +77,40 @@ export async function toggleRecurringInvoice(id: string) {
   const session = await requireUser();
   if (!session?.user?.id) return { error: "User not found" };
 
-  const current = await prisma.recurringInvoice.findUnique({
-    where: { id, userId: session.user.id },
-    select: { isActive: true },
-  });
+  try {
+    const current = await prisma.recurringInvoice.findUnique({
+      where: { id, userId: session.user.id },
+      select: { isActive: true },
+    });
 
-  if (!current) return { error: "Not found" };
+    if (!current) return { error: "Not found" };
 
-  await prisma.recurringInvoice.update({
-    where: { id, userId: session.user.id },
-    data: { isActive: !current.isActive },
-  });
+    await prisma.recurringInvoice.update({
+      where: { id, userId: session.user.id },
+      data: { isActive: !current.isActive },
+    });
 
-  return { success: true };
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to toggle recurring invoice:", error);
+    return { error: "Failed to update recurring invoice" };
+  }
 }
 
 export async function deleteRecurringInvoice(id: string) {
   const session = await requireUser();
   if (!session?.user?.id) return { error: "User not found" };
 
-  await prisma.recurringInvoice.delete({
-    where: { id, userId: session.user.id },
-  });
+  try {
+    await prisma.recurringInvoice.delete({
+      where: { id, userId: session.user.id },
+    });
 
-  return { success: true };
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete recurring invoice:", error);
+    return { error: "Failed to delete recurring invoice" };
+  }
 }
 
 export async function processRecurringInvoices() {
@@ -190,7 +201,7 @@ export async function processRecurringInvoices() {
           variables: {
             clientName: recurring.client!.name,
             invoiceNumber: invoiceNumber.toString(),
-            invoiceDueDate: new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(now),
+            invoiceDueDate: formatDate.long(now),
             invoiceAmount: formatCurrency({
               amount: recurring.total,
               currency: recurring.currency as Currency,

@@ -12,7 +12,7 @@ vi.mock("@/lib/db", () => ({
 import prisma from "@/lib/db";
 import { getUserUsage, logEmailSent } from "../usage";
 
-const db = prisma as {
+const db = prisma as unknown as {
   user: { findUniqueOrThrow: ReturnType<typeof vi.fn> };
   invoice: { count: ReturnType<typeof vi.fn> };
   emailLog: { count: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn> };

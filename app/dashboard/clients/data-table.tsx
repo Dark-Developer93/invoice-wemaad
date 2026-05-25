@@ -34,18 +34,11 @@ import { ChevronDown } from "lucide-react";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  userData: {
-    firstName: string | null;
-    lastName: string | null;
-    address: string | null;
-    email: string;
-  };
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  userData,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -73,7 +66,6 @@ export function DataTable<TData, TValue>({
       rowSelection,
     },
     meta: {
-      userData,
       allClients: data,
     },
   });

@@ -26,28 +26,33 @@ export async function GET(request: Request) {
     ? (statusParam as InvoiceStatus)
     : undefined;
 
-  const rawData = await prisma.invoice.findMany({
-    where: {
-      userId: session.user.id,
-      ...(statusFilter ? { status: statusFilter } : {}),
-      createdAt: {
-        gte: subDays(new Date(), range),
-        lte: new Date(),
+  try {
+    const rawData = await prisma.invoice.findMany({
+      where: {
+        userId: session.user.id,
+        ...(statusFilter ? { status: statusFilter } : {}),
+        createdAt: {
+          gte: subDays(new Date(), range),
+          lte: new Date(),
+        },
       },
-    },
-    select: { createdAt: true, total: true },
-    orderBy: { createdAt: "asc" },
-  });
+      select: { createdAt: true, total: true },
+      orderBy: { createdAt: "asc" },
+    });
 
-  const aggregated = rawData.reduce((acc: Record<number, number>, curr) => {
-    const timestamp = new Date(curr.createdAt).setHours(0, 0, 0, 0);
-    acc[timestamp] = (acc[timestamp] ?? 0) + curr.total;
-    return acc;
-  }, {});
+    const aggregated = rawData.reduce((acc: Record<number, number>, curr) => {
+      const timestamp = new Date(curr.createdAt).setHours(0, 0, 0, 0);
+      acc[timestamp] = (acc[timestamp] ?? 0) + curr.total;
+      return acc;
+    }, {});
 
-  const data = Object.entries(aggregated)
-    .map(([date, amount]) => ({ date: Number(date), amount }))
-    .sort((a, b) => a.date - b.date);
+    const data = Object.entries(aggregated)
+      .map(([date, amount]) => ({ date: Number(date), amount }))
+      .sort((a, b) => a.date - b.date);
 
-  return NextResponse.json(data);
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Failed to fetch chart data:", error);
+    return NextResponse.json({ error: "Failed to fetch chart data" }, { status: 500 });
+  }
 }

@@ -27,7 +27,7 @@ async function ClientDetailPage({ params }: { params: Params }) {
     redirect("/login");
   }
 
-  const [client, user, allClients] = await Promise.all([
+  const [client, allClients] = await Promise.all([
     prisma.client.findUnique({
       where: {
         id: clientId,
@@ -43,15 +43,6 @@ async function ClientDetailPage({ params }: { params: Params }) {
           },
           take: 5,
         },
-      },
-    }),
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        firstName: true,
-        lastName: true,
-        address: true,
-        email: true,
       },
     }),
     prisma.client.findMany({
@@ -84,7 +75,7 @@ async function ClientDetailPage({ params }: { params: Params }) {
     }),
   ]);
 
-  if (!client || !user) {
+  if (!client) {
     notFound();
   }
 
@@ -105,10 +96,6 @@ async function ClientDetailPage({ params }: { params: Params }) {
         </div>
         <div className="flex gap-4">
           <InvoiceDialog
-            firstName={user.firstName || ""}
-            lastName={user.lastName || ""}
-            address={user.address || ""}
-            email={user.email}
             clients={allClients}
             defaultClientId={client.id}
             trigger={
