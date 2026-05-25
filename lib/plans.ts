@@ -10,6 +10,7 @@ export const PLAN_LIMITS: Record<PlanType, { invoices: number | null; emails: nu
 export const PLAN_FEATURES: Record<
   PlanType,
   {
+    recurringInvoices: boolean;
     analytics: boolean;
     customBranding: boolean;
     teamCollaboration: boolean;
@@ -17,10 +18,10 @@ export const PLAN_FEATURES: Record<
     multiUser: boolean;
   }
 > = {
-  FREE:     { analytics: false, customBranding: false, teamCollaboration: false, apiAccess: false, multiUser: false },
-  STARTER:  { analytics: true,  customBranding: false, teamCollaboration: false, apiAccess: false, multiUser: false },
-  PRO:      { analytics: true,  customBranding: true,  teamCollaboration: true,  apiAccess: true,  multiUser: false },
-  BUSINESS: { analytics: true,  customBranding: true,  teamCollaboration: true,  apiAccess: true,  multiUser: true  },
+  FREE:     { recurringInvoices: false, analytics: false, customBranding: false, teamCollaboration: false, apiAccess: false, multiUser: false },
+  STARTER:  { recurringInvoices: true,  analytics: true,  customBranding: false, teamCollaboration: false, apiAccess: false, multiUser: false },
+  PRO:      { recurringInvoices: true,  analytics: true,  customBranding: true,  teamCollaboration: true,  apiAccess: true,  multiUser: false },
+  BUSINESS: { recurringInvoices: true,  analytics: true,  customBranding: true,  teamCollaboration: true,  apiAccess: true,  multiUser: true  },
 };
 
 export const PLAN_PRICE: Record<PlanType, number | null> = {
