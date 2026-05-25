@@ -87,7 +87,7 @@ export async function createInvoice(
               amount: submission.value.total,
               currency: submission.value.currency as Currency,
             }),
-            invoiceLink: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/invoice/${data.id}`,
+            invoiceLink: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/invoice/${data.id}`,
           },
         })
           .then(() => logEmailSent(session.user!.id!, "newInvoice", data.id))
@@ -175,7 +175,7 @@ export async function editInvoice(
               amount: submission.value.total,
               currency: submission.value.currency as Currency,
             }),
-            invoiceLink: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/invoice/${data.id}`,
+            invoiceLink: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/invoice/${data.id}`,
           },
         })
           .then(() => logEmailSent(session.user!.id!, "updatedInvoice", data.id))

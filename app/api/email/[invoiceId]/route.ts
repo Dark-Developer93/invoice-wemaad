@@ -79,7 +79,7 @@ export async function POST(
           amount: invoiceData.total,
           currency: invoiceData.currency as Currency,
         }),
-        invoiceLink: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/invoice/${invoiceData.id}`,
+        invoiceLink: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/invoice/${invoiceData.id}`,
       },
     });
 
