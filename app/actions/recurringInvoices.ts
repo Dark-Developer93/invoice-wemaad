@@ -105,7 +105,7 @@ export async function processRecurringInvoices() {
   const now = new Date();
 
   const due = await prisma.recurringInvoice.findMany({
-    where: { isActive: true, nextRunAt: { lte: now } },
+    where: { isActive: true, nextRunAt: { lte: now }, User: { isActive: true } },
     include: { client: { include: { contactPersons: { where: { isPrimary: true }, take: 1 } } } },
   });
 

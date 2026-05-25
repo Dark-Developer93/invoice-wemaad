@@ -31,12 +31,15 @@ async function getUser(userId: string) {
       firstName: true,
       lastName: true,
       address: true,
+      isAdmin: true,
     },
   });
 
   if (!data?.firstName || !data.lastName || !data.address) {
     redirect("/onboarding");
   }
+
+  return data;
 }
 
 export default async function DashboardLayout({
@@ -45,7 +48,7 @@ export default async function DashboardLayout({
   children: ReactNode;
 }) {
   const session = await requireUser();
-  await getUser(session.user?.id as string);
+  const userData = await getUser(session.user?.id as string);
 
   return (
     <>
@@ -62,7 +65,7 @@ export default async function DashboardLayout({
             </div>
             <div className="flex-1">
               <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-                <DashboardLinks />
+                <DashboardLinks isAdmin={userData?.isAdmin} />
               </nav>
             </div>
           </div>
@@ -78,7 +81,7 @@ export default async function DashboardLayout({
               </SheetTrigger>
               <SheetContent side="left">
                 <nav className="grid gap-2 mt-10">
-                  <DashboardLinks />
+                  <DashboardLinks isAdmin={userData?.isAdmin} />
                 </nav>
               </SheetContent>
             </Sheet>
