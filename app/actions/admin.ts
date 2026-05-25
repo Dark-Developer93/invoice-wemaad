@@ -179,6 +179,10 @@ export async function adminApproveUpgradeRequest(requestId: string) {
 export async function adminRejectUpgradeRequest(requestId: string, adminNote?: string) {
   await requireAdmin();
 
+  if (adminNote && adminNote.length > 1000) {
+    throw new Error("Admin note cannot exceed 1000 characters.");
+  }
+
   const request = await prisma.planUpgradeRequest.findUnique({
     where: { id: requestId },
   });

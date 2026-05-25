@@ -169,7 +169,7 @@ export function InvoiceForm({
   const updateTotal = useMemo(
     () =>
       debounce((quantity: number, rate: number) => {
-        const calculatedTotal = quantity * rate;
+        const calculatedTotal = Math.round(quantity * rate * 100) / 100;
         setLocalTotal(calculatedTotal);
         form.setValue("total", calculatedTotal, { shouldValidate: true });
       }, 300),
@@ -220,7 +220,8 @@ export function InvoiceForm({
           : await editInvoice(null, submitFormData);
 
       if (result.status === "error") {
-        toast.error(JSON.stringify(result.error));
+        const msgs = Object.values(result.error ?? {}).flat();
+        toast.error(msgs[0] ?? "Failed to save invoice");
         return;
       }
 

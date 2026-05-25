@@ -66,7 +66,7 @@ export default async function MarkAsPaid({ params }: { params: Params }) {
               await markAsPaid(invoiceId);
             }}
           >
-            <SubmitButton text="Mark ad Paid!" />
+            <SubmitButton text="Mark as Paid!" />
           </form>
         </CardFooter>
       </Card>

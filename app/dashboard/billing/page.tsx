@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 
@@ -67,12 +68,14 @@ export default async function BillingPage() {
 
   const [usage, userData, pendingRequest] = await Promise.all([
     getUserUsage(userId),
-    prisma.user.findUniqueOrThrow({
+    prisma.user.findUnique({
       where: { id: userId },
       select: { plan: true, planUpdatedAt: true },
     }),
     getUserPendingUpgradeRequest(userId),
   ]);
+
+  if (!userData) notFound();
 
   const currentPlan = userData.plan as PlanType;
   const currentFeatures = PLAN_FEATURES[currentPlan];

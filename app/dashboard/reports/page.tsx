@@ -64,7 +64,7 @@ export default async function ReportsPage() {
   for (const inv of allInvoices) {
     if (inv.status === "PAID") {
       const key = format(new Date(inv.createdAt), "MMM yy");
-      if (key in monthlyMap) monthlyMap[key] += inv.total;
+      if (key in monthlyMap) monthlyMap[key] += Number(inv.total);
     }
   }
   const monthlyData = Object.entries(monthlyMap).map(([month, total]) => ({ month, total }));
@@ -73,10 +73,10 @@ export default async function ReportsPage() {
   // Status breakdown
   const paidTotal = allInvoices
     .filter((i) => i.status === "PAID")
-    .reduce((a, i) => a + i.total, 0);
+    .reduce((a, i) => a + Number(i.total), 0);
   const pendingTotal = allInvoices
     .filter((i) => i.status === "PENDING")
-    .reduce((a, i) => a + i.total, 0);
+    .reduce((a, i) => a + Number(i.total), 0);
 
   // Client revenue (top 10) — derived from the already-loaded allInvoices slice
   const clientMap: Record<string, { name: string; total: number; count: number }> = {};
@@ -85,7 +85,7 @@ export default async function ReportsPage() {
     if (!clientMap[inv.clientId]) {
       clientMap[inv.clientId] = { name: inv.client.name, total: 0, count: 0 };
     }
-    clientMap[inv.clientId].total += inv.total;
+    clientMap[inv.clientId].total += Number(inv.total);
     clientMap[inv.clientId].count++;
   }
   const clientRevenue = Object.entries(clientMap)

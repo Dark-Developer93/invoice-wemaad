@@ -79,7 +79,7 @@ export function RecurringInvoiceForm({
   const qty = form.watch("invoiceItemQuantity");
   const rate = form.watch("invoiceItemRate");
   useEffect(() => {
-    form.setValue("total", (qty || 0) * (rate || 0));
+    form.setValue("total", Math.round((qty || 0) * (rate || 0) * 100) / 100);
   }, [qty, rate, form]);
 
   return (
