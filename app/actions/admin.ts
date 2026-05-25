@@ -182,6 +182,7 @@ export async function adminApproveUpgradeRequest(requestId: string) {
 
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${request.userId}`);
+  revalidatePath("/dashboard/billing");
 }
 
 export async function adminRejectUpgradeRequest(requestId: string, adminNote?: string) {
@@ -218,6 +219,7 @@ export async function adminRejectUpgradeRequest(requestId: string, adminNote?: s
 
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${request.userId}`);
+  revalidatePath("/dashboard/billing");
 }
 
 export async function adminDeleteUser(userId: string) {

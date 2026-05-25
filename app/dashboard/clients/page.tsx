@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { DataTable } from "./data-table";
@@ -69,6 +70,8 @@ export default async function ClientsPage() {
     }),
   ]);
 
+  if (!user) notFound();
+
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -88,7 +91,7 @@ export default async function ClientsPage() {
           button={<ClientDialog />}
         />
       ) : (
-        <DataTable columns={columns} data={clients} userData={user ?? { firstName: null, lastName: null, address: null, email: "" }} />
+        <DataTable columns={columns} data={clients} userData={user} />
       )}
     </div>
   );

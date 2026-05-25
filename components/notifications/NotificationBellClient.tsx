@@ -34,10 +34,14 @@ export function NotificationBellClient({
   async function handleOpenChange(next: boolean) {
     setOpen(next);
     if (next && unreadCount > 0) {
-      await markAllNotificationsRead();
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date() }))
-      );
+      try {
+        await markAllNotificationsRead();
+        setNotifications((prev) =>
+          prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date() }))
+        );
+      } catch {
+        // badge stays accurate; next open will retry
+      }
     }
   }
 
