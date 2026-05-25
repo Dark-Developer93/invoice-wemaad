@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DashboardLinks } from "@/components/dashboard-links/DashboardLinks";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { signOut } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
@@ -88,6 +89,7 @@ export default async function DashboardLayout({
 
             <div className="flex items-center ml-auto gap-2">
               <ThemeToggle />
+              <NotificationBell userId={session.user?.id as string} />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button

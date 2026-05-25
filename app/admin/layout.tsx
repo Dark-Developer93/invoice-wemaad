@@ -5,6 +5,7 @@ import { Menu, Shield } from "lucide-react";
 
 import { signOut } from "@/lib/auth";
 import { requireAdmin } from "@/lib/session";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import Logo from "@/public/logo.png";
 import { DashboardLinks } from "@/components/dashboard-links/DashboardLinks";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   const sidebar = (
     <div className="flex flex-col h-full gap-2">
@@ -64,6 +65,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
             <div className="flex items-center ml-auto gap-2">
               <ThemeToggle />
+              <NotificationBell userId={session.user!.id!} />
               <form
                 action={async () => {
                   "use server";

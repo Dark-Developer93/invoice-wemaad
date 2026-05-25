@@ -170,6 +170,14 @@ export async function adminApproveUpgradeRequest(requestId: string) {
       where: { id: request.userId },
       data: { plan: request.requestedPlan, planUpdatedAt: new Date() },
     }),
+    prisma.notification.create({
+      data: {
+        userId: request.userId,
+        title: "Plan upgrade approved",
+        message: `Your request to upgrade to the ${request.requestedPlan} plan has been approved.`,
+        href: "/dashboard/billing",
+      },
+    }),
   ]);
 
   revalidatePath("/admin/users");
@@ -191,10 +199,22 @@ export async function adminRejectUpgradeRequest(requestId: string, adminNote?: s
     throw new Error("Request not found or already resolved.");
   }
 
-  await prisma.planUpgradeRequest.update({
-    where: { id: requestId },
-    data: { status: "REJECTED", adminNote: adminNote || null },
-  });
+  await prisma.$transaction([
+    prisma.planUpgradeRequest.update({
+      where: { id: requestId },
+      data: { status: "REJECTED", adminNote: adminNote || null },
+    }),
+    prisma.notification.create({
+      data: {
+        userId: request.userId,
+        title: "Plan upgrade not approved",
+        message: adminNote
+          ? `Your request to upgrade to the ${request.requestedPlan} plan was not approved. Note: ${adminNote}`
+          : `Your request to upgrade to the ${request.requestedPlan} plan was not approved.`,
+        href: "/dashboard/billing",
+      },
+    }),
+  ]);
 
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${request.userId}`);
