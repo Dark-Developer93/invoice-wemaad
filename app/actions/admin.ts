@@ -102,6 +102,24 @@ export async function adminToggleUserActive(userId: string, isActive: boolean) {
   }
 }
 
+export async function adminToggleUserAdmin(userId: string, makeAdmin: boolean) {
+  const session = await requireAdmin();
+
+  if (session.user!.id === userId && !makeAdmin) {
+    throw new Error("You cannot remove your own admin privileges.");
+  }
+
+  const result = await prisma.user.updateMany({
+    where: { id: userId },
+    data: { isAdmin: makeAdmin },
+  });
+
+  if (result.count === 0) throw new Error("User not found.");
+
+  revalidatePath(`/admin/users/${userId}`);
+  revalidatePath("/admin/users");
+}
+
 export async function adminGetPendingUpgradeRequests() {
   await requireAdmin();
 

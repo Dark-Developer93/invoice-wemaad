@@ -75,7 +75,7 @@ export default async function AdminUsersPage() {
       )}
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -124,7 +124,7 @@ export default async function AdminUsersPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground text-left">
                   <th className="pb-3 pr-4 font-medium">Name</th>

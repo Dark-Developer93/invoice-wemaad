@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { adminGetUser, adminGetUserUpgradeRequests } from "@/app/actions/admin";
+import { requireAdmin } from "@/lib/session";
 import { AdminUserActions } from "./AdminUserActions";
 
 export default async function AdminUserDetailPage({
@@ -19,7 +20,8 @@ export default async function AdminUserDetailPage({
   params: Promise<{ userId: string }>;
 }) {
   const { userId } = await params;
-  const [user, upgradeRequests] = await Promise.all([
+  const [session, user, upgradeRequests] = await Promise.all([
+    requireAdmin(),
     adminGetUser(userId),
     adminGetUserUpgradeRequests(userId),
   ]);
@@ -28,33 +30,35 @@ export default async function AdminUserDetailPage({
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
-      <div className="flex items-center gap-4">
-        <Button asChild variant="outline" size="sm">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button asChild variant="outline" size="sm" className="shrink-0">
           <Link href="/admin/users">
             <ArrowLeft className="size-4 mr-1" />
             Back
           </Link>
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">
             {user.firstName && user.lastName
               ? `${user.firstName} ${user.lastName}`
               : user.email}
           </h1>
-          <p className="text-muted-foreground text-sm">{user.email}</p>
+          <p className="text-muted-foreground text-sm truncate">{user.email}</p>
         </div>
-        {user.isAdmin && (
-          <Badge variant="outline" className="text-blue-600 border-blue-600">
-            Admin
-          </Badge>
-        )}
-        {user.isActive ? (
-          <Badge variant="outline" className="text-green-600 border-green-600">
-            Active
-          </Badge>
-        ) : (
-          <Badge variant="destructive">Inactive</Badge>
-        )}
+        <div className="flex gap-2 flex-wrap">
+          {user.isAdmin && (
+            <Badge variant="outline" className="text-blue-600 border-blue-600">
+              Admin
+            </Badge>
+          )}
+          {user.isActive ? (
+            <Badge variant="outline" className="text-green-600 border-green-600">
+              Active
+            </Badge>
+          ) : (
+            <Badge variant="destructive">Inactive</Badge>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -101,7 +105,7 @@ export default async function AdminUserDetailPage({
           <CardHeader>
             <CardTitle className="text-base">Usage Stats</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="flex flex-col items-center justify-center rounded-lg bg-muted/50 p-4">
               <FileText className="size-6 text-blue-600 mb-1" />
               <span className="text-2xl font-bold">{user._count.invoices}</span>
@@ -127,7 +131,11 @@ export default async function AdminUserDetailPage({
       </div>
 
       {/* Admin Actions */}
-      <AdminUserActions user={user} upgradeRequests={upgradeRequests} />
+      <AdminUserActions
+        user={user}
+        upgradeRequests={upgradeRequests}
+        currentUserId={session.user!.id!}
+      />
     </div>
   );
 }

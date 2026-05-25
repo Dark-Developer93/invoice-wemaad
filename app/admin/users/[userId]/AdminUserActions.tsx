@@ -33,6 +33,7 @@ import {
   adminUpdateUserPlan,
   adminToggleUserActive,
   adminDeleteUser,
+  adminToggleUserAdmin,
   adminApproveUpgradeRequest,
   adminRejectUpgradeRequest,
 } from "@/app/actions/admin";
@@ -42,6 +43,12 @@ type User = {
   plan: "FREE" | "STARTER" | "PRO" | "BUSINESS";
   isAdmin: boolean;
   isActive: boolean;
+};
+
+type Props = {
+  user: User;
+  upgradeRequests?: UpgradeRequest[];
+  currentUserId?: string;
 };
 
 type UpgradeRequest = {
@@ -63,14 +70,25 @@ const STATUS_COLORS: Record<string, string> = {
 export function AdminUserActions({
   user,
   upgradeRequests = [],
-}: {
-  user: User;
-  upgradeRequests?: UpgradeRequest[];
-}) {
+  currentUserId,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedPlan, setSelectedPlan] = useState<string>(user.plan);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  function handleToggleAdmin() {
+    startTransition(async () => {
+      try {
+        await adminToggleUserAdmin(user.id, !user.isAdmin);
+        toast.success(user.isAdmin ? "Admin privileges removed." : "User promoted to admin.");
+        router.refresh();
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Failed to update admin status.";
+        toast.error(message);
+      }
+    });
+  }
 
   function handlePlanUpdate() {
     startTransition(async () => {
@@ -317,6 +335,37 @@ export function AdminUserActions({
           </CardContent>
         </Card>
       </div>
+
+      {/* Admin Access */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Admin Access</CardTitle>
+          <CardDescription>
+            Grant or revoke admin privileges for this user.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Role:</span>
+            <Badge variant={user.isAdmin ? "default" : "secondary"}>
+              {user.isAdmin ? "Admin" : "User"}
+            </Badge>
+          </div>
+          {currentUserId === user.id ? (
+            <p className="text-sm text-muted-foreground">
+              You cannot modify your own admin privileges.
+            </p>
+          ) : (
+            <Button
+              variant={user.isAdmin ? "destructive" : "default"}
+              onClick={handleToggleAdmin}
+              disabled={isPending}
+            >
+              {user.isAdmin ? "Remove Admin Privileges" : "Promote to Admin"}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
