@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { DashboardLinks } from "@/components/dashboard-links/DashboardLinks";
 
-export function MobileNav({
+export function NavSheet({
   isAdmin,
   className,
 }: {

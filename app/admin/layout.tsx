@@ -6,7 +6,7 @@ import { Shield } from "lucide-react";
 import { signOut } from "@/lib/auth";
 import { requireAdmin } from "@/lib/session";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { MobileNav } from "@/components/mobile-nav/MobileNav";
+import { NavSheet } from "@/components/nav-sheet/NavSheet";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import Logo from "@/public/logo.png";
@@ -39,7 +39,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
         <div className="flex flex-col min-h-screen">
           <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 shrink-0">
-            <MobileNav isAdmin={true} className="lg:hidden shrink-0" />
+            <NavSheet isAdmin={true} className="lg:hidden shrink-0" />
 
             <div className="hidden sm:flex items-center gap-2">
               <Shield className="size-5 text-blue-600" />

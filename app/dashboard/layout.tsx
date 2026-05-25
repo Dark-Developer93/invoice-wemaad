@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DashboardLinks } from "@/components/dashboard-links/DashboardLinks";
-import { MobileNav } from "@/components/mobile-nav/MobileNav";
+import { NavSheet } from "@/components/nav-sheet/NavSheet";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { signOut } from "@/lib/auth";
 import prisma from "@/lib/db";
@@ -73,7 +73,7 @@ export default async function DashboardLayout({
 
         <div className="flex flex-col">
           <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-            <MobileNav isAdmin={userData?.isAdmin} className="md:hidden" />
+            <NavSheet isAdmin={userData?.isAdmin} className="md:hidden" />
 
             <div className="flex items-center ml-auto gap-2">
               <ThemeToggle />
