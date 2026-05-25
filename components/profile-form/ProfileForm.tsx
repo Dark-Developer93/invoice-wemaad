@@ -17,6 +17,7 @@ import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SubmitButton from "@/components/submit-button/SubmitButton";
 import { updateProfile } from "@/app/actions/profile";
+import { toFormData } from "@/lib/toFormData";
 import { onboardingSchema } from "@/lib/zodSchemas";
 import { PersonalTab } from "./PersonalTab";
 import { CompanyTab } from "./CompanyTab";
@@ -87,14 +88,7 @@ export function ProfileForm({
   async function onSubmit(data: ProfileFormValues) {
     try {
       setIsLoading(true);
-      const formData = new FormData();
-
-      Object.entries(data).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          formData.append(key, value.toString());
-        }
-      });
-
+      const formData = toFormData(data as Record<string, unknown>);
       const result = await updateProfile(null, formData);
 
       if (result.status === "success") {

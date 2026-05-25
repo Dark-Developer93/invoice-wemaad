@@ -10,6 +10,7 @@ import { Client } from "@/app/dashboard/clients/columns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { clientFormSchema } from "@/lib/zodSchemas";
 import { createClient, editClient } from "@/app/actions/clients";
+import { toFormData } from "@/lib/toFormData";
 import { useRouter } from "next/navigation";
 import SubmitButton from "@/components/submit-button/SubmitButton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -110,15 +111,7 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
   async function onSubmit(data: ClientFormValues) {
     try {
       setIsLoading(true);
-      const formData = new FormData();
-
-      Object.entries(data).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          formData.append(key, JSON.stringify(value));
-        } else if (value !== null && value !== undefined) {
-          formData.append(key, value.toString());
-        }
-      });
+      const formData = toFormData(data as Record<string, unknown>);
 
       const result = client
         ? await editClient(client.id, null, formData)
