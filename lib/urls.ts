@@ -5,10 +5,17 @@ function hmacToken(invoiceId: string): string {
   return crypto.createHmac("sha256", env.AUTH_SECRET).update(invoiceId).digest("hex");
 }
 
+// VERCEL_URL is auto-set by Vercel on every deployment (production + PR previews).
+// It has no scheme, so we prepend https://. Fall back to NEXT_PUBLIC_APP_URL for
+// local dev and non-Vercel hosts.
+function getBaseUrl(): string {
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+}
+
 export function getInvoiceUrl(invoiceId: string): string {
-  const base = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
   const token = hmacToken(invoiceId);
-  return `${base}/api/invoice/${invoiceId}?token=${token}`;
+  return `${getBaseUrl()}/api/invoice/${invoiceId}?token=${token}`;
 }
 
 export function verifyInvoiceToken(invoiceId: string, token: string): boolean {
