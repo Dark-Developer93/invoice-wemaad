@@ -25,26 +25,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { CurrencySelect } from "@/components/ui/currency-select";
 import { recurringInvoiceSchema } from "@/lib/zodSchemas";
 import { createRecurringInvoice } from "@/app/actions/recurringInvoices";
+import { useUser } from "@/components/providers/UserProvider";
 
 type FormValues = z.infer<typeof recurringInvoiceSchema>;
 
 interface RecurringInvoiceFormProps {
   clients: Client[];
   onSuccess?: () => void;
-  defaultFromName?: string;
-  defaultFromEmail?: string;
-  defaultFromAddress?: string;
 }
 
 export function RecurringInvoiceForm({
   clients,
   onSuccess,
-  defaultFromName = "",
-  defaultFromEmail = "",
-  defaultFromAddress = "",
 }: RecurringInvoiceFormProps) {
+  const { firstName, lastName, email, companyName, companyEmail, companyAddress, address } = useUser();
+  const defaultFromName = companyName || `${firstName} ${lastName}`.trim();
+  const defaultFromEmail = companyEmail || email;
+  const defaultFromAddress = companyAddress || address;
+
   const [state, action, isPending] = useActionState(createRecurringInvoice, undefined);
 
   const form = useForm<FormValues>({
@@ -228,18 +229,7 @@ export function RecurringInvoiceForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Currency</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="EGP">EGP</SelectItem>
-                  </SelectContent>
-                </Select>
+                <CurrencySelect value={field.value} onValueChange={field.onChange} />
                 <input type="hidden" name="currency" value={field.value} />
                 <FormMessage />
               </FormItem>

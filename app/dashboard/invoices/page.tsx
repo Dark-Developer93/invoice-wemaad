@@ -30,52 +30,34 @@ export default async function InvoicesRoute() {
     redirect("/login");
   }
 
-  const [user, clients] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        firstName: true,
-        lastName: true,
-        address: true,
-        email: true,
-        companyName: true,
-        companyEmail: true,
-        companyAddress: true,
-      },
-    }),
-    prisma.client.findMany({
-      where: { userId: session.user.id },
-      include: {
-        addresses: {
-          select: {
-            id: true,
-            type: true,
-            street: true,
-            city: true,
-            state: true,
-            country: true,
-            zipCode: true,
-            isDefault: true,
-          },
-        },
-        contactPersons: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-            position: true,
-            isPrimary: true,
-          },
+  const clients = await prisma.client.findMany({
+    where: { userId: session.user.id },
+    include: {
+      addresses: {
+        select: {
+          id: true,
+          type: true,
+          street: true,
+          city: true,
+          state: true,
+          country: true,
+          zipCode: true,
+          isDefault: true,
         },
       },
-    }),
-  ]);
-
-  if (!user) {
-    redirect("/login");
-  }
+      contactPersons: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          position: true,
+          isPrimary: true,
+        },
+      },
+    },
+  });
 
   return (
     <Card>
@@ -91,13 +73,6 @@ export default async function InvoicesRoute() {
                 <PlusIcon className="mr-2 h-4 w-4" /> Create Invoice
               </Button>
             }
-            firstName={user.firstName ?? ""}
-            lastName={user.lastName ?? ""}
-            address={user.address ?? ""}
-            email={user.email ?? ""}
-            companyName={user.companyName ?? ""}
-            companyEmail={user.companyEmail ?? ""}
-            companyAddress={user.companyAddress ?? ""}
             clients={clients}
           />
         </div>
@@ -112,13 +87,6 @@ export default async function InvoicesRoute() {
                     <PlusIcon className="mr-2 h-4 w-4" /> Create Invoice
                   </Button>
                 }
-                firstName={user.firstName ?? ""}
-                lastName={user.lastName ?? ""}
-                address={user.address ?? ""}
-                email={user.email ?? ""}
-                companyName={user.companyName ?? ""}
-                companyEmail={user.companyEmail ?? ""}
-                companyAddress={user.companyAddress ?? ""}
                 clients={clients}
               />
             }

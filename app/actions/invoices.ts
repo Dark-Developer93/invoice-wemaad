@@ -9,8 +9,54 @@ import { invoiceSchema } from "@/lib/zodSchemas";
 import prisma from "@/lib/db";
 import { sendEmail } from "@/lib/email/index";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatDate } from "@/lib/formatDate";
 import { Currency } from "@/types";
 import { getUserUsage, logEmailSent } from "@/lib/usage";
+import { getInvoiceUrl } from "@/lib/urls";
+
+async function sendInvoiceEmail(
+  userId: string,
+  clientName: string,
+  contactEmail: string,
+  templateName: "newInvoice" | "updatedInvoice",
+  invoiceNumber: number,
+  invoiceDate: string,
+  total: number,
+  currency: string,
+  invoiceId: string
+) {
+  try {
+    const emailUsage = await getUserUsage(userId);
+    if (emailUsage.emailLimit !== null && emailUsage.emailsThisMonth >= emailUsage.emailLimit) {
+      return;
+    }
+    sendEmail({
+      to: contactEmail,
+      templateName,
+      variables: {
+        clientName,
+        invoiceNumber: invoiceNumber.toString(),
+        invoiceDueDate: formatDate.long(invoiceDate),
+        invoiceAmount: formatCurrency({ amount: total, currency: currency as Currency }),
+        invoiceLink: getInvoiceUrl(invoiceId),
+      },
+    })
+      .then(() => logEmailSent(userId, templateName, invoiceId))
+      .catch((error) => {
+        console.error(`Failed to send ${templateName} email:`, error);
+        prisma.notification.create({
+          data: {
+            userId,
+            title: "Email delivery failed",
+            message: `Invoice email to ${clientName} could not be sent. Please resend from the invoice page.`,
+            href: "/dashboard/invoices",
+          },
+        }).catch(() => {});
+      });
+  } catch (error) {
+    console.error("Failed to initiate invoice email:", error);
+  }
+}
 
 export async function createInvoice(
   _prevState: SubmissionResult<string[]> | null | undefined,
@@ -72,29 +118,17 @@ export async function createInvoice(
     const shouldSendEmail = formData.get("sendEmail") !== "false";
 
     if (shouldSendEmail && client && client.contactPersons[0]) {
-      const emailUsage = await getUserUsage(session.user.id);
-      if (emailUsage.emailLimit === null || emailUsage.emailsThisMonth < emailUsage.emailLimit) {
-        sendEmail({
-          to: client.contactPersons[0].email,
-          templateName: "newInvoice",
-          variables: {
-            clientName: client.name,
-            invoiceNumber: submission.value.invoiceNumber.toString(),
-            invoiceDueDate: new Intl.DateTimeFormat("en-US", {
-              dateStyle: "long",
-            }).format(new Date(submission.value.date)),
-            invoiceAmount: formatCurrency({
-              amount: submission.value.total,
-              currency: submission.value.currency as Currency,
-            }),
-            invoiceLink: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/invoice/${data.id}`,
-          },
-        })
-          .then(() => logEmailSent(session.user!.id!, "newInvoice", data.id))
-          .catch((error) => {
-            console.error("Failed to send invoice email:", error);
-          });
-      }
+      await sendInvoiceEmail(
+        session.user.id,
+        client.name,
+        client.contactPersons[0].email,
+        "newInvoice",
+        submission.value.invoiceNumber,
+        submission.value.date,
+        submission.value.total,
+        submission.value.currency,
+        data.id
+      );
     }
 
     return { status: "success", error: {} };
@@ -160,29 +194,17 @@ export async function editInvoice(
     const shouldSendEmail = formData.get("sendEmail") !== "false";
 
     if (shouldSendEmail && client && client.contactPersons[0]) {
-      const emailUsage = await getUserUsage(session.user.id);
-      if (emailUsage.emailLimit === null || emailUsage.emailsThisMonth < emailUsage.emailLimit) {
-        sendEmail({
-          to: client.contactPersons[0].email,
-          templateName: "updatedInvoice",
-          variables: {
-            clientName: client.name,
-            invoiceNumber: submission.value.invoiceNumber.toString(),
-            invoiceDueDate: new Intl.DateTimeFormat("en-US", {
-              dateStyle: "long",
-            }).format(new Date(submission.value.date)),
-            invoiceAmount: formatCurrency({
-              amount: submission.value.total,
-              currency: submission.value.currency as Currency,
-            }),
-            invoiceLink: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/invoice/${data.id}`,
-          },
-        })
-          .then(() => logEmailSent(session.user!.id!, "updatedInvoice", data.id))
-          .catch((error) => {
-            console.error("Failed to send invoice update email:", error);
-          });
-      }
+      await sendInvoiceEmail(
+        session.user.id,
+        client.name,
+        client.contactPersons[0].email,
+        "updatedInvoice",
+        submission.value.invoiceNumber,
+        submission.value.date,
+        submission.value.total,
+        submission.value.currency,
+        data.id
+      );
     }
 
     return { status: "success", error: {} };
@@ -202,12 +224,17 @@ export async function deleteInvoice(invoiceId: string) {
     return { error: "User not found" };
   }
 
-  await prisma.invoice.delete({
-    where: {
-      userId: session.user.id,
-      id: invoiceId,
-    },
-  });
+  try {
+    await prisma.invoice.delete({
+      where: {
+        userId: session.user.id,
+        id: invoiceId,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to delete invoice:", error);
+    return { error: "Failed to delete invoice" };
+  }
 
   return redirect("/dashboard/invoices");
 }
@@ -219,15 +246,20 @@ export async function markAsPaid(invoiceId: string) {
     return { error: "User not found" };
   }
 
-  await prisma.invoice.update({
-    where: {
-      userId: session.user.id,
-      id: invoiceId,
-    },
-    data: {
-      status: "PAID",
-    },
-  });
+  try {
+    await prisma.invoice.update({
+      where: {
+        userId: session.user.id,
+        id: invoiceId,
+      },
+      data: {
+        status: "PAID",
+      },
+    });
+  } catch (error) {
+    console.error("Failed to mark invoice as paid:", error);
+    return { error: "Failed to update invoice status" };
+  }
 
   return redirect("/dashboard/invoices");
 }

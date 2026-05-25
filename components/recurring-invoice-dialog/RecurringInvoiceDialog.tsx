@@ -15,17 +15,11 @@ import { RecurringInvoiceForm } from "../recurring-invoice-form/RecurringInvoice
 interface RecurringInvoiceDialogProps {
   trigger?: ReactNode;
   clients: Client[];
-  defaultFromName?: string;
-  defaultFromEmail?: string;
-  defaultFromAddress?: string;
 }
 
 export function RecurringInvoiceDialog({
   trigger,
   clients,
-  defaultFromName,
-  defaultFromEmail,
-  defaultFromAddress,
 }: RecurringInvoiceDialogProps) {
   const [open, setOpen] = useState(false);
 
@@ -38,15 +32,13 @@ export function RecurringInvoiceDialog({
         <DialogHeader>
           <DialogTitle>New Recurring Invoice</DialogTitle>
           <DialogDescription>
-            Set up an invoice template that automatically generates on a regular schedule.
+            Set up an invoice template that automatically generates on a regular
+            schedule.
           </DialogDescription>
         </DialogHeader>
         <RecurringInvoiceForm
           clients={clients}
           onSuccess={() => setOpen(false)}
-          defaultFromName={defaultFromName}
-          defaultFromEmail={defaultFromEmail}
-          defaultFromAddress={defaultFromAddress}
         />
       </DialogContent>
     </Dialog>

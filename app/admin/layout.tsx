@@ -30,7 +30,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               </Link>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <nav className="grid items-start px-2 text-sm font-medium lg:px-4 mt-2">
+              <nav className="grid items-start px-2 font-medium lg:px-4 mt-2">
                 <DashboardLinks isAdmin={true} />
               </nav>
             </div>

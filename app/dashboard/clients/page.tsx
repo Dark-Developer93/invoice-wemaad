@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { DataTable } from "./data-table";
@@ -15,62 +14,54 @@ export const metadata: Metadata = {
 export default async function ClientsPage() {
   const session = await requireUser();
 
-  const [clients, user] = await Promise.all([
-    prisma.client.findMany({
-      where: { userId: session.user!.id! },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        category: true,
-        createdAt: true,
-        updatedAt: true,
-        userId: true,
-        taxId: true,
-        website: true,
-        notes: true,
-        tags: true,
-        addresses: {
-          where: { isDefault: true },
-          select: {
-            id: true,
-            type: true,
-            street: true,
-            city: true,
-            state: true,
-            country: true,
-            zipCode: true,
-            isDefault: true,
-          },
-          take: 1,
+  const clients = await prisma.client.findMany({
+    where: { userId: session.user!.id! },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      category: true,
+      createdAt: true,
+      updatedAt: true,
+      userId: true,
+      taxId: true,
+      website: true,
+      notes: true,
+      tags: true,
+      addresses: {
+        where: { isDefault: true },
+        select: {
+          id: true,
+          type: true,
+          street: true,
+          city: true,
+          state: true,
+          country: true,
+          zipCode: true,
+          isDefault: true,
         },
-        contactPersons: {
-          where: { isPrimary: true },
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-            position: true,
-            isPrimary: true,
-          },
-          take: 1,
-        },
-        customFields: {
-          select: { id: true, key: true, value: true },
-        },
+        take: 1,
       },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.user.findUnique({
-      where: { id: session.user!.id! },
-      select: { firstName: true, lastName: true, address: true, email: true },
-    }),
-  ]);
-
-  if (!user) notFound();
+      contactPersons: {
+        where: { isPrimary: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          position: true,
+          isPrimary: true,
+        },
+        take: 1,
+      },
+      customFields: {
+        select: { id: true, key: true, value: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
@@ -91,7 +82,7 @@ export default async function ClientsPage() {
           button={<ClientDialog />}
         />
       ) : (
-        <DataTable columns={columns} data={clients} userData={user} />
+        <DataTable columns={columns} data={clients} />
       )}
     </div>
   );

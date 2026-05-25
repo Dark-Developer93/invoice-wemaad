@@ -29,16 +29,24 @@ export async function onboardUser(
     return submission.reply();
   }
 
-  await prisma.user.update({
-    where: {
-      id: session.user.id,
-    },
-    data: {
-      firstName: submission.value.firstName,
-      lastName: submission.value.lastName,
-      address: submission.value.address,
-    },
-  });
+  try {
+    await prisma.user.update({
+      where: {
+        id: session.user.id,
+      },
+      data: {
+        firstName: submission.value.firstName,
+        lastName: submission.value.lastName,
+        address: submission.value.address,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to onboard user:", error);
+    return {
+      status: "error" as const,
+      error: { "": ["Failed to save profile. Please try again."] },
+    };
+  }
 
   return redirect("/dashboard");
 }

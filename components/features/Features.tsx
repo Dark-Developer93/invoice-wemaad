@@ -1,35 +1,69 @@
-import { Mail, Clock, PieChart, Shield, Users, Zap } from "lucide-react";
+import {
+  Mail,
+  Clock,
+  PieChart,
+  Shield,
+  Users,
+  Zap,
+  RefreshCw,
+  BarChart3,
+  FileDown,
+} from "lucide-react";
 
 const features = [
   {
+    icon: Zap,
+    title: "Quick Creation",
+    description:
+      "Create and send professional invoices in minutes with an intuitive editor.",
+  },
+  {
+    icon: RefreshCw,
+    title: "Recurring Invoices",
+    description:
+      "Automate repeat billing by scheduling invoice templates that generate and send on your defined cadence.",
+  },
+  {
     icon: Mail,
     title: "Automated Email Reminders",
-    description: "Never chase payments again with automated reminder emails",
-  },
-  {
-    icon: Clock,
-    title: "Real-time Updates",
-    description: "Track payment status and invoice views in real-time",
-  },
-  {
-    icon: PieChart,
-    title: "Invoice Analytics",
-    description: "Get insights into your payment patterns and cash flow",
-  },
-  {
-    icon: Shield,
-    title: "Secure Sharing",
-    description: "Share invoices securely via email links",
+    description:
+      "Never chase payments again — automated reminder emails go out on your schedule.",
   },
   {
     icon: Users,
     title: "Client Management",
-    description: "Manage your client information and invoice history",
+    description:
+      "Organise clients with full contact details, multiple addresses, and complete invoice history.",
   },
   {
-    icon: Zap,
-    title: "Quick Creation",
-    description: "Create and send professional invoices in minutes",
+    icon: BarChart3,
+    title: "Financial Reports",
+    description:
+      "Track revenue trends, outstanding balances, and payment patterns with exportable reports.",
+  },
+  {
+    icon: PieChart,
+    title: "Invoice Analytics",
+    description:
+      "Get insights into your cash flow and invoice performance with clear visual charts.",
+  },
+  {
+    icon: FileDown,
+    title: "PDF Generation",
+    description:
+      "Download polished PDF invoices instantly — perfect for sharing or your own records.",
+  },
+  {
+    icon: Shield,
+    title: "Secure Sharing",
+    description:
+      "Client-facing invoice links are signed so only the intended recipient can access them.",
+  },
+  {
+    icon: Clock,
+    title: "Real-time Updates",
+    description:
+      "Track payment status and invoice activity in real-time with instant notifications.",
   },
 ];
 
@@ -41,7 +75,8 @@ const Features = () => {
           Everything you need to manage invoices
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Powerful features to help you create and manage invoices efficiently
+          Powerful features to help you create, automate, and track invoices
+          efficiently
         </p>
       </div>
 

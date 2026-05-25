@@ -21,6 +21,7 @@ import { signOut } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { UserProvider } from "@/components/providers/UserProvider";
 
 async function getUser(userId: string) {
   const data = await prisma.user.findUnique({
@@ -31,6 +32,10 @@ async function getUser(userId: string) {
       firstName: true,
       lastName: true,
       address: true,
+      email: true,
+      companyName: true,
+      companyEmail: true,
+      companyAddress: true,
       isAdmin: true,
     },
   });
@@ -111,7 +116,19 @@ export default async function DashboardLayout({
             </div>
           </header>
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-            {children}
+            <UserProvider
+              user={{
+                firstName: userData?.firstName ?? "",
+                lastName: userData?.lastName ?? "",
+                address: userData?.address ?? "",
+                email: userData?.email ?? "",
+                companyName: userData?.companyName ?? "",
+                companyEmail: userData?.companyEmail ?? "",
+                companyAddress: userData?.companyAddress ?? "",
+              }}
+            >
+              {children}
+            </UserProvider>
           </main>
         </div>
       </div>

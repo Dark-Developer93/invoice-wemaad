@@ -57,25 +57,15 @@ export type Client = {
 };
 
 interface TableMeta {
-  userData: {
-    firstName: string | null;
-    lastName: string | null;
-    address: string | null;
-    email: string;
-    companyName?: string;
-    companyEmail?: string;
-    companyAddress?: string;
-  };
   allClients: Client[];
 }
 
 interface ActionCellProps {
   client: Client;
-  userData: TableMeta["userData"];
   allClients: TableMeta["allClients"];
 }
 
-function ActionCell({ client, userData, allClients }: ActionCellProps) {
+function ActionCell({ client, allClients }: ActionCellProps) {
   const router = useRouter();
   const clientWithRequiredFields = {
     ...client,
@@ -116,19 +106,12 @@ function ActionCell({ client, userData, allClients }: ActionCellProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
           <InvoiceDialog
-            firstName={userData.firstName || ""}
-            lastName={userData.lastName || ""}
-            address={userData.address || ""}
-            email={userData.email}
-            companyName={userData.companyName || ""}
-            companyEmail={userData.companyEmail || ""}
-            companyAddress={userData.companyAddress || ""}
-            clients={allClients.map((client) => ({
-              ...client,
-              addresses: client.addresses
+            clients={allClients.map((c) => ({
+              ...c,
+              addresses: c.addresses
                 .filter((addr) => addr.id)
                 .map((addr) => ({ ...addr, id: addr.id! })),
-              contactPersons: client.contactPersons
+              contactPersons: c.contactPersons
                 .filter((contact) => contact.id)
                 .map((contact) => ({ ...contact, id: contact.id! })),
             }))}
@@ -196,9 +179,7 @@ export const columns: ColumnDef<Client>[] = [
     accessorKey: "contactPersons",
     header: "Primary Contact",
     cell: ({ row }) => {
-      const contacts = row.getValue(
-        "contactPersons"
-      ) as Client["contactPersons"];
+      const contacts = row.getValue("contactPersons") as Client["contactPersons"];
       const primaryContact = contacts[0];
       if (!primaryContact) return null;
       return (
@@ -220,7 +201,6 @@ export const columns: ColumnDef<Client>[] = [
       return (
         <ActionCell
           client={client}
-          userData={meta.userData}
           allClients={meta.allClients}
         />
       );
