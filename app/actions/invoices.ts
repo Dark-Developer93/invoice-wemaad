@@ -11,6 +11,7 @@ import { sendEmail } from "@/lib/email/index";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 import { getUserUsage, logEmailSent } from "@/lib/usage";
+import { getInvoiceUrl } from "@/lib/urls";
 
 export async function createInvoice(
   _prevState: SubmissionResult<string[]> | null | undefined,
@@ -87,7 +88,7 @@ export async function createInvoice(
               amount: submission.value.total,
               currency: submission.value.currency as Currency,
             }),
-            invoiceLink: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/invoice/${data.id}`,
+            invoiceLink: getInvoiceUrl(data.id),
           },
         })
           .then(() => logEmailSent(session.user!.id!, "newInvoice", data.id))
@@ -175,7 +176,7 @@ export async function editInvoice(
               amount: submission.value.total,
               currency: submission.value.currency as Currency,
             }),
-            invoiceLink: `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"}/api/invoice/${data.id}`,
+            invoiceLink: getInvoiceUrl(data.id),
           },
         })
           .then(() => logEmailSent(session.user!.id!, "updatedInvoice", data.id))

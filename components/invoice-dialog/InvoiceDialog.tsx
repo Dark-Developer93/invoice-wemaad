@@ -13,17 +13,8 @@ import {
 import { InvoiceForm } from "../invoice-form/InvoiceForm";
 
 interface InvoiceDialogProps {
-  // Common props
   trigger?: ReactNode;
   onSuccess?: () => void;
-  // Create mode props
-  firstName?: string;
-  lastName?: string;
-  address?: string;
-  email?: string;
-  companyName?: string;
-  companyEmail?: string;
-  companyAddress?: string;
   defaultClientId?: string;
   clients?: (Client & {
     addresses: Array<{
@@ -46,7 +37,6 @@ interface InvoiceDialogProps {
       isPrimary: boolean;
     }>;
   })[];
-  // Edit mode props
   invoice?: Prisma.InvoiceGetPayload<{
     include: {
       client: {
@@ -68,13 +58,6 @@ interface InvoiceDialogProps {
 export function InvoiceDialog({
   trigger,
   onSuccess,
-  firstName = "",
-  lastName = "",
-  address = "",
-  email = "",
-  companyName,
-  companyEmail,
-  companyAddress,
   clients = [],
   defaultClientId,
   invoice,
@@ -106,13 +89,6 @@ export function InvoiceDialog({
         </DialogHeader>
         <InvoiceForm
           mode={mode}
-          firstName={firstName}
-          lastName={lastName}
-          address={address}
-          email={email}
-          companyName={companyName}
-          companyEmail={companyEmail}
-          companyAddress={companyAddress}
           clients={clients}
           defaultClientId={defaultClientId}
           data={invoice}

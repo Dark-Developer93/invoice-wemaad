@@ -43,19 +43,13 @@ import { invoiceSchema } from "@/lib/zodSchemas";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/components/providers/UserProvider";
 import * as z from "zod";
 
 type InvoiceFormValues = z.infer<typeof invoiceSchema>;
 
 interface InvoiceFormProps {
   mode: "create" | "edit";
-  firstName?: string;
-  lastName?: string;
-  address?: string;
-  email?: string;
-  companyName?: string;
-  companyEmail?: string;
-  companyAddress?: string;
   defaultClientId?: string;
   clients?: (Client & {
     addresses: Array<{
@@ -100,19 +94,21 @@ interface InvoiceFormProps {
 
 export function InvoiceForm({
   mode,
-  firstName = "",
-  lastName = "",
-  address = "",
-  email = "",
-  companyName = "",
-  companyEmail = "",
-  companyAddress = "",
   clients = [],
   defaultClientId,
   data,
   onSuccess,
   onClose,
 }: InvoiceFormProps) {
+  const {
+    firstName,
+    lastName,
+    address,
+    email,
+    companyName,
+    companyEmail,
+    companyAddress,
+  } = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [sendEmail, setSendEmail] = useState(true);

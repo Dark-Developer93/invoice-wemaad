@@ -27,24 +27,24 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { recurringInvoiceSchema } from "@/lib/zodSchemas";
 import { createRecurringInvoice } from "@/app/actions/recurringInvoices";
+import { useUser } from "@/components/providers/UserProvider";
 
 type FormValues = z.infer<typeof recurringInvoiceSchema>;
 
 interface RecurringInvoiceFormProps {
   clients: Client[];
   onSuccess?: () => void;
-  defaultFromName?: string;
-  defaultFromEmail?: string;
-  defaultFromAddress?: string;
 }
 
 export function RecurringInvoiceForm({
   clients,
   onSuccess,
-  defaultFromName = "",
-  defaultFromEmail = "",
-  defaultFromAddress = "",
 }: RecurringInvoiceFormProps) {
+  const { firstName, lastName, email, companyName, companyEmail, companyAddress, address } = useUser();
+  const defaultFromName = companyName || `${firstName} ${lastName}`.trim();
+  const defaultFromEmail = companyEmail || email;
+  const defaultFromAddress = companyAddress || address;
+
   const [state, action, isPending] = useActionState(createRecurringInvoice, undefined);
 
   const form = useForm<FormValues>({

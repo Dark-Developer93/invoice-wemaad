@@ -45,19 +45,7 @@ export default async function RecurringInvoicesPage() {
     );
   }
 
-  const [user, clients, recurringInvoices] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        firstName: true,
-        lastName: true,
-        address: true,
-        email: true,
-        companyName: true,
-        companyEmail: true,
-        companyAddress: true,
-      },
-    }),
+  const [clients, recurringInvoices] = await Promise.all([
     prisma.client.findMany({ where: { userId: session.user.id } }),
     prisma.recurringInvoice.findMany({
       where: { userId: session.user.id },
@@ -65,13 +53,6 @@ export default async function RecurringInvoicesPage() {
       orderBy: { createdAt: "desc" },
     }),
   ]);
-
-  if (!user) redirect("/login");
-
-  const fromName =
-    user.companyName || `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
-  const fromEmail = user.companyEmail || user.email || "";
-  const fromAddress = user.companyAddress || user.address || "";
 
   return (
     <Card>
@@ -87,9 +68,6 @@ export default async function RecurringInvoicesPage() {
           </div>
           <RecurringInvoiceDialog
             clients={clients}
-            defaultFromName={fromName}
-            defaultFromEmail={fromEmail}
-            defaultFromAddress={fromAddress}
             trigger={
               <Button>
                 <PlusIcon className="mr-2 size-4" /> New Recurring Invoice

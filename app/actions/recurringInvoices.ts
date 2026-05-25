@@ -12,6 +12,7 @@ import { sendEmail } from "@/lib/email/index";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 import prisma from "@/lib/db";
+import { getInvoiceUrl } from "@/lib/urls";
 
 function computeNextRunAt(
   from: Date,
@@ -194,10 +195,7 @@ export async function processRecurringInvoices() {
               amount: recurring.total,
               currency: recurring.currency as Currency,
             }),
-            invoiceLink:
-              process.env.NODE_ENV !== "production"
-                ? `http://localhost:3000/api/invoice/${invoice.id}`
-                : `https://invoice-wemaad.vercel.app/api/invoice/${invoice.id}`,
+            invoiceLink: getInvoiceUrl(invoice.id),
           },
         })
           .then(() => {
