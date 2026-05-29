@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Client } from "@prisma/client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import debounce from "lodash/debounce";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -93,15 +93,13 @@ export function RecurringInvoiceForm({
 
   const currency = form.watch("currency") as Currency;
 
-  const updateTotal = useMemo(
-    () =>
-      debounce((quantity: number, rate: number) => {
-        const calculatedTotal = Math.round(quantity * rate * 100) / 100;
-        setLocalTotal(calculatedTotal);
-        form.setValue("total", calculatedTotal, { shouldValidate: true });
-      }, 300),
-    [form]
-  );
+  const updateTotal = useRef(
+    debounce((quantity: number, rate: number) => {
+      const calculatedTotal = Math.round(quantity * rate * 100) / 100;
+      setLocalTotal(calculatedTotal);
+      form.setValue("total", calculatedTotal, { shouldValidate: true });
+    }, 300)
+  ).current;
 
   useEffect(() => {
     const subscription = form.watch((_, { name }) => {
@@ -115,7 +113,7 @@ export function RecurringInvoiceForm({
       subscription.unsubscribe();
       updateTotal.cancel();
     };
-  }, [form, updateTotal]);
+  }, [form]);
 
   useEffect(() => {
     const quantity = form.getValues("invoiceItemQuantity") || 0;
