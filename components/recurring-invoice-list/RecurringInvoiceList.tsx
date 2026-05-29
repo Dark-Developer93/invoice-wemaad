@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { RecurringInvoice, Client } from "@prisma/client";
 import { format } from "date-fns";
 import { MoreHorizontal, Pause, Play, Trash2 } from "lucide-react";
@@ -39,6 +39,10 @@ const INTERVAL_LABELS: Record<string, string> = {
 export function RecurringInvoiceList({ items }: RecurringInvoiceListProps) {
   const [list, setList] = useState(items);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setList(items);
+  }, [items]);
 
   function handleToggle(id: string) {
     startTransition(async () => {
