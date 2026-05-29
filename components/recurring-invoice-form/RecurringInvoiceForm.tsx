@@ -120,7 +120,9 @@ export function RecurringInvoiceForm({
   useEffect(() => {
     const quantity = form.getValues("invoiceItemQuantity") || 0;
     const rate = form.getValues("invoiceItemRate") || 0;
-    updateTotal(quantity, rate);
+    const calculatedTotal = Math.round(quantity * rate * 100) / 100;
+    setLocalTotal(calculatedTotal);
+    form.setValue("total", calculatedTotal, { shouldValidate: false });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

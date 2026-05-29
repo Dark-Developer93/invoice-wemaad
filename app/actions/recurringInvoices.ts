@@ -58,12 +58,13 @@ export async function createRecurringInvoice(
         ...rest,
       },
     });
-
-    revalidatePath("/dashboard/recurring-invoices");
-    return { status: "success", error: {} };
-  } catch {
+  } catch (error) {
+    console.error("Failed to create recurring invoice:", error);
     return { status: "error", error: { "": ["Failed to create recurring invoice"] } };
   }
+
+  revalidatePath("/dashboard/recurring-invoices");
+  return { status: "success", error: {} };
 }
 
 export async function toggleRecurringInvoice(id: string) {
