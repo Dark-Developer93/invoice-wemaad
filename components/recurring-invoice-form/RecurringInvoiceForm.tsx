@@ -44,6 +44,7 @@ import { recurringInvoiceSchema } from "@/lib/zodSchemas";
 import { createRecurringInvoice } from "@/app/actions/recurringInvoices";
 import { useUser } from "@/components/providers/UserProvider";
 import { toFormData } from "@/lib/toFormData";
+import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 
@@ -62,6 +63,7 @@ export function RecurringInvoiceForm({
 }: RecurringInvoiceFormProps) {
   const { firstName, lastName, email, companyName, companyEmail, companyAddress, address } =
     useUser();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [localTotal, setLocalTotal] = useState(0);
@@ -79,9 +81,10 @@ export function RecurringInvoiceForm({
       dueDate: 30,
       invoiceItemDescription: "",
       invoiceItemQuantity: 1,
-      invoiceItemRate: 0,
+      invoiceItemRate: 1,
       total: 0,
       startDate: new Date().toISOString().split("T")[0],
+      note: "",
     },
   });
 
@@ -114,6 +117,13 @@ export function RecurringInvoiceForm({
     };
   }, [form, updateTotal]);
 
+  useEffect(() => {
+    const quantity = form.getValues("invoiceItemQuantity") || 0;
+    const rate = form.getValues("invoiceItemRate") || 0;
+    updateTotal(quantity, rate);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function onSubmit(values: FormValues) {
     try {
       setIsLoading(true);
@@ -127,6 +137,7 @@ export function RecurringInvoiceForm({
       }
 
       toast.success("Recurring invoice created");
+      router.refresh();
       onSuccess?.();
       onClose?.();
     } catch (error) {

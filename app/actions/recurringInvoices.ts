@@ -4,6 +4,8 @@ import { addMonths, addQuarters, addYears } from "date-fns";
 import { parseWithZod } from "@conform-to/zod";
 import { SubmissionResult } from "@conform-to/react";
 
+import { revalidatePath } from "next/cache";
+
 import { getRequiredUserId } from "@/lib/session";
 import { recurringInvoiceSchema } from "@/lib/zodSchemas";
 import { PLAN_FEATURES } from "@/lib/plans";
@@ -57,6 +59,7 @@ export async function createRecurringInvoice(
       },
     });
 
+    revalidatePath("/dashboard/recurring-invoices");
     return { status: "success", error: {} };
   } catch {
     return { status: "error", error: { "": ["Failed to create recurring invoice"] } };
