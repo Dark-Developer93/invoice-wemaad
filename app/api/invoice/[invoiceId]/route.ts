@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
-import { verifyInvoiceToken } from "@/lib/urls";
 
 import { generateInvoicePDF } from "@/app/actions/generate-invoice";
 
@@ -14,11 +13,6 @@ export async function GET(
 ) {
   try {
     const { invoiceId } = await params;
-
-    const token = request.nextUrl.searchParams.get("token") ?? "";
-    if (!verifyInvoiceToken(invoiceId, token)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const invoice = await prisma.invoice.findUnique({
       where: {
