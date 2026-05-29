@@ -19,7 +19,7 @@ import { NavSheet } from "@/components/nav-sheet/NavSheet";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { signOut } from "@/lib/auth";
 import prisma from "@/lib/db";
-import { requireUser } from "@/lib/session";
+import { getRequiredUserId } from "@/lib/session";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { UserProvider } from "@/components/providers/UserProvider";
 
@@ -52,12 +52,12 @@ export default async function DashboardLayout({
 }: {
   children: ReactNode;
 }) {
-  const session = await requireUser();
-  const userData = await getUser(session.user?.id as string);
+  const userId = await getRequiredUserId();
+  const userData = await getUser(userId);
 
   return (
     <>
-      <div className="grid min-h-screen w-full md:gird-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
         <div className="hidden border-r bg-muted/40 md:block">
           <div className="flex flex-col max-h-screen h-full gap-2">
             <div className="h-14 flex items-center border-b px-4 lg:h-[60px] lg:px-6">

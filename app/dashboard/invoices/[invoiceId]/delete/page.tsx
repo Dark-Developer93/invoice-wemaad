@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 
 import {
   Card,
@@ -14,26 +13,13 @@ import WarningGif from "@/public/warning-gif.gif";
 import { buttonVariants } from "@/components/ui/button";
 import SubmitButton from "@/components/submit-button/SubmitButton";
 import { deleteInvoice } from "@/app/actions/invoices";
-import prisma from "@/lib/db";
-import { requireUser } from "@/lib/session";
+import { getRequiredUserId, requireInvoiceOwnership } from "@/lib/session";
 
 export const metadata = {
   title: "Delete Invoice | WeMaAd Invoice",
   description: "Delete an invoice from your account",
 };
 
-async function Authorize(invoiceId: string, userId: string) {
-  const data = await prisma.invoice.findUnique({
-    where: {
-      id: invoiceId,
-      userId: userId,
-    },
-  });
-
-  if (!data) {
-    return redirect("/dashboard/invoices");
-  }
-}
 type Params = Promise<{ invoiceId: string }>;
 
 export default async function DeleteInvoiceRoute({
@@ -41,9 +27,8 @@ export default async function DeleteInvoiceRoute({
 }: {
   params: Params;
 }) {
-  const session = await requireUser();
-  const { invoiceId } = await params;
-  await Authorize(invoiceId, session.user?.id as string);
+  const [{ invoiceId }, userId] = await Promise.all([params, getRequiredUserId()]);
+  await requireInvoiceOwnership(invoiceId, userId);
   return (
     <div className="flex flex-1 justify-center items-center">
       <Card className="max-w-[500px]">
