@@ -4,16 +4,12 @@ import { addMonths, addQuarters, addYears } from "date-fns";
 import { parseWithZod } from "@conform-to/zod";
 import { SubmissionResult } from "@conform-to/react";
 
-import { requireUser } from "@/lib/session";
+import { getRequiredUserId } from "@/lib/session";
 import { recurringInvoiceSchema } from "@/lib/zodSchemas";
 import { PLAN_FEATURES } from "@/lib/plans";
-import { getUserUsage, logEmailSent } from "@/lib/usage";
-import { sendEmail } from "@/lib/email/index";
-import { formatCurrency } from "@/lib/formatCurrency";
-import { formatDate } from "@/lib/formatDate";
-import { Currency } from "@/types";
+import { getUserUsage } from "@/lib/usage";
+import { dispatchInvoiceEmail } from "@/lib/email/invoice";
 import prisma from "@/lib/db";
-import { getInvoiceUrl } from "@/lib/urls";
 
 function computeNextRunAt(
   from: Date,
@@ -28,13 +24,9 @@ export async function createRecurringInvoice(
   _prevState: SubmissionResult<string[]> | null | undefined,
   formData: FormData
 ): Promise<SubmissionResult<string[]>> {
-  const session = await requireUser();
+  const userId = await getRequiredUserId();
 
-  if (!session?.user?.id) {
-    return { status: "error", error: { "": ["User not found"] } };
-  }
-
-  const usage = await getUserUsage(session.user.id);
+  const usage = await getUserUsage(userId);
   if (!PLAN_FEATURES[usage.plan].analytics) {
     return {
       status: "error",
@@ -47,9 +39,7 @@ export async function createRecurringInvoice(
     return submission.reply();
   }
 
-  const { interval, startDate, endDate, note, clientId, ...rest } =
-    submission.value;
-
+  const { interval, startDate, endDate, note, clientId, ...rest } = submission.value;
   const start = new Date(startDate);
   const nextRunAt = start <= new Date() ? computeNextRunAt(start, interval) : start;
 
@@ -62,7 +52,7 @@ export async function createRecurringInvoice(
         nextRunAt,
         invoiceNote: note,
         clientId,
-        userId: session.user.id,
+        userId,
         ...rest,
       },
     });
@@ -74,19 +64,18 @@ export async function createRecurringInvoice(
 }
 
 export async function toggleRecurringInvoice(id: string) {
-  const session = await requireUser();
-  if (!session?.user?.id) return { error: "User not found" };
+  const userId = await getRequiredUserId();
 
   try {
     const current = await prisma.recurringInvoice.findUnique({
-      where: { id, userId: session.user.id },
+      where: { id, userId },
       select: { isActive: true },
     });
 
     if (!current) return { error: "Not found" };
 
     await prisma.recurringInvoice.update({
-      where: { id, userId: session.user.id },
+      where: { id, userId },
       data: { isActive: !current.isActive },
     });
 
@@ -98,14 +87,10 @@ export async function toggleRecurringInvoice(id: string) {
 }
 
 export async function deleteRecurringInvoice(id: string) {
-  const session = await requireUser();
-  if (!session?.user?.id) return { error: "User not found" };
+  const userId = await getRequiredUserId();
 
   try {
-    await prisma.recurringInvoice.delete({
-      where: { id, userId: session.user.id },
-    });
-
+    await prisma.recurringInvoice.delete({ where: { id, userId } });
     return { success: true };
   } catch (error) {
     console.error("Failed to delete recurring invoice:", error);
@@ -195,35 +180,20 @@ export async function processRecurringInvoices() {
         usage.emailLimit === null || usage.emailsThisMonth < usage.emailLimit;
 
       if (contact && emailLimitOk) {
-        sendEmail({
-          to: contact.email,
+        usage.emailsThisMonth++;
+        dispatchInvoiceEmail({
+          userId: recurring.userId!,
+          clientName: recurring.client!.name,
+          contactEmail: contact.email,
           templateName: "newInvoice",
-          variables: {
-            clientName: recurring.client!.name,
-            invoiceNumber: invoiceNumber.toString(),
-            invoiceDueDate: formatDate.long(now),
-            invoiceAmount: formatCurrency({
-              amount: recurring.total,
-              currency: recurring.currency as Currency,
-            }),
-            invoiceLink: getInvoiceUrl(invoice.id),
-          },
-        })
-          .then(() => {
-            logEmailSent(recurring.userId!, "recurringInvoice", invoice.id);
-            usage.emailsThisMonth++;
-          })
-          .catch((error) => {
-            console.error(`Failed to send recurring invoice email for ${recurring.id}:`, error);
-            prisma.notification.create({
-              data: {
-                userId: recurring.userId!,
-                title: "Recurring invoice email failed",
-                message: `Could not send the auto-generated invoice email to ${recurring.client!.name}. Please resend manually.`,
-                href: "/dashboard/recurring-invoices",
-              },
-            }).catch(() => {});
-          });
+          logType: "recurringInvoice",
+          invoiceNumber,
+          invoiceDate: now,
+          total: recurring.total,
+          currency: recurring.currency,
+          invoiceId: invoice.id,
+          notificationHref: "/dashboard/recurring-invoices",
+        });
       }
     } catch (err) {
       console.error(`Failed to process recurring invoice ${recurring.id}:`, err);
