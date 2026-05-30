@@ -122,7 +122,7 @@ function ReportsContentSkeleton() {
           <Skeleton className="h-4 w-24 mt-1" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[180px] w-full" />
+          <Skeleton className="h-[200px] w-full" />
         </CardContent>
       </Card>
       {[...Array(2)].map((_, i) => (

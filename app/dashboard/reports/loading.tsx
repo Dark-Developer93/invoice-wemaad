@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-function CardSkeleton({ className }: { className?: string }) {
+function CardSkeleton({ className, chartHeight = 180 }: { className?: string; chartHeight?: number }) {
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
@@ -9,7 +9,7 @@ function CardSkeleton({ className }: { className?: string }) {
         <Skeleton className="h-4 w-24 mt-1" />
       </CardHeader>
       <CardContent>
-        <Skeleton className="h-[180px] w-full" />
+        <Skeleton className="w-full" style={{ height: chartHeight }} />
       </CardContent>
     </Card>
   );
@@ -28,7 +28,7 @@ export default function Loading() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="lg:col-span-2">
-          <CardSkeleton />
+          <CardSkeleton chartHeight={200} />
         </div>
         <CardSkeleton />
         <CardSkeleton />
