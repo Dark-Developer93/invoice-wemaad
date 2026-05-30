@@ -48,9 +48,9 @@ export function RevenueSummaryCard({
       <CardContent>
         <ChartContainer
           config={{ total: { label: "Revenue", color: "hsl(var(--primary))" } }}
-          className="min-h-[200px] w-full"
+          className="min-h-[250px] w-full"
         >
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={250}>
             <BarChart data={data} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
               <XAxis
                 dataKey="month"
