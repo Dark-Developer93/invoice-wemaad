@@ -19,16 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   adminUpdateUserPlan,
   adminToggleUserActive,
@@ -59,6 +51,14 @@ type UpgradeRequest = {
   adminNote?: string | null;
 };
 
+type ConfirmConfig = {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  variant: "default" | "destructive";
+  onConfirm: () => void;
+} | null;
+
 const PLAN_OPTIONS = ["FREE", "STARTER", "PRO", "BUSINESS"] as const;
 
 const STATUS_COLORS: Record<string, string> = {
@@ -75,7 +75,7 @@ export function AdminUserActions({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedPlan, setSelectedPlan] = useState<string>(user.plan);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<ConfirmConfig>(null);
 
   function handleToggleAdmin() {
     startTransition(async () => {
@@ -121,7 +121,6 @@ export function AdminUserActions({
       try {
         await adminDeleteUser(user.id);
         toast.success("User deleted.");
-        setDeleteDialogOpen(false);
         router.push("/admin/users");
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Failed to delete user.";
@@ -292,45 +291,39 @@ export function AdminUserActions({
               <div className="flex gap-2">
                 <Button
                   variant={user.isActive ? "destructive" : "default"}
-                  onClick={handleToggleActive}
+                  onClick={() =>
+                    user.isActive
+                      ? setConfirmConfig({
+                          title: "Deactivate Account",
+                          description:
+                            "This will deactivate the user's account and pause all their recurring invoices. They will not be able to log in until reactivated.",
+                          confirmLabel: "Deactivate",
+                          variant: "destructive",
+                          onConfirm: handleToggleActive,
+                        })
+                      : handleToggleActive()
+                  }
                   disabled={isPending}
                 >
                   {user.isActive ? "Deactivate Account" : "Activate Account"}
                 </Button>
 
-                <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" disabled={isPending}>
-                      Delete User
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Delete User Account</DialogTitle>
-                      <DialogDescription>
-                        This will permanently delete this user and all their data
-                        (invoices, clients, recurring invoices, email logs). This
-                        action cannot be undone.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setDeleteDialogOpen(false)}
-                        disabled={isPending}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={handleDelete}
-                        disabled={isPending}
-                      >
-                        Delete Permanently
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setConfirmConfig({
+                      title: "Delete User Account",
+                      description:
+                        "This will permanently delete this user and all their data (invoices, clients, recurring invoices, email logs). This action cannot be undone.",
+                      confirmLabel: "Delete Permanently",
+                      variant: "destructive",
+                      onConfirm: handleDelete,
+                    })
+                  }
+                  disabled={isPending}
+                >
+                  Delete User
+                </Button>
               </div>
             )}
           </CardContent>
@@ -359,7 +352,27 @@ export function AdminUserActions({
           ) : (
             <Button
               variant={user.isAdmin ? "destructive" : "default"}
-              onClick={handleToggleAdmin}
+              onClick={() =>
+                setConfirmConfig(
+                  user.isAdmin
+                    ? {
+                        title: "Remove Admin Privileges",
+                        description:
+                          "This user will lose all admin access and be reverted to a regular user.",
+                        confirmLabel: "Remove Privileges",
+                        variant: "destructive",
+                        onConfirm: handleToggleAdmin,
+                      }
+                    : {
+                        title: "Promote to Admin",
+                        description:
+                          "This user will gain full admin access to the platform, including user management and billing controls.",
+                        confirmLabel: "Promote",
+                        variant: "default",
+                        onConfirm: handleToggleAdmin,
+                      }
+                )
+              }
               disabled={isPending}
             >
               {user.isAdmin ? "Remove Admin Privileges" : "Promote to Admin"}
@@ -367,6 +380,18 @@ export function AdminUserActions({
           )}
         </CardContent>
       </Card>
+
+      {confirmConfig && (
+        <ConfirmDialog
+          open={!!confirmConfig}
+          onOpenChange={(open) => !open && setConfirmConfig(null)}
+          title={confirmConfig.title}
+          description={confirmConfig.description}
+          confirmLabel={confirmConfig.confirmLabel}
+          variant={confirmConfig.variant}
+          onConfirm={confirmConfig.onConfirm}
+        />
+      )}
     </div>
   );
 }
