@@ -140,24 +140,22 @@ export default async function AdminUserDetailPage({
                   ? Math.min(100, Math.round((usage.invoicesThisMonth / usage.invoiceLimit) * 100))
                   : null;
                 const overLimit = pct !== null && pct >= 100;
+                const labelColor = overLimit ? "text-red-600" : pct !== null && pct >= 80 ? "text-yellow-600" : "text-muted-foreground";
                 return (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-1.5"><FileText className="size-3.5 text-blue-600" /> Invoices</span>
-                      <span className={overLimit ? "text-red-600 font-medium" : "text-muted-foreground"}>
-                        {usage.invoicesThisMonth}
-                        {usage.invoiceLimit !== null ? ` / ${usage.invoiceLimit}` : " / ∞"}
+                      <span className={`font-medium tabular-nums ${labelColor}`}>
+                        {usage.invoicesThisMonth}{usage.invoiceLimit !== null ? ` / ${usage.invoiceLimit}` : " / ∞"}
+                        {pct !== null && <span className="ml-1.5 text-xs">({pct}%)</span>}
                       </span>
                     </div>
                     {pct !== null ? (
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${overLimit ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-blue-500"}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <span className={`text-xs font-medium w-9 text-right tabular-nums ${overLimit ? "text-red-600" : pct >= 80 ? "text-yellow-600" : "text-muted-foreground"}`}>{pct}%</span>
+                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${overLimit ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-blue-500"}`}
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground">Unlimited</p>
@@ -171,24 +169,22 @@ export default async function AdminUserDetailPage({
                   ? Math.min(100, Math.round((usage.emailsThisMonth / usage.emailLimit) * 100))
                   : null;
                 const overLimit = pct !== null && pct >= 100;
+                const labelColor = overLimit ? "text-red-600" : pct !== null && pct >= 80 ? "text-yellow-600" : "text-muted-foreground";
                 return (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-1.5"><Send className="size-3.5 text-orange-600" /> Emails</span>
-                      <span className={overLimit ? "text-red-600 font-medium" : "text-muted-foreground"}>
-                        {usage.emailsThisMonth}
-                        {usage.emailLimit !== null ? ` / ${usage.emailLimit}` : " / ∞"}
+                      <span className={`font-medium tabular-nums ${labelColor}`}>
+                        {usage.emailsThisMonth}{usage.emailLimit !== null ? ` / ${usage.emailLimit}` : " / ∞"}
+                        {pct !== null && <span className="ml-1.5 text-xs">({pct}%)</span>}
                       </span>
                     </div>
                     {pct !== null ? (
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${overLimit ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-orange-500"}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <span className={`text-xs font-medium w-9 text-right tabular-nums ${overLimit ? "text-red-600" : pct >= 80 ? "text-yellow-600" : "text-muted-foreground"}`}>{pct}%</span>
+                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${overLimit ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-orange-500"}`}
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground">Unlimited</p>
