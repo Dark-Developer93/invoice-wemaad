@@ -54,7 +54,7 @@ export function InvoiceForm({
     defaultValues: {
       invoiceName: mode === "edit" ? data?.invoiceName || "" : "",
       invoiceNumber: mode === "edit" ? Number(data?.invoiceNumber) || 1 : 1,
-      currency: mode === "edit" ? data?.currency || "USD" : "USD",
+      currency: (mode === "edit" ? data?.currency || "USD" : "USD") as Currency,
       date:
         mode === "edit"
           ? data?.date
