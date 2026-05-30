@@ -109,12 +109,14 @@ async function ClientDetailPage({ params }: { params: Params }) {
       </div>
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="addresses">Addresses</TabsTrigger>
-          <TabsTrigger value="contacts">Contact Persons</TabsTrigger>
-          <TabsTrigger value="custom">Custom Fields</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="w-max">
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="addresses">Addresses</TabsTrigger>
+            <TabsTrigger value="contacts">Contacts</TabsTrigger>
+            <TabsTrigger value="custom">Custom Fields</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="details" className="space-y-4">
           <Card>
@@ -179,7 +181,7 @@ async function ClientDetailPage({ params }: { params: Params }) {
                   {client.invoices.map((invoice) => (
                     <div
                       key={invoice.id}
-                      className="flex items-center justify-between"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
                     >
                       <div>
                         <div className="font-medium">{invoice.invoiceName}</div>
@@ -187,7 +189,7 @@ async function ClientDetailPage({ params }: { params: Params }) {
                           {new Date(invoice.date).toLocaleDateString()}
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
                         <Badge
                           variant={
                             invoice.status === "PAID" ? "default" : "secondary"

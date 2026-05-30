@@ -112,13 +112,32 @@ export function Graph({ data, chartType = "line", currency = "USD" }: GraphProps
     );
   }
 
+  const yAxisProps = {
+    width: 52,
+    tick: { fontSize: 11 },
+    tickFormatter: (v: number) =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency,
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(v),
+  };
+
+  const xAxisProps = {
+    dataKey: "date" as const,
+    tick: { fontSize: 11 },
+    interval: "preserveStartEnd" as const,
+    tickFormatter: (v: number) => format(v, "MMM d"),
+  };
+
   if (chartType === "bar") {
     return (
-      <ChartContainer config={chartConfig} className="min-h-[300px]">
+      <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
-            <XAxis dataKey="date" tickFormatter={(v) => format(v, "MMM d")} />
-            <YAxis />
+          <BarChart data={data} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+            <XAxis {...xAxisProps} />
+            <YAxis {...yAxisProps} />
             <ChartTooltip content={({ active, payload }) => (
               <AmountTooltip active={active} payload={payload as { payload: DataPoint; value: number }[]} currency={currency} />
             )} />
@@ -130,11 +149,11 @@ export function Graph({ data, chartType = "line", currency = "USD" }: GraphProps
   }
 
   return (
-    <ChartContainer config={chartConfig} className="min-h-[300px]">
+    <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data}>
-          <XAxis dataKey="date" tickFormatter={(value) => format(value, "MMM d")} />
-          <YAxis />
+        <LineChart data={data} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+          <XAxis {...xAxisProps} />
+          <YAxis {...yAxisProps} />
           <ChartTooltip content={({ active, payload }) => (
             <AmountTooltip active={active} payload={payload as { payload: DataPoint; value: number }[]} currency={currency} />
           )} />

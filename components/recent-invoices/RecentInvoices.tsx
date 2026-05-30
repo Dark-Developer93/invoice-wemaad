@@ -65,11 +65,11 @@ export default function RecentInvoices({
                   {item.client?.name?.slice(0, 2) || "?"}
                 </AvatarFallback>
               </Avatar>
-              <div className="ml-4 space-y-1">
-                <p className="text-sm font-medium leading-none">
+              <div className="ml-4 space-y-1 min-w-0 flex-1">
+                <p className="text-sm font-medium leading-none truncate">
                   {item.client?.name || "—"}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground truncate">
                   {item.client?.email || "—"}
                 </p>
               </div>
