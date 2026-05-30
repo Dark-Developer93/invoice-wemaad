@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import SubmitButton from "@/components/submit-button/SubmitButton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useState } from "react";
+import { ClientFormProvider } from "./ClientFormContext";
 import { BasicInfoTab } from "./BasicInfoTab";
 import { AddressesTab } from "./AddressesTab";
 import { ContactPersonsTab } from "./ContactPersonsTab";
@@ -137,6 +138,7 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
 
   return (
     <Form {...form}>
+      <ClientFormProvider value={{ form }}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
@@ -147,19 +149,19 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
           </TabsList>
 
           <TabsContent value="basic" className="space-y-4">
-            <BasicInfoTab form={form} />
+            <BasicInfoTab />
           </TabsContent>
 
           <TabsContent value="addresses" className="space-y-4">
-            <AddressesTab form={form} />
+            <AddressesTab />
           </TabsContent>
 
           <TabsContent value="contacts" className="space-y-4">
-            <ContactPersonsTab form={form} />
+            <ContactPersonsTab />
           </TabsContent>
 
           <TabsContent value="custom" className="space-y-4">
-            <CustomFieldsTab form={form} />
+            <CustomFieldsTab />
           </TabsContent>
         </Tabs>
 
@@ -181,6 +183,7 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
           </div>
         </div>
       </form>
+      </ClientFormProvider>
 
       <ConfirmDialog
         open={showCancelConfirm}

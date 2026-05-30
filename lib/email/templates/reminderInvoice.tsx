@@ -1,8 +1,8 @@
-import { ReminderInvoiceEmailProps } from "@/types";
+import { InvoiceEmailProps } from "@/types";
 import { InvoiceEmailProvider } from "../components/InvoiceEmailContext";
 import { InvoiceEmailTemplate } from "../components/InvoiceEmailTemplate";
 
-export default function ReminderInvoiceEmail(props: ReminderInvoiceEmailProps) {
+export default function ReminderInvoiceEmail(props: InvoiceEmailProps) {
   return (
     <InvoiceEmailProvider invoice={props}>
       <InvoiceEmailTemplate

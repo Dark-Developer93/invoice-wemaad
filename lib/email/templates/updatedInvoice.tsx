@@ -1,8 +1,8 @@
-import { UpdatedInvoiceEmailProps } from "@/types";
+import { InvoiceEmailProps } from "@/types";
 import { InvoiceEmailProvider } from "../components/InvoiceEmailContext";
 import { InvoiceEmailTemplate } from "../components/InvoiceEmailTemplate";
 
-export default function UpdatedInvoiceEmail(props: UpdatedInvoiceEmailProps) {
+export default function UpdatedInvoiceEmail(props: InvoiceEmailProps) {
   return (
     <InvoiceEmailProvider invoice={props}>
       <InvoiceEmailTemplate
