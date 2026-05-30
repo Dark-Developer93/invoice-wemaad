@@ -65,7 +65,7 @@ interface ActionCellProps {
   allClients: TableMeta["allClients"];
 }
 
-function ActionCell({ client, allClients }: ActionCellProps) {
+export function ActionCell({ client, allClients }: ActionCellProps) {
   const router = useRouter();
   const clientWithRequiredFields = {
     ...client,

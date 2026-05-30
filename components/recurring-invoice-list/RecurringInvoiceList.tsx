@@ -36,6 +36,44 @@ const INTERVAL_LABELS: Record<string, string> = {
   YEARLY: "Yearly",
 };
 
+interface ItemActionsProps {
+  item: RecurringInvoiceWithClient;
+  isPending: boolean;
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+function ItemActions({ item, isPending, onToggle, onDelete }: ItemActionsProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" disabled={isPending}>
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onToggle(item.id)}>
+          {item.isActive ? (
+            <>
+              <Pause className="size-4 mr-2" /> Pause
+            </>
+          ) : (
+            <>
+              <Play className="size-4 mr-2" /> Resume
+            </>
+          )}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onDelete(item.id)}
+          className="text-destructive"
+        >
+          <Trash2 className="size-4 mr-2" /> Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function RecurringInvoiceList({ items }: RecurringInvoiceListProps) {
   const [list, setList] = useState(items);
   const [isPending, startTransition] = useTransition();
@@ -103,32 +141,12 @@ export function RecurringInvoiceList({ items }: RecurringInvoiceListProps) {
               {item.endDate && ` · Ends: ${format(new Date(item.endDate), "MMM d, yyyy")}`}
             </div>
             <div className="flex justify-end">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={isPending}>
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleToggle(item.id)}>
-                    {item.isActive ? (
-                      <>
-                        <Pause className="size-4 mr-2" /> Pause
-                      </>
-                    ) : (
-                      <>
-                        <Play className="size-4 mr-2" /> Resume
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleDelete(item.id)}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="size-4 mr-2" /> Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <ItemActions
+                item={item}
+                isPending={isPending}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+              />
             </div>
           </div>
         ))}
@@ -153,7 +171,7 @@ export function RecurringInvoiceList({ items }: RecurringInvoiceListProps) {
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{item.invoiceName}</TableCell>
                 <TableCell>{item.client?.name ?? "—"}</TableCell>
-                <TableCell>{INTERVAL_LABELS[item.interval]}</TableCell>
+                <TableCell>{INTERVAL_LABELS[item.interval] ?? item.interval}</TableCell>
                 <TableCell>{format(new Date(item.nextRunAt), "MMM d, yyyy")}</TableCell>
                 <TableCell>
                   {item.endDate ? format(new Date(item.endDate), "MMM d, yyyy") : "—"}
@@ -164,32 +182,12 @@ export function RecurringInvoiceList({ items }: RecurringInvoiceListProps) {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" disabled={isPending}>
-                        <MoreHorizontal className="size-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleToggle(item.id)}>
-                        {item.isActive ? (
-                          <>
-                            <Pause className="size-4 mr-2" /> Pause
-                          </>
-                        ) : (
-                          <>
-                            <Play className="size-4 mr-2" /> Resume
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDelete(item.id)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="size-4 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <ItemActions
+                    item={item}
+                    isPending={isPending}
+                    onToggle={handleToggle}
+                    onDelete={handleDelete}
+                  />
                 </TableCell>
               </TableRow>
             ))}

@@ -68,7 +68,7 @@ export function ViewInvoiceDialog({
   return (
     <Dialog>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="w-full sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-none sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Invoice Details</DialogTitle>
           <DialogDescription>
@@ -142,7 +142,7 @@ export function ViewInvoiceDialog({
                 <div className="whitespace-pre-line">
                   {invoice.invoiceItemDescription}
                 </div>
-                <div className="flex gap-6 text-muted-foreground">
+                <div className="flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground">
                   <span>Qty: {invoice.invoiceItemQuantity}</span>
                   <span>
                     Rate:{" "}
