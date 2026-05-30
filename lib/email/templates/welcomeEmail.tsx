@@ -10,6 +10,10 @@ import {
   Button,
 } from "@react-email/components";
 
+import { EmailFooter } from "../components/EmailFooter";
+import { EmailHeader } from "../components/EmailHeader";
+import { container, content, main } from "../components/emailStyles";
+
 interface WelcomeEmailProps {
   url: string;
 }
@@ -21,12 +25,11 @@ export default function WelcomeEmail({ url }: WelcomeEmailProps) {
       <Preview>Welcome to InvoiceWeMaAd - Your Magic Link is Here!</Preview>
       <Body style={main}>
         <Container style={container}>
-          <div style={header}>
-            <div style={brand}>
-              Invoice<span style={brandSpan}>WeMaAd</span>
-            </div>
-            <div style={badge}>Magic Link</div>
-          </div>
+          <EmailHeader
+            badgeLabel="Magic Link"
+            badgeBackground="#ECFDF5"
+            badgeColor="#059669"
+          />
 
           <Section style={content}>
             <Heading style={heroText}>Welcome to InvoiceWeMaAd!</Heading>
@@ -71,67 +74,13 @@ export default function WelcomeEmail({ url }: WelcomeEmailProps) {
               </div>
             </div>
 
-            <div style={footer}>
-              <Text>© 2024 InvoiceWeMaAd. All rights reserved.</Text>
-              <Text>Making invoicing super easy!</Text>
-            </div>
+            <EmailFooter />
           </Section>
         </Container>
       </Body>
     </Html>
   );
 }
-
-const main = {
-  backgroundColor: "#FAFAFA",
-  fontFamily: '"Geist", Arial, sans-serif',
-};
-
-const container = {
-  maxWidth: "600px",
-  margin: "0 auto",
-  padding: "24px",
-  backgroundColor: "#FFFFFF",
-  borderRadius: "12px",
-  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-};
-
-const header = {
-  textAlign: "left" as const,
-  marginBottom: "32px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  padding: "0 16px",
-};
-
-const brand = {
-  display: "inline-flex",
-  alignItems: "center",
-  fontSize: "24px",
-  fontWeight: 600,
-  color: "#18181B",
-};
-
-const brandSpan = {
-  color: "#3B82F6",
-  marginLeft: "4px",
-};
-
-const badge = {
-  display: "inline-block",
-  padding: "6px 12px",
-  backgroundColor: "#ECFDF5",
-  color: "#059669",
-  borderRadius: "9999px",
-  fontSize: "14px",
-  fontWeight: 500,
-  marginLeft: "8px",
-};
-
-const content = {
-  padding: "0 16px",
-};
 
 const heroText = {
   fontSize: "32px",
@@ -189,13 +138,4 @@ const featureTitle = {
   fontWeight: 600,
   marginBottom: "8px",
   color: "#18181B",
-};
-
-const footer = {
-  marginTop: "48px",
-  textAlign: "center" as const,
-  color: "#71717A",
-  fontSize: "14px",
-  borderTop: "1px solid #E4E4E7",
-  paddingTop: "24px",
 };
