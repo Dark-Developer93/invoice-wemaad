@@ -129,26 +129,26 @@ export default async function AdminUserDetailPage({
               <CardTitle className="text-base">Account Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-muted-foreground min-w-0">
                 <Mail className="size-4 shrink-0" />
-                <span>{user.email}</span>
+                <span className="truncate">{user.email}</span>
               </div>
               {user.address && (
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="flex items-center gap-2 text-muted-foreground min-w-0">
                   <MapPin className="size-4 shrink-0" />
-                  <span>{user.address}</span>
+                  <span className="truncate">{user.address}</span>
                 </div>
               )}
               {user.companyName && (
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="flex items-center gap-2 text-muted-foreground min-w-0">
                   <Building2 className="size-4 shrink-0" />
-                  <span>{user.companyName}</span>
+                  <span className="truncate">{user.companyName}</span>
                 </div>
               )}
               {user.companyEmail && (
-                <div className="flex items-start gap-2 text-muted-foreground">
+                <div className="flex items-start gap-2 text-muted-foreground min-w-0">
                   <Mail className="size-4 mt-0.5 shrink-0" />
-                  <span>{user.companyEmail}</span>
+                  <span className="truncate">{user.companyEmail}</span>
                 </div>
               )}
               <div className="pt-2 border-t text-xs text-muted-foreground">

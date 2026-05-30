@@ -54,7 +54,7 @@ export function AdminUpgradeRequests({
 
   const pendingCount = upgradeRequests.filter((r) => r.status === "PENDING").length;
 
-  function handleApprove(requestId: string, requestedPlan: string) {
+  function handleApprove(requestId: string) {
     startTransition(async () => {
       try {
         await adminApproveUpgradeRequest(requestId);
@@ -132,7 +132,7 @@ export function AdminUpgradeRequests({
                         description: `This will immediately upgrade the user to the ${req.requestedPlan} plan.`,
                         confirmLabel: "Approve",
                         variant: "default",
-                        onConfirm: () => handleApprove(req.id, req.requestedPlan),
+                        onConfirm: () => handleApprove(req.id),
                       })
                     }
                     disabled={isPending}

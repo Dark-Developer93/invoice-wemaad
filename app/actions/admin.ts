@@ -73,6 +73,10 @@ export async function adminUpdateUserPlan(userId: string, plan: string) {
     where: { id: userId },
     data: { plan: parsed.data, planUpdatedAt: new Date() },
   });
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${userId}`);
+  revalidatePath("/dashboard/billing");
 }
 
 export async function adminToggleUserActive(userId: string, isActive: boolean) {
@@ -102,6 +106,9 @@ export async function adminToggleUserActive(userId: string, isActive: boolean) {
       data: { isActive: false },
     });
   }
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${userId}`);
 }
 
 export async function adminToggleUserAdmin(userId: string, makeAdmin: boolean) {
@@ -241,4 +248,5 @@ export async function adminDeleteUser(userId: string) {
     throw new Error("User not found.");
   }
   // Sessions are cascade-deleted at the DB level (Session.onDelete: Cascade).
+  revalidatePath("/admin/users");
 }
