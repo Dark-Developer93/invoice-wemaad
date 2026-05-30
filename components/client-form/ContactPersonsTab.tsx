@@ -117,6 +117,16 @@ export function ContactPersonsTab() {
           </div>
         ))}
 
+        {(form.formState.errors.contactPersons as { message?: string })
+          ?.message && (
+          <p className="text-sm font-medium text-destructive mt-2">
+            {
+              (form.formState.errors.contactPersons as { message?: string })
+                .message
+            }
+          </p>
+        )}
+
         <Button
           type="button"
           variant="outline"

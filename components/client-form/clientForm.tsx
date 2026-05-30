@@ -109,6 +109,15 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
         },
   });
 
+  function onInvalid() {
+    const errors = form.formState.errors;
+    if ((errors.contactPersons as { message?: string })?.message) {
+      toast.error("At least one contact person is required. Go to the Contacts tab.");
+    } else {
+      toast.error("Please fix the form errors before submitting.");
+    }
+  }
+
   async function onSubmit(data: ClientFormValues) {
     try {
       setIsLoading(true);
@@ -139,7 +148,7 @@ export function ClientForm({ client, onClose, onSuccess }: ClientFormProps) {
   return (
     <Form {...form}>
       <ClientFormProvider value={{ form }}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-8">
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto gap-1">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
