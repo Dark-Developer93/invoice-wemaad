@@ -24,6 +24,7 @@ import { InvoiceDialog } from "../invoice-dialog/InvoiceDialog";
 import Link from "next/link";
 import { ViewInvoiceDialog } from "../invoice-dialog/ViewInvoiceDialog";
 import { generateInvoicePDF } from "@/app/actions/generate-invoice";
+import { sendReminderEmail } from "@/app/actions/invoices";
 
 interface iAppProps {
   invoice: Prisma.InvoiceGetPayload<{
@@ -44,19 +45,11 @@ export function InvoiceActions({ invoice }: iAppProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSendReminder = () => {
-    toast.promise(
-      fetch(`/api/email/${invoice.id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }),
-      {
-        loading: "Sending reminder email...",
-        success: "Reminder email sent successfully",
-        error: "Failed to send reminder email",
-      }
-    );
+    toast.promise(sendReminderEmail(invoice.id), {
+      loading: "Sending reminder email...",
+      success: "Reminder email sent successfully",
+      error: (err: Error) => err.message || "Failed to send reminder email",
+    });
   };
 
   const handleDownload = async () => {

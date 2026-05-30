@@ -192,12 +192,12 @@ export async function processRecurringInvoices() {
           templateName: "newInvoice",
           logType: "recurringInvoice",
           invoiceNumber,
-          invoiceDate: now,
+          invoiceDueDate: now,
           total: recurring.total,
           currency: recurring.currency,
           invoiceId: invoice.id,
           notificationHref: "/dashboard/recurring-invoices",
-        });
+        }).catch(() => { /* email is best-effort; failure creates an in-app notification */ });
       }
     } catch (err) {
       console.error(`Failed to process recurring invoice ${recurring.id}:`, err);

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { parseWithZod } from "@conform-to/zod";
 import { SubmissionResult } from "@conform-to/react";
+import { addDays, format } from "date-fns";
 
 import { getRequiredUserId } from "@/lib/session";
 import { invoiceSchema } from "@/lib/zodSchemas";
@@ -50,11 +51,11 @@ export async function createInvoice(
           contactEmail: client.contactPersons[0].email,
           templateName: "newInvoice",
           invoiceNumber: submission.value.invoiceNumber,
-          invoiceDate: submission.value.date,
+          invoiceDueDate: submission.value.date,
           total: submission.value.total,
           currency: submission.value.currency,
           invoiceId: data.id,
-        });
+        }).catch(() => { /* email is best-effort; failure creates an in-app notification */ });
       }
     }
 
@@ -107,11 +108,11 @@ export async function editInvoice(
           contactEmail: client.contactPersons[0].email,
           templateName: "updatedInvoice",
           invoiceNumber: submission.value.invoiceNumber,
-          invoiceDate: submission.value.date,
+          invoiceDueDate: submission.value.date,
           total: submission.value.total,
           currency: submission.value.currency,
           invoiceId: data.id,
-        });
+        }).catch(() => { /* email is best-effort; failure creates an in-app notification */ });
       }
     }
 
@@ -133,6 +134,46 @@ export async function deleteInvoice(invoiceId: string) {
   }
 
   return redirect("/dashboard/invoices");
+}
+
+export async function sendReminderEmail(invoiceId: string) {
+  const userId = await getRequiredUserId();
+
+  const invoiceData = await prisma.invoice.findUnique({
+    where: { id: invoiceId, userId },
+    include: {
+      client: {
+        include: {
+          contactPersons: { where: { isPrimary: true }, take: 1 },
+        },
+      },
+    },
+  });
+
+  if (!invoiceData || !invoiceData.client || !invoiceData.client.contactPersons[0]) {
+    throw new Error("Invoice or client contact not found");
+  }
+
+  const usage = await getUserUsage(userId);
+  if (usage.emailLimit !== null && usage.emailsThisMonth >= usage.emailLimit) {
+    throw new Error(
+      `Monthly email limit (${usage.emailLimit}) reached on the ${usage.plan} plan. Upgrade your plan to send more emails.`
+    );
+  }
+
+  const dueDate = addDays(new Date(invoiceData.date), invoiceData.dueDate);
+
+  await dispatchInvoiceEmail({
+    userId,
+    clientName: invoiceData.client.name,
+    contactEmail: invoiceData.client.contactPersons[0].email,
+    templateName: "reminderInvoice",
+    invoiceNumber: invoiceData.invoiceNumber,
+    invoiceDueDate: format(dueDate, "PPP"),
+    total: invoiceData.total,
+    currency: invoiceData.currency,
+    invoiceId: invoiceData.id,
+  });
 }
 
 export async function markAsPaid(invoiceId: string) {
