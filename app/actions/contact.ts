@@ -7,10 +7,13 @@ import { sendEmail } from "@/lib/email";
 const CONTACT_EMAIL = "abdullah@wemaad.net";
 
 const contactFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  message: z.string().min(10, "Message must be at least 10 characters long"),
+  firstName: z.string().min(1, "First name is required").max(100, "First name is too long"),
+  lastName: z.string().min(1, "Last name is required").max(100, "Last name is too long"),
+  email: z.string().email("Invalid email address").max(254, "Email is too long"),
+  message: z
+    .string()
+    .min(10, "Message must be at least 10 characters long")
+    .max(5000, "Message is too long"),
 });
 
 export async function submitContactForm(
