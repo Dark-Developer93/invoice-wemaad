@@ -47,7 +47,7 @@ export async function submitContactForm(
         name: "InvoiceWeMaAd",
         address: process.env.EMAIL_FROM,
       },
-      to: "hello@wemaad.com",
+      to: "abdullah@wemaad.net",
       subject: "New Contact Form Submission - InvoiceWeMaAd",
       html: await render(
         ContactFormEmail({

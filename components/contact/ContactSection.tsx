@@ -120,7 +120,7 @@ export default function ContactSection() {
               <div>
                 <h3 className="font-semibold">Email</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  hello@wemaad.com
+                  abdullah@wemaad.net
                 </p>
               </div>
             </CardContent>
@@ -132,7 +132,7 @@ export default function ContactSection() {
               <div>
                 <h3 className="font-semibold">Phone</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  +X (XXX) XXX-XXXX
+                  +201142549787
                 </p>
               </div>
             </CardContent>
