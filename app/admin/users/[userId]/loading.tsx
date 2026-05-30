@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AdminUserDetailSkeleton } from "./page";
+import { AdminUserDetailSkeleton } from "./_skeleton";
 
 export default function Loading() {
   return (

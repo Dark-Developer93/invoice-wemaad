@@ -1,4 +1,4 @@
-import { AdminUsersContentSkeleton } from "./page";
+import { AdminUsersContentSkeleton } from "./_skeleton";
 
 export default function Loading() {
   return (
