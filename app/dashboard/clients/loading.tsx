@@ -5,9 +5,11 @@ export default function Loading() {
     <div className="space-y-4">
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="space-y-1">
-          <Skeleton className="h-8 w-24" />
-          <Skeleton className="h-4 w-48" />
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Clients</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage your client directory and their information.
+          </p>
         </div>
         <Skeleton className="h-9 w-full sm:w-36" />
       </div>

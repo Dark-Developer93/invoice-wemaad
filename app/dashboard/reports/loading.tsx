@@ -20,9 +20,9 @@ export default function ReportsLoading() {
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="space-y-1">
-          <Skeleton className="h-8 w-28" />
-          <Skeleton className="h-4 w-52" />
+        <div>
+          <h1 className="text-2xl font-bold">Reports</h1>
+          <p className="text-muted-foreground">Financial insights and analytics</p>
         </div>
         <Skeleton className="h-9 w-28" />
       </div>
