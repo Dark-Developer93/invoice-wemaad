@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Users, UserCheck, UserX, Crown, Clock } from "lucide-react";
 import {
@@ -10,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { adminGetAllUsers, adminGetPendingUpgradeRequests } from "@/app/actions/admin";
+import { AdminUsersContentSkeleton } from "./_skeleton";
 
 const PLAN_COLORS: Record<string, string> = {
   FREE: "secondary",
@@ -18,7 +20,7 @@ const PLAN_COLORS: Record<string, string> = {
   BUSINESS: "destructive",
 };
 
-export default async function AdminUsersPage() {
+async function AdminUsersContent() {
   const [users, pendingRequests] = await Promise.all([
     adminGetAllUsers(),
     adminGetPendingUpgradeRequests(),
@@ -30,15 +32,7 @@ export default async function AdminUsersPage() {
   const paidUsers = users.filter((u) => u.plan !== "FREE").length;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
-        <p className="text-muted-foreground text-sm sm:text-base">
-          Manage all users, their plans, and account status.
-        </p>
-      </div>
-
-      {/* Pending upgrade requests */}
+    <>
       {pendingRequests.length > 0 && (
         <Card className="border-yellow-500/50 bg-yellow-500/5">
           <CardHeader className="pb-3">
@@ -61,7 +55,8 @@ export default async function AdminUsersPage() {
                         : req.user.email}
                     </span>
                     <span className="text-muted-foreground ml-2">
-                      {req.user.plan} → <span className="font-semibold text-foreground">{req.requestedPlan}</span>
+                      {req.user.plan} →{" "}
+                      <span className="font-semibold text-foreground">{req.requestedPlan}</span>
                     </span>
                   </div>
                   <Button asChild size="sm" variant="outline">
@@ -74,7 +69,6 @@ export default async function AdminUsersPage() {
         </Card>
       )}
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -114,7 +108,6 @@ export default async function AdminUsersPage() {
         </Card>
       </div>
 
-      {/* Users Table */}
       <Card>
         <CardHeader>
           <CardTitle>All Users</CardTitle>
@@ -157,9 +150,19 @@ export default async function AdminUsersPage() {
                         <div className="text-xs text-muted-foreground">{user.companyName}</div>
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-muted-foreground hidden sm:table-cell">{user.email}</td>
+                    <td className="py-3 pr-4 text-muted-foreground hidden sm:table-cell">
+                      {user.email}
+                    </td>
                     <td className="py-3 pr-4">
-                      <Badge variant={PLAN_COLORS[user.plan] as "default" | "secondary" | "outline" | "destructive"}>
+                      <Badge
+                        variant={
+                          PLAN_COLORS[user.plan] as
+                            | "default"
+                            | "secondary"
+                            | "outline"
+                            | "destructive"
+                        }
+                      >
                         {user.plan}
                       </Badge>
                     </td>
@@ -172,8 +175,12 @@ export default async function AdminUsersPage() {
                         <Badge variant="destructive">Inactive</Badge>
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-center hidden md:table-cell">{user._count.invoices}</td>
-                    <td className="py-3 pr-4 text-center hidden md:table-cell">{user._count.clients}</td>
+                    <td className="py-3 pr-4 text-center hidden md:table-cell">
+                      {user._count.invoices}
+                    </td>
+                    <td className="py-3 pr-4 text-center hidden md:table-cell">
+                      {user._count.clients}
+                    </td>
                     <td className="py-3 pr-4 text-muted-foreground text-xs hidden lg:table-cell">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
@@ -187,13 +194,27 @@ export default async function AdminUsersPage() {
               </tbody>
             </table>
             {users.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                No users found.
-              </div>
+              <div className="text-center py-12 text-muted-foreground">No users found.</div>
             )}
           </div>
         </CardContent>
       </Card>
+    </>
+  );
+}
+
+export default function AdminUsersPage() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
+          Manage all users, their plans, and account status.
+        </p>
+      </div>
+      <Suspense fallback={<AdminUsersContentSkeleton />}>
+        <AdminUsersContent />
+      </Suspense>
     </div>
   );
 }
