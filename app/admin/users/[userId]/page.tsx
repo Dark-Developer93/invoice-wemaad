@@ -1,6 +1,16 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, Mail, MapPin, FileText, Users, RefreshCw, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Mail,
+  MapPin,
+  FileText,
+  Users,
+  RefreshCw,
+  Send,
+  type LucideIcon,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -15,6 +25,50 @@ import { requireAdmin } from "@/lib/session";
 import { getUserUsage } from "@/lib/usage";
 import { AdminUserActions } from "./AdminUserActions";
 import { AdminUpgradeRequests } from "./AdminUpgradeRequests";
+
+function UsageBar({
+  icon: Icon,
+  label,
+  used,
+  limit,
+  activeColor,
+}: {
+  icon: LucideIcon;
+  label: string;
+  used: number;
+  limit: number | null;
+  activeColor: string;
+}) {
+  const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : null;
+  const overLimit = pct !== null && pct >= 100;
+  const nearLimit = pct !== null && pct >= 80;
+  const textColor = overLimit ? "text-red-600" : nearLimit ? "text-yellow-600" : "text-muted-foreground";
+  const barColor = overLimit ? "bg-red-500" : nearLimit ? "bg-yellow-500" : activeColor;
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-sm">
+        <span className="flex items-center gap-1.5">
+          <Icon className="size-3.5" /> {label}
+        </span>
+        <span className={`font-medium tabular-nums ${textColor}`}>
+          {used}{limit !== null ? ` / ${limit}` : " / ∞"}
+          {pct !== null && <span className="ml-1.5 text-xs">({pct}%)</span>}
+        </span>
+      </div>
+      {pct !== null ? (
+        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${barColor}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">Unlimited</p>
+      )}
+    </div>
+  );
+}
 
 export default async function AdminUserDetailPage({
   params,
@@ -142,82 +196,20 @@ export default async function AdminUserDetailPage({
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   This Month&apos;s Plan Usage
                 </p>
-                {/* Invoices this month */}
-                {(() => {
-                  const pct = usage.invoiceLimit
-                    ? Math.min(100, Math.round((usage.invoicesThisMonth / usage.invoiceLimit) * 100))
-                    : null;
-                  const overLimit = pct !== null && pct >= 100;
-                  const labelColor = overLimit
-                    ? "text-red-600"
-                    : pct !== null && pct >= 80
-                    ? "text-yellow-600"
-                    : "text-muted-foreground";
-                  return (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-1.5">
-                          <FileText className="size-3.5 text-blue-600" /> Invoices
-                        </span>
-                        <span className={`font-medium tabular-nums ${labelColor}`}>
-                          {usage.invoicesThisMonth}
-                          {usage.invoiceLimit !== null ? ` / ${usage.invoiceLimit}` : " / ∞"}
-                          {pct !== null && <span className="ml-1.5 text-xs">({pct}%)</span>}
-                        </span>
-                      </div>
-                      {pct !== null ? (
-                        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              overLimit ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-blue-500"
-                            }`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">Unlimited</p>
-                      )}
-                    </div>
-                  );
-                })()}
-                {/* Emails this month */}
-                {(() => {
-                  const pct = usage.emailLimit
-                    ? Math.min(100, Math.round((usage.emailsThisMonth / usage.emailLimit) * 100))
-                    : null;
-                  const overLimit = pct !== null && pct >= 100;
-                  const labelColor = overLimit
-                    ? "text-red-600"
-                    : pct !== null && pct >= 80
-                    ? "text-yellow-600"
-                    : "text-muted-foreground";
-                  return (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-1.5">
-                          <Send className="size-3.5 text-orange-600" /> Emails
-                        </span>
-                        <span className={`font-medium tabular-nums ${labelColor}`}>
-                          {usage.emailsThisMonth}
-                          {usage.emailLimit !== null ? ` / ${usage.emailLimit}` : " / ∞"}
-                          {pct !== null && <span className="ml-1.5 text-xs">({pct}%)</span>}
-                        </span>
-                      </div>
-                      {pct !== null ? (
-                        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              overLimit ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-orange-500"
-                            }`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">Unlimited</p>
-                      )}
-                    </div>
-                  );
-                })()}
+                <UsageBar
+                  icon={FileText}
+                  label="Invoices"
+                  used={usage.invoicesThisMonth}
+                  limit={usage.invoiceLimit}
+                  activeColor="bg-blue-500"
+                />
+                <UsageBar
+                  icon={Send}
+                  label="Emails"
+                  used={usage.emailsThisMonth}
+                  limit={usage.emailLimit}
+                  activeColor="bg-orange-500"
+                />
               </div>
             </CardContent>
           </Card>

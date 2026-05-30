@@ -267,7 +267,7 @@ export function AdminUserActions({ user, currentUserId }: Props) {
 
       {confirmConfig && (
         <ConfirmDialog
-          open={!!confirmConfig}
+          open
           onOpenChange={(open) => !open && setConfirmConfig(null)}
           title={confirmConfig.title}
           description={confirmConfig.description}
