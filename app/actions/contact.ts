@@ -1,10 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { render } from "@react-email/render";
 
-import ContactFormEmail from "@/lib/email/templates/contactForm";
-import { emailTransporter } from "@/lib/email";
+import { sendEmail } from "@/lib/email";
+
+const CONTACT_EMAIL = "abdullah@wemaad.net";
 
 const contactFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -16,52 +16,26 @@ const contactFormSchema = z.object({
 export async function submitContactForm(
   formData: FormData
 ): Promise<{ success?: boolean; error?: string }> {
-  // Validate environment variables
-  if (!process.env.EMAIL_FROM || !process.env.EMAIL_SERVER_USER) {
-    throw new Error("Server configuration error");
-  }
-
-  const firstName = formData.get("firstName")?.toString();
-  const lastName = formData.get("lastName")?.toString();
-  const email = formData.get("email")?.toString();
-  const message = formData.get("message")?.toString();
-
-  if (!firstName || !lastName || !email || !message) {
-    throw new Error("All fields are required");
-  }
-
   const validatedFields = contactFormSchema.safeParse({
-    firstName,
-    lastName,
-    email,
-    message,
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
+    email: formData.get("email"),
+    message: formData.get("message"),
   });
 
   if (!validatedFields.success) {
-    throw new Error("Invalid form data");
+    return { error: "Invalid form data" };
   }
 
   try {
-    await emailTransporter.sendMail({
-      from: {
-        name: "InvoiceWeMaAd",
-        address: process.env.EMAIL_FROM,
-      },
-      to: "abdullah@wemaad.net",
-      subject: "New Contact Form Submission - InvoiceWeMaAd",
-      html: await render(
-        ContactFormEmail({
-          firstName: validatedFields.data.firstName,
-          lastName: validatedFields.data.lastName,
-          email: validatedFields.data.email,
-          message: validatedFields.data.message,
-        })
-      ),
+    await sendEmail({
+      to: CONTACT_EMAIL,
+      templateName: "contactForm",
+      variables: validatedFields.data,
     });
 
     return { success: true };
-  } catch (error) {
-    console.error("Failed to send contact form email:", error);
+  } catch {
     return { error: "Failed to send message" };
   }
 }
