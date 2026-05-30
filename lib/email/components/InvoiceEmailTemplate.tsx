@@ -11,7 +11,6 @@ import {
 
 import { EmailFooter } from "./EmailFooter";
 import { EmailHeader } from "./EmailHeader";
-import { useInvoiceEmail } from "./InvoiceEmailContext";
 import {
   button,
   buttonContainer,
@@ -32,6 +31,11 @@ interface InvoiceEmailTemplateProps {
   detailsHeading: string;
   bodyText: string;
   buttonText: string;
+  clientName: string;
+  invoiceNumber: string;
+  invoiceDueDate: string;
+  invoiceAmount: string;
+  invoiceLink: string;
 }
 
 export function InvoiceEmailTemplate({
@@ -43,9 +47,12 @@ export function InvoiceEmailTemplate({
   detailsHeading,
   bodyText,
   buttonText,
+  clientName,
+  invoiceNumber,
+  invoiceDueDate,
+  invoiceAmount,
+  invoiceLink,
 }: InvoiceEmailTemplateProps) {
-  const { clientName, invoiceNumber, invoiceDueDate, invoiceAmount, invoiceLink } =
-    useInvoiceEmail();
 
   const noticeStyle = {
     backgroundColor: notice.background,
