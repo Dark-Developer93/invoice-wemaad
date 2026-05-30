@@ -1,7 +1,5 @@
 "use client";
 
-import { UseFormReturn } from "react-hook-form";
-import * as z from "zod";
 import {
   FormControl,
   FormField,
@@ -12,15 +10,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { clientFormSchema } from "@/lib/zodSchemas";
+import { useClientForm } from "./ClientFormContext";
 
-type ClientFormValues = z.infer<typeof clientFormSchema>;
-
-interface BasicInfoTabProps {
-  form: UseFormReturn<ClientFormValues>;
-}
-
-export function BasicInfoTab({ form }: BasicInfoTabProps) {
+export function BasicInfoTab() {
+  const { form } = useClientForm();
   return (
     <Card>
       <CardContent className="pt-6">

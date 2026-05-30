@@ -3,10 +3,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Prisma, Client } from "@prisma/client";
 import { useState, useEffect, useMemo, useRef } from "react";
 import debounce from "lodash/debounce";
-import * as z from "zod";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
@@ -18,48 +16,17 @@ import { toFormData } from "@/lib/toFormData";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/components/providers/UserProvider";
 
+import { InvoiceFormProvider, InvoiceClient, InvoiceData, InvoiceFormValues } from "./InvoiceFormContext";
 import { InvoiceMetaSection } from "./InvoiceMetaSection";
 import { InvoiceFromToSection } from "./InvoiceFromToSection";
 import { InvoiceItemsSection } from "./InvoiceItemsSection";
 import { InvoiceActionsSection } from "./InvoiceActionsSection";
 
-type InvoiceFormValues = z.infer<typeof invoiceSchema>;
-
 interface InvoiceFormProps {
   mode: "create" | "edit";
   defaultClientId?: string;
-  clients?: (Client & {
-    addresses: Array<{
-      id: string;
-      type: "BILLING" | "SHIPPING" | "OTHER";
-      street: string;
-      city: string;
-      state: string | null;
-      country: string;
-      zipCode: string;
-      isDefault: boolean;
-    }>;
-    contactPersons: Array<{
-      id: string;
-      firstName: string;
-      lastName: string;
-      email: string;
-      phone: string | null;
-      position: string | null;
-      isPrimary: boolean;
-    }>;
-  })[];
-  data?: Prisma.InvoiceGetPayload<{
-    include: {
-      client: {
-        select: {
-          name: true;
-          email: true;
-          addresses: { select: { street: true; isDefault: true } };
-        };
-      };
-    };
-  }>;
+  clients?: InvoiceClient[];
+  data?: InvoiceData;
   onSuccess?: () => void;
   onClose?: () => void;
 }
@@ -192,27 +159,31 @@ export function InvoiceForm({
   return (
     <Card className="w-full">
       <CardContent className="p-4 sm:p-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
-            <InvoiceMetaSection form={form} />
-            <InvoiceFromToSection
-              form={form}
-              mode={mode}
-              clients={clients}
-              data={data}
-              selectedClient={selectedClient}
-            />
-            <InvoiceItemsSection form={form} currency={currency} localTotal={localTotal} />
-            <InvoiceActionsSection
-              mode={mode}
-              sendEmail={sendEmail}
-              setSendEmail={setSendEmail}
-              isLoading={isLoading}
-              onClose={onClose}
-              onCancelClick={() => setShowCancelConfirm(true)}
-            />
-          </form>
-        </Form>
+        <InvoiceFormProvider
+          value={{
+            form,
+            mode,
+            clients,
+            data,
+            selectedClient,
+            currency,
+            localTotal,
+            sendEmail,
+            setSendEmail,
+            isLoading,
+            onClose,
+            onCancelClick: () => setShowCancelConfirm(true),
+          }}
+        >
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+              <InvoiceMetaSection />
+              <InvoiceFromToSection />
+              <InvoiceItemsSection />
+              <InvoiceActionsSection />
+            </form>
+          </Form>
+        </InvoiceFormProvider>
       </CardContent>
 
       <ConfirmDialog

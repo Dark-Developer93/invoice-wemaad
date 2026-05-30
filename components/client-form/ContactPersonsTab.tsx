@@ -1,7 +1,5 @@
 "use client";
 
-import { UseFormReturn } from "react-hook-form";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   FormControl,
@@ -13,15 +11,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
-import { clientFormSchema } from "@/lib/zodSchemas";
+import { useClientForm } from "./ClientFormContext";
 
-type ClientFormValues = z.infer<typeof clientFormSchema>;
-
-interface ContactPersonsTabProps {
-  form: UseFormReturn<ClientFormValues>;
-}
-
-export function ContactPersonsTab({ form }: ContactPersonsTabProps) {
+export function ContactPersonsTab() {
+  const { form } = useClientForm();
   return (
     <Card>
       <CardContent className="pt-6">

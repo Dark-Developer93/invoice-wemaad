@@ -8,7 +8,7 @@ import { addDays, format } from "date-fns";
 import { getRequiredUserId } from "@/lib/session";
 import { invoiceSchema } from "@/lib/zodSchemas";
 import prisma from "@/lib/db";
-import { getUserUsage } from "@/lib/usage";
+import { getUserUsage, isEmailLimitOk } from "@/lib/usage";
 import { dispatchInvoiceEmail } from "@/lib/email/invoice";
 
 export async function createInvoice(
@@ -36,9 +36,7 @@ export async function createInvoice(
     });
 
     const shouldSendEmail = formData.get("sendEmail") !== "false";
-    const emailLimitOk = usage.emailLimit === null || usage.emailsThisMonth < usage.emailLimit;
-
-    if (shouldSendEmail && emailLimitOk) {
+    if (shouldSendEmail && isEmailLimitOk(usage)) {
       const client = await prisma.client.findUnique({
         where: { id: submission.value.clientId, userId },
         include: { contactPersons: { where: { isPrimary: true }, take: 1 } },
@@ -99,9 +97,7 @@ export async function editInvoice(
         getUserUsage(userId),
       ]);
 
-      const emailLimitOk = usage.emailLimit === null || usage.emailsThisMonth < usage.emailLimit;
-
-      if (client?.contactPersons[0] && emailLimitOk) {
+      if (client?.contactPersons[0] && isEmailLimitOk(usage)) {
         dispatchInvoiceEmail({
           userId,
           clientName: client.name,
@@ -155,7 +151,7 @@ export async function sendReminderEmail(invoiceId: string) {
   }
 
   const usage = await getUserUsage(userId);
-  if (usage.emailLimit !== null && usage.emailsThisMonth >= usage.emailLimit) {
+  if (!isEmailLimitOk(usage)) {
     throw new Error(
       `Monthly email limit (${usage.emailLimit}) reached on the ${usage.plan} plan. Upgrade your plan to send more emails.`
     );

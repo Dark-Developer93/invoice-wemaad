@@ -1,9 +1,7 @@
 "use client";
 
-import { UseFormReturn } from "react-hook-form";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
-import * as z from "zod";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,15 +20,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { CurrencySelect } from "@/components/ui/currency-select";
-import { invoiceSchema } from "@/lib/zodSchemas";
+import { useInvoiceForm } from "./InvoiceFormContext";
 
-type InvoiceFormValues = z.infer<typeof invoiceSchema>;
+export function InvoiceMetaSection() {
+  const { form } = useInvoiceForm();
 
-interface InvoiceMetaSectionProps {
-  form: UseFormReturn<InvoiceFormValues>;
-}
-
-export function InvoiceMetaSection({ form }: InvoiceMetaSectionProps) {
   return (
     <>
       {/* Invoice name + badge */}

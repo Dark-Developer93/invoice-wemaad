@@ -4,24 +4,11 @@ import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import SubmitButton from "@/components/submit-button/SubmitButton";
+import { useInvoiceForm } from "./InvoiceFormContext";
 
-interface InvoiceActionsSectionProps {
-  mode: "create" | "edit";
-  sendEmail: boolean;
-  setSendEmail: (v: boolean) => void;
-  isLoading: boolean;
-  onClose?: () => void;
-  onCancelClick: () => void;
-}
+export function InvoiceActionsSection() {
+  const { mode, sendEmail, setSendEmail, isLoading, onClose, onCancelClick } = useInvoiceForm();
 
-export function InvoiceActionsSection({
-  mode,
-  sendEmail,
-  setSendEmail,
-  isLoading,
-  onClose,
-  onCancelClick,
-}: InvoiceActionsSectionProps) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div className="flex items-center gap-3">

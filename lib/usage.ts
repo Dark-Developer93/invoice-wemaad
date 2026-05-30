@@ -35,3 +35,7 @@ export async function getUserUsage(userId: string): Promise<UserUsage> {
 export async function logEmailSent(userId: string, emailType: string, invoiceId?: string) {
   await prisma.emailLog.create({ data: { userId, emailType, invoiceId } });
 }
+
+export function isEmailLimitOk(usage: UserUsage): boolean {
+  return usage.emailLimit === null || usage.emailsThisMonth < usage.emailLimit;
+}

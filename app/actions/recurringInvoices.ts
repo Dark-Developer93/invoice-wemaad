@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 import { getRequiredUserId } from "@/lib/session";
 import { recurringInvoiceSchema } from "@/lib/zodSchemas";
 import { PLAN_FEATURES } from "@/lib/plans";
-import { getUserUsage } from "@/lib/usage";
+import { getUserUsage, isEmailLimitOk } from "@/lib/usage";
 import { dispatchInvoiceEmail } from "@/lib/email/invoice";
 import prisma from "@/lib/db";
 
@@ -180,10 +180,8 @@ export async function processRecurringInvoices() {
       usage.invoicesThisMonth++;
 
       const contact = recurring.client?.contactPersons[0];
-      const emailLimitOk =
-        usage.emailLimit === null || usage.emailsThisMonth < usage.emailLimit;
 
-      if (contact && emailLimitOk) {
+      if (contact && isEmailLimitOk(usage)) {
         usage.emailsThisMonth++;
         dispatchInvoiceEmail({
           userId: recurring.userId!,

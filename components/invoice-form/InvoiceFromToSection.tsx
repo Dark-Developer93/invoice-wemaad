@@ -1,9 +1,5 @@
 "use client";
 
-import { UseFormReturn } from "react-hook-form";
-import { Prisma, Client } from "@prisma/client";
-import * as z from "zod";
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,59 +15,11 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { invoiceSchema } from "@/lib/zodSchemas";
+import { useInvoiceForm } from "./InvoiceFormContext";
 
-type InvoiceFormValues = z.infer<typeof invoiceSchema>;
+export function InvoiceFromToSection() {
+  const { form, mode, clients, data, selectedClient } = useInvoiceForm();
 
-type InvoiceClient = Client & {
-  addresses: Array<{
-    id: string;
-    type: "BILLING" | "SHIPPING" | "OTHER";
-    street: string;
-    city: string;
-    state: string | null;
-    country: string;
-    zipCode: string;
-    isDefault: boolean;
-  }>;
-  contactPersons: Array<{
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string | null;
-    position: string | null;
-    isPrimary: boolean;
-  }>;
-};
-
-type InvoiceData = Prisma.InvoiceGetPayload<{
-  include: {
-    client: {
-      select: {
-        name: true;
-        email: true;
-        addresses: { select: { street: true; isDefault: true } };
-      };
-    };
-  };
-}>;
-
-interface InvoiceFromToSectionProps {
-  form: UseFormReturn<InvoiceFormValues>;
-  mode: "create" | "edit";
-  clients: InvoiceClient[];
-  data?: InvoiceData;
-  selectedClient: InvoiceClient | null | undefined;
-}
-
-export function InvoiceFromToSection({
-  form,
-  mode,
-  clients,
-  data,
-  selectedClient,
-}: InvoiceFromToSectionProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
       <div>

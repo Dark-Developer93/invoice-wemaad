@@ -3,7 +3,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { formatDate } from "@/lib/formatDate";
 import { logEmailSent } from "@/lib/usage";
 import { getInvoiceUrl } from "@/lib/urls";
-import { Currency } from "@/types";
+import { Currency, InvoiceEmailProps } from "@/types";
 import prisma from "@/lib/db";
 
 export async function dispatchInvoiceEmail({

@@ -1,8 +1,5 @@
 "use client";
 
-import { UseFormReturn } from "react-hook-form";
-import * as z from "zod";
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,22 +11,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { formatCurrency } from "@/lib/formatCurrency";
-import { Currency } from "@/types";
-import { invoiceSchema } from "@/lib/zodSchemas";
+import { useInvoiceForm } from "./InvoiceFormContext";
 
-type InvoiceFormValues = z.infer<typeof invoiceSchema>;
+export function InvoiceItemsSection() {
+  const { form, currency, localTotal } = useInvoiceForm();
 
-interface InvoiceItemsSectionProps {
-  form: UseFormReturn<InvoiceFormValues>;
-  currency: Currency;
-  localTotal: number;
-}
-
-export function InvoiceItemsSection({
-  form,
-  currency,
-  localTotal,
-}: InvoiceItemsSectionProps) {
   return (
     <>
       {/* Invoice items */}
