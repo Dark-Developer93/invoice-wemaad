@@ -102,3 +102,9 @@ html {
     @apply bg-background text-foreground;
   }
 }
+
+.dark [data-sonner-toaster] [data-close-button] {
+  background: hsl(var(--secondary)) !important;
+  color: hsl(var(--secondary-foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+}

@@ -166,7 +166,7 @@ const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
               "relative flex flex-col justify-between transition-all hover:scale-105 w-full max-w-sm mx-auto",
               {
                 "border-primary/50 shadow-xl shadow-primary/10": plan.popular,
-                "rounded-lg border text-card-foreground shadow-sm py-1 border-zinc-700 animate-background-shine bg-white dark:bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%]":
+                "rounded-lg border text-card-foreground shadow-sm py-1 border-primary/20 dark:border-zinc-700 animate-background-shine bg-white dark:bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%]":
                   plan.exclusive,
               }
             )}
