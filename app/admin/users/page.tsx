@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Users, UserCheck, UserX, Crown, Clock } from "lucide-react";
 import {
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { adminGetAllUsers, adminGetPendingUpgradeRequests } from "@/app/actions/admin";
 
 const PLAN_COLORS: Record<string, string> = {
@@ -18,7 +20,7 @@ const PLAN_COLORS: Record<string, string> = {
   BUSINESS: "destructive",
 };
 
-export default async function AdminUsersPage() {
+async function AdminUsersContent() {
   const [users, pendingRequests] = await Promise.all([
     adminGetAllUsers(),
     adminGetPendingUpgradeRequests(),
@@ -30,15 +32,7 @@ export default async function AdminUsersPage() {
   const paidUsers = users.filter((u) => u.plan !== "FREE").length;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
-        <p className="text-muted-foreground text-sm sm:text-base">
-          Manage all users, their plans, and account status.
-        </p>
-      </div>
-
-      {/* Pending upgrade requests */}
+    <>
       {pendingRequests.length > 0 && (
         <Card className="border-yellow-500/50 bg-yellow-500/5">
           <CardHeader className="pb-3">
@@ -61,7 +55,8 @@ export default async function AdminUsersPage() {
                         : req.user.email}
                     </span>
                     <span className="text-muted-foreground ml-2">
-                      {req.user.plan} → <span className="font-semibold text-foreground">{req.requestedPlan}</span>
+                      {req.user.plan} →{" "}
+                      <span className="font-semibold text-foreground">{req.requestedPlan}</span>
                     </span>
                   </div>
                   <Button asChild size="sm" variant="outline">
@@ -74,7 +69,6 @@ export default async function AdminUsersPage() {
         </Card>
       )}
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -114,7 +108,6 @@ export default async function AdminUsersPage() {
         </Card>
       </div>
 
-      {/* Users Table */}
       <Card>
         <CardHeader>
           <CardTitle>All Users</CardTitle>
@@ -157,9 +150,19 @@ export default async function AdminUsersPage() {
                         <div className="text-xs text-muted-foreground">{user.companyName}</div>
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-muted-foreground hidden sm:table-cell">{user.email}</td>
+                    <td className="py-3 pr-4 text-muted-foreground hidden sm:table-cell">
+                      {user.email}
+                    </td>
                     <td className="py-3 pr-4">
-                      <Badge variant={PLAN_COLORS[user.plan] as "default" | "secondary" | "outline" | "destructive"}>
+                      <Badge
+                        variant={
+                          PLAN_COLORS[user.plan] as
+                            | "default"
+                            | "secondary"
+                            | "outline"
+                            | "destructive"
+                        }
+                      >
                         {user.plan}
                       </Badge>
                     </td>
@@ -172,8 +175,12 @@ export default async function AdminUsersPage() {
                         <Badge variant="destructive">Inactive</Badge>
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-center hidden md:table-cell">{user._count.invoices}</td>
-                    <td className="py-3 pr-4 text-center hidden md:table-cell">{user._count.clients}</td>
+                    <td className="py-3 pr-4 text-center hidden md:table-cell">
+                      {user._count.invoices}
+                    </td>
+                    <td className="py-3 pr-4 text-center hidden md:table-cell">
+                      {user._count.clients}
+                    </td>
                     <td className="py-3 pr-4 text-muted-foreground text-xs hidden lg:table-cell">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
@@ -187,13 +194,78 @@ export default async function AdminUsersPage() {
               </tbody>
             </table>
             {users.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                No users found.
-              </div>
+              <div className="text-center py-12 text-muted-foreground">No users found.</div>
             )}
           </div>
         </CardContent>
       </Card>
+    </>
+  );
+}
+
+export function AdminUsersContentSkeleton() {
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="size-4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-12" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-4 w-56 mt-1" />
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <div className="min-w-[500px] space-y-0">
+              <div className="flex gap-4 border-b pb-3">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 w-14" />
+                <Skeleton className="h-4 w-14" />
+                <Skeleton className="h-4 w-14" />
+                <Skeleton className="h-4 w-10" />
+              </div>
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 py-3 border-b last:border-0">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-8 w-16 ml-auto" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+export default async function AdminUsersPage() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
+          Manage all users, their plans, and account status.
+        </p>
+      </div>
+      <Suspense fallback={<AdminUsersContentSkeleton />}>
+        <AdminUsersContent />
+      </Suspense>
     </div>
   );
 }

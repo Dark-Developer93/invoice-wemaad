@@ -1,6 +1,16 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, Mail, MapPin, FileText, Users, RefreshCw, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Mail,
+  MapPin,
+  FileText,
+  Users,
+  RefreshCw,
+  Send,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10,17 +20,13 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { adminGetUser, adminGetUserUpgradeRequests } from "@/app/actions/admin";
 import { requireAdmin } from "@/lib/session";
 import { getUserUsage } from "@/lib/usage";
 import { AdminUserActions } from "./AdminUserActions";
 
-export default async function AdminUserDetailPage({
-  params,
-}: {
-  params: Promise<{ userId: string }>;
-}) {
-  const { userId } = await params;
+async function AdminUserDetailContent({ userId }: { userId: string }) {
   const [session, user, upgradeRequests, usage] = await Promise.all([
     requireAdmin(),
     adminGetUser(userId),
@@ -31,14 +37,8 @@ export default async function AdminUserDetailPage({
   if (!user) notFound();
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
+    <>
       <div className="flex flex-wrap items-center gap-3">
-        <Button asChild variant="outline" size="sm" className="shrink-0">
-          <Link href="/admin/users">
-            <ArrowLeft className="size-4 mr-1" />
-            Back
-          </Link>
-        </Button>
         <div className="min-w-0 flex-1">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">
             {user.firstName && user.lastName
@@ -64,7 +64,6 @@ export default async function AdminUserDetailPage({
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Account Details */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Account Details</CardTitle>
@@ -93,7 +92,8 @@ export default async function AdminUserDetailPage({
               </div>
             )}
             <div className="pt-2 border-t text-xs text-muted-foreground">
-              Joined {new Date(user.createdAt).toLocaleDateString("en-US", {
+              Joined{" "}
+              {new Date(user.createdAt).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
@@ -102,11 +102,12 @@ export default async function AdminUserDetailPage({
           </CardContent>
         </Card>
 
-        {/* Usage Stats */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Usage Stats</CardTitle>
-            <CardDescription>All-time totals and this month&apos;s plan usage</CardDescription>
+            <CardDescription>
+              All-time totals and this month&apos;s plan usage
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -133,27 +134,47 @@ export default async function AdminUserDetailPage({
             </div>
 
             <div className="border-t pt-4 space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">This Month&apos;s Plan Usage</p>
-              {/* Invoices this month */}
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                This Month&apos;s Plan Usage
+              </p>
               {(() => {
                 const pct = usage.invoiceLimit
-                  ? Math.min(100, Math.round((usage.invoicesThisMonth / usage.invoiceLimit) * 100))
+                  ? Math.min(
+                      100,
+                      Math.round((usage.invoicesThisMonth / usage.invoiceLimit) * 100)
+                    )
                   : null;
                 const overLimit = pct !== null && pct >= 100;
-                const labelColor = overLimit ? "text-red-600" : pct !== null && pct >= 80 ? "text-yellow-600" : "text-muted-foreground";
+                const labelColor =
+                  overLimit
+                    ? "text-red-600"
+                    : pct !== null && pct >= 80
+                    ? "text-yellow-600"
+                    : "text-muted-foreground";
                 return (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1.5"><FileText className="size-3.5 text-blue-600" /> Invoices</span>
+                      <span className="flex items-center gap-1.5">
+                        <FileText className="size-3.5 text-blue-600" /> Invoices
+                      </span>
                       <span className={`font-medium tabular-nums ${labelColor}`}>
-                        {usage.invoicesThisMonth}{usage.invoiceLimit !== null ? ` / ${usage.invoiceLimit}` : " / ∞"}
-                        {pct !== null && <span className="ml-1.5 text-xs">({pct}%)</span>}
+                        {usage.invoicesThisMonth}
+                        {usage.invoiceLimit !== null ? ` / ${usage.invoiceLimit}` : " / ∞"}
+                        {pct !== null && (
+                          <span className="ml-1.5 text-xs">({pct}%)</span>
+                        )}
                       </span>
                     </div>
                     {pct !== null ? (
                       <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${overLimit ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-blue-500"}`}
+                          className={`h-full rounded-full transition-all ${
+                            overLimit
+                              ? "bg-red-500"
+                              : pct >= 80
+                              ? "bg-yellow-500"
+                              : "bg-blue-500"
+                          }`}
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -163,26 +184,44 @@ export default async function AdminUserDetailPage({
                   </div>
                 );
               })()}
-              {/* Emails this month */}
               {(() => {
                 const pct = usage.emailLimit
-                  ? Math.min(100, Math.round((usage.emailsThisMonth / usage.emailLimit) * 100))
+                  ? Math.min(
+                      100,
+                      Math.round((usage.emailsThisMonth / usage.emailLimit) * 100)
+                    )
                   : null;
                 const overLimit = pct !== null && pct >= 100;
-                const labelColor = overLimit ? "text-red-600" : pct !== null && pct >= 80 ? "text-yellow-600" : "text-muted-foreground";
+                const labelColor =
+                  overLimit
+                    ? "text-red-600"
+                    : pct !== null && pct >= 80
+                    ? "text-yellow-600"
+                    : "text-muted-foreground";
                 return (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1.5"><Send className="size-3.5 text-orange-600" /> Emails</span>
+                      <span className="flex items-center gap-1.5">
+                        <Send className="size-3.5 text-orange-600" /> Emails
+                      </span>
                       <span className={`font-medium tabular-nums ${labelColor}`}>
-                        {usage.emailsThisMonth}{usage.emailLimit !== null ? ` / ${usage.emailLimit}` : " / ∞"}
-                        {pct !== null && <span className="ml-1.5 text-xs">({pct}%)</span>}
+                        {usage.emailsThisMonth}
+                        {usage.emailLimit !== null ? ` / ${usage.emailLimit}` : " / ∞"}
+                        {pct !== null && (
+                          <span className="ml-1.5 text-xs">({pct}%)</span>
+                        )}
                       </span>
                     </div>
                     {pct !== null ? (
                       <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${overLimit ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-orange-500"}`}
+                          className={`h-full rounded-full transition-all ${
+                            overLimit
+                              ? "bg-red-500"
+                              : pct >= 80
+                              ? "bg-yellow-500"
+                              : "bg-orange-500"
+                          }`}
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -197,12 +236,105 @@ export default async function AdminUserDetailPage({
         </Card>
       </div>
 
-      {/* Admin Actions */}
       <AdminUserActions
         user={user}
         upgradeRequests={upgradeRequests}
         currentUserId={session.user!.id!}
       />
+    </>
+  );
+}
+
+export function AdminUserDetailSkeleton() {
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-36" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-5 w-14 rounded-full" />
+          <Skeleton className="h-5 w-14 rounded-full" />
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-32" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-3 w-40 mt-2" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-4 w-48 mt-1" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-20 rounded-lg" />
+              ))}
+            </div>
+            <div className="border-t pt-4 space-y-3">
+              <Skeleton className="h-3 w-36" />
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="space-y-1">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <Skeleton className="h-2 w-full rounded-full" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-5 w-40" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-20 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </>
+  );
+}
+
+export default async function AdminUserDetailPage({
+  params,
+}: {
+  params: Promise<{ userId: string }>;
+}) {
+  const { userId } = await params;
+
+  return (
+    <div className="flex flex-col gap-6 max-w-5xl">
+      <div>
+        <Button asChild variant="outline" size="sm" className="shrink-0">
+          <Link href="/admin/users">
+            <ArrowLeft className="size-4 mr-1" />
+            Back
+          </Link>
+        </Button>
+      </div>
+      <Suspense fallback={<AdminUserDetailSkeleton />}>
+        <AdminUserDetailContent userId={userId} />
+      </Suspense>
     </div>
   );
 }
