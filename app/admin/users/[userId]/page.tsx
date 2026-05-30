@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
@@ -25,6 +26,7 @@ import { requireAdmin } from "@/lib/session";
 import { getUserUsage } from "@/lib/usage";
 import { AdminUserActions } from "./AdminUserActions";
 import { AdminUpgradeRequests } from "./AdminUpgradeRequests";
+import { AdminUserDetailSkeleton } from "./_skeleton";
 
 function UsageBar({
   icon: Icon,
@@ -70,12 +72,7 @@ function UsageBar({
   );
 }
 
-export default async function AdminUserDetailPage({
-  params,
-}: {
-  params: Promise<{ userId: string }>;
-}) {
-  const { userId } = await params;
+async function AdminUserDetailContent({ userId }: { userId: string }) {
   const [session, user, upgradeRequests, usage] = await Promise.all([
     requireAdmin(),
     adminGetUser(userId),
@@ -86,15 +83,9 @@ export default async function AdminUserDetailPage({
   if (!user) notFound();
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
+    <>
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3">
-        <Button asChild variant="outline" size="sm" className="shrink-0">
-          <Link href="/admin/users">
-            <ArrowLeft className="size-4 mr-1" />
-            Back
-          </Link>
-        </Button>
         <div className="min-w-0 flex-1">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">
             {user.firstName && user.lastName
@@ -226,6 +217,30 @@ export default async function AdminUserDetailPage({
           />
         </div>
       </div>
+    </>
+  );
+}
+
+export default async function AdminUserDetailPage({
+  params,
+}: {
+  params: Promise<{ userId: string }>;
+}) {
+  const { userId } = await params;
+
+  return (
+    <div className="flex flex-col gap-6 max-w-6xl">
+      <div>
+        <Button asChild variant="outline" size="sm" className="shrink-0">
+          <Link href="/admin/users">
+            <ArrowLeft className="size-4 mr-1" />
+            Back
+          </Link>
+        </Button>
+      </div>
+      <Suspense fallback={<AdminUserDetailSkeleton />}>
+        <AdminUserDetailContent userId={userId} />
+      </Suspense>
     </div>
   );
 }

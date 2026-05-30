@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
@@ -9,13 +10,13 @@ import { requestPlanUpgrade, getUserPendingUpgradeRequest } from "@/app/actions/
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import prisma from "@/lib/db";
 
@@ -62,10 +63,7 @@ const PLAN_NAMES: Record<PlanType, string> = {
   BUSINESS: "Business",
 };
 
-export default async function BillingPage() {
-  const session = await requireUser();
-  const userId = session.user!.id!;
-
+async function BillingContent({ userId }: { userId: string }) {
   const [usage, userData, pendingRequest] = await Promise.all([
     getUserUsage(userId),
     prisma.user.findUnique({
@@ -89,15 +87,7 @@ export default async function BillingPage() {
   if (!currentFeatures.multiUser) lockedFeatures.push("Multi-user access");
 
   return (
-    <div className="flex flex-col gap-6 p-4">
-      <div>
-        <h1 className="text-2xl font-bold">Billing & Plan</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Manage your subscription and monitor monthly usage.
-        </p>
-      </div>
-
-      {/* Pending upgrade request notice */}
+    <>
       {pendingRequest && (
         <Card className="border-yellow-500/50 bg-yellow-500/5">
           <CardContent className="pt-4 flex items-start gap-3">
@@ -117,21 +107,20 @@ export default async function BillingPage() {
         </Card>
       )}
 
-      {/* Current plan + usage */}
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
             <CardTitle>Current Plan</CardTitle>
             <Badge variant="secondary">{PLAN_NAMES[currentPlan]}</Badge>
           </div>
-          <CardDescription>
+          <p className="text-sm text-muted-foreground">
             {PLAN_PRICE[currentPlan] !== null
               ? PLAN_PRICE[currentPlan] === 0
                 ? "Free forever"
                 : `$${PLAN_PRICE[currentPlan]}/month`
               : "Custom pricing"}{" "}
             · Active since {format(new Date(userData.planUpdatedAt), "MMM d, yyyy")}
-          </CardDescription>
+          </p>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <UsageBar
@@ -147,7 +136,6 @@ export default async function BillingPage() {
         </CardContent>
       </Card>
 
-      {/* Plan selection */}
       <div>
         <h2 className="text-lg font-semibold mb-4">Available Plans</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -260,7 +248,6 @@ export default async function BillingPage() {
         </div>
       </div>
 
-      {/* Locked features notice */}
       {lockedFeatures.length > 0 && (
         <Card className="border-dashed">
           <CardContent className="pt-4">
@@ -271,6 +258,72 @@ export default async function BillingPage() {
           </CardContent>
         </Card>
       )}
+    </>
+  );
+}
+
+function BillingContentSkeleton() {
+  return (
+    <>
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+          <Skeleton className="h-4 w-48 mt-1" />
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-4 w-12" />
+              </div>
+              <Skeleton className="h-2 w-full rounded-full" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+      <div>
+        <Skeleton className="h-6 w-36 mb-4" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="flex flex-col">
+              <CardHeader className="pb-2">
+                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-8 w-16 mt-2" />
+              </CardHeader>
+              <CardContent className="flex-1 space-y-2">
+                {[...Array(4)].map((_, j) => (
+                  <Skeleton key={j} className="h-4 w-full" />
+                ))}
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-9 w-full" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default async function BillingPage() {
+  const session = await requireUser();
+
+  return (
+    <div className="flex flex-col gap-6 p-4">
+      <div>
+        <h1 className="text-2xl font-bold">Billing & Plan</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Manage your subscription and monitor monthly usage.
+        </p>
+      </div>
+      <Suspense fallback={<BillingContentSkeleton />}>
+        <BillingContent userId={session.user!.id!} />
+      </Suspense>
     </div>
   );
 }

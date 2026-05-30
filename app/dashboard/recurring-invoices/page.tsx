@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { PlusIcon, RefreshCw } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -11,8 +12,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { RecurringInvoiceDialog } from "@/components/recurring-invoice-dialog/RecurringInvoiceDialog";
-
 import { RecurringInvoiceList } from "@/components/recurring-invoice-list/RecurringInvoiceList";
 import { UpgradePrompt } from "@/components/upgrade-prompt/UpgradePrompt";
 import { getUserUsage } from "@/lib/usage";
@@ -23,14 +24,72 @@ export const metadata = {
   description: "Manage your recurring invoices",
 };
 
+async function RecurringInvoiceListContent({ userId }: { userId: string }) {
+  const recurringInvoices = await prisma.recurringInvoice.findMany({
+    where: { userId },
+    include: { client: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return <RecurringInvoiceList items={recurringInvoices} />;
+}
+
+function RecurringInvoiceListSkeleton() {
+  return (
+    <>
+      <div className="md:hidden space-y-3">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="rounded-lg border bg-card p-4 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-3 w-40" />
+          </div>
+        ))}
+      </div>
+      <div className="hidden md:block overflow-x-auto">
+        <div className="min-w-[600px]">
+          <div className="grid grid-cols-7 border-b px-4 py-3 gap-4">
+            <Skeleton className="h-4 w-10" />
+            <Skeleton className="h-4 w-10" />
+            <Skeleton className="h-4 w-10" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-12" />
+            <Skeleton className="h-4 w-10" />
+          </div>
+          {[...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              className="grid grid-cols-7 items-center px-4 py-3 border-b last:border-0 gap-4"
+            >
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-5 w-14 rounded-full" />
+              <Skeleton className="h-8 w-8 ml-auto" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default async function RecurringInvoicesPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const usage = await getUserUsage(session.user.id);
-  const hasAccess = PLAN_FEATURES[usage.plan].recurringInvoices;
+  const [usage, clients] = await Promise.all([
+    getUserUsage(session.user.id),
+    prisma.client.findMany({ where: { userId: session.user.id } }),
+  ]);
 
-  if (!hasAccess) {
+  if (!PLAN_FEATURES[usage.plan].recurringInvoices) {
     return (
       <UpgradePrompt
         title="Recurring Invoices"
@@ -44,15 +103,6 @@ export default async function RecurringInvoicesPage() {
       />
     );
   }
-
-  const [clients, recurringInvoices] = await Promise.all([
-    prisma.client.findMany({ where: { userId: session.user.id } }),
-    prisma.recurringInvoice.findMany({
-      where: { userId: session.user.id },
-      include: { client: true },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
 
   return (
     <Card>
@@ -79,7 +129,9 @@ export default async function RecurringInvoicesPage() {
         </div>
       </CardHeader>
       <CardContent>
-        <RecurringInvoiceList items={recurringInvoices} />
+        <Suspense fallback={<RecurringInvoiceListSkeleton />}>
+          <RecurringInvoiceListContent userId={session.user.id} />
+        </Suspense>
       </CardContent>
     </Card>
   );
