@@ -75,7 +75,7 @@ export default function NewInvoiceEmail({
 
             <div style={footer}>
               <Text style={{ ...text, color: "#71717a", fontSize: "14px" }}>
-                © 2024 InvoiceWeMaAd. All rights reserved.
+                © {new Date().getFullYear()} InvoiceWeMaAd. All rights reserved.
               </Text>
               <Text style={{ ...text, color: "#71717a", fontSize: "14px" }}>
                 Making invoicing super easy!

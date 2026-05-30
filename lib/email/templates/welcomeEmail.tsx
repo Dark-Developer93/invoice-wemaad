@@ -72,7 +72,7 @@ export default function WelcomeEmail({ url }: WelcomeEmailProps) {
             </div>
 
             <div style={footer}>
-              <Text>© 2024 InvoiceWeMaAd. All rights reserved.</Text>
+              <Text>© {new Date().getFullYear()} InvoiceWeMaAd. All rights reserved.</Text>
               <Text>Making invoicing super easy!</Text>
             </div>
           </Section>
