@@ -15,10 +15,9 @@ function CardSkeleton({ className }: { className?: string }) {
   );
 }
 
-export default function ReportsLoading() {
+export default function Loading() {
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Reports</h1>
@@ -28,14 +27,11 @@ export default function ReportsLoading() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Full-width revenue chart */}
         <div className="lg:col-span-2">
           <CardSkeleton />
         </div>
-        {/* Status breakdown + client revenue */}
         <CardSkeleton />
         <CardSkeleton />
-        {/* Full-width outstanding invoices table */}
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <Skeleton className="h-5 w-48" />

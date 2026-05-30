@@ -25,7 +25,6 @@ export default function Loading() {
         </div>
       </CardHeader>
       <CardContent>
-        {/* Mobile skeleton */}
         <div className="md:hidden space-y-3">
           {[...Array(4)].map((_, i) => (
             <div
@@ -42,14 +41,16 @@ export default function Loading() {
           ))}
         </div>
 
-        {/* Desktop skeleton */}
         <div className="hidden md:block overflow-x-auto">
           <div className="min-w-[600px]">
-            {/* Header row */}
             <div className="grid grid-cols-7 border-b px-4 py-3 gap-4">
-              {[40, 24, 16, 24, 20, 14, 16].map((w, i) => (
-                <Skeleton key={i} className={`h-4 w-${w}`} />
-              ))}
+              <Skeleton className="h-4 w-10" />
+              <Skeleton className="h-4 w-10" />
+              <Skeleton className="h-4 w-10" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-12" />
+              <Skeleton className="h-4 w-10" />
             </div>
             {[...Array(4)].map((_, i) => (
               <div
