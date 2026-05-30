@@ -48,12 +48,27 @@ export function RevenueSummaryCard({
       <CardContent>
         <ChartContainer
           config={{ total: { label: "Revenue", color: "hsl(var(--primary))" } }}
-          className="min-h-[250px]"
+          className="min-h-[250px] w-full"
         >
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={data}>
-              <XAxis dataKey="month" />
-              <YAxis />
+            <BarChart data={data} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 11 }}
+                interval="preserveStartEnd"
+              />
+              <YAxis
+                width={56}
+                tick={{ fontSize: 11 }}
+                tickFormatter={(v) =>
+                  new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency,
+                    notation: "compact",
+                    maximumFractionDigits: 1,
+                  }).format(v / 100)
+                }
+              />
               <ChartTooltip
                 content={({ active, payload }) => {
                   if (!active || !payload?.length) return null;

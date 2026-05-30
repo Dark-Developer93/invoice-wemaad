@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
+import { ActionCell, type Client } from "./columns";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -108,7 +109,39 @@ export function DataTable<TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border overflow-x-auto">
+      {/* Mobile: card list */}
+      <div className="md:hidden space-y-3 mb-4">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => {
+            const client = row.original as Client;
+            const allClients = (table.options.meta as { allClients: Client[] })?.allClients ?? [];
+            return (
+              <div
+                key={row.id}
+                className="rounded-lg border bg-card p-4 flex flex-col gap-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-sm truncate">{client.name}</span>
+                  <div className="shrink-0">
+                    <ActionCell client={client} allClients={allClients} />
+                  </div>
+                </div>
+                {client.email && (
+                  <div className="text-sm text-muted-foreground">{client.email}</div>
+                )}
+                {client.phone && (
+                  <div className="text-sm text-muted-foreground">{client.phone}</div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <p className="text-center text-muted-foreground py-8">No clients found.</p>
+        )}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden md:block rounded-md border overflow-x-auto">
         <Table className="min-w-[500px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

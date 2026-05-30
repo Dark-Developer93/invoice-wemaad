@@ -41,33 +41,50 @@ async function getData(userId: string) {
 
 function InvoiceListSkeleton() {
   return (
-    <div className="rounded-md border">
-      {/* Table header */}
-      <div className="border-b">
-        <div className="grid grid-cols-6 p-4">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-24 ml-auto" />
-        </div>
+    <>
+      {/* Mobile skeleton */}
+      <div className="md:hidden space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="rounded-lg border p-4 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+            <Skeleton className="h-4 w-32" />
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Table rows */}
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="border-b">
+      {/* Desktop skeleton */}
+      <div className="hidden md:block rounded-md border">
+        <div className="border-b">
           <div className="grid grid-cols-6 p-4">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-8 w-20 ml-auto" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-24 ml-auto" />
           </div>
         </div>
-      ))}
-    </div>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="border-b">
+            <div className="grid grid-cols-6 p-4">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-8 w-20 ml-auto" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -87,45 +104,82 @@ export async function InvoiceList({ emptyButton }: { emptyButton?: ReactNode }) 
           href="/dashboard/invoices/create"
         />
       ) : (
-        <div className="overflow-x-auto -mx-1">
-          <Table className="min-w-[540px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell>#{invoice.invoiceNumber}</TableCell>
-                  <TableCell>{invoice.client?.name || "—"}</TableCell>
-                  <TableCell>
+        <>
+          {/* Mobile: card list */}
+          <div className="md:hidden space-y-3">
+            {data.map((invoice) => (
+              <div
+                key={invoice.id}
+                className="rounded-lg border bg-card p-4 flex flex-col gap-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">#{invoice.invoiceNumber}</span>
+                  <Badge>{invoice.status}</Badge>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {invoice.client?.name || "—"}
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>
                     {formatCurrency({
                       amount: invoice.total,
                       currency: invoice.currency as Currency,
                     })}
-                  </TableCell>
-                  <TableCell>
-                    <Badge>{invoice.status}</Badge>
-                  </TableCell>
-                  <TableCell>
+                  </span>
+                  <span className="text-xs text-muted-foreground">
                     {new Intl.DateTimeFormat("en-US", {
                       dateStyle: "medium",
                     }).format(invoice.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <InvoiceActions invoice={invoice} />
-                  </TableCell>
+                  </span>
+                </div>
+                <div className="flex justify-end pt-1">
+                  <InvoiceActions invoice={invoice} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: table */}
+          <div className="hidden md:block overflow-x-auto -mx-1">
+            <Table className="min-w-[540px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice ID</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {data.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell>#{invoice.invoiceNumber}</TableCell>
+                    <TableCell>{invoice.client?.name || "—"}</TableCell>
+                    <TableCell>
+                      {formatCurrency({
+                        amount: invoice.total,
+                        currency: invoice.currency as Currency,
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      <Badge>{invoice.status}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Intl.DateTimeFormat("en-US", {
+                        dateStyle: "medium",
+                      }).format(invoice.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <InvoiceActions invoice={invoice} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </>
   );

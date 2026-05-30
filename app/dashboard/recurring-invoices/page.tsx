@@ -57,7 +57,7 @@ export default async function RecurringInvoicesPage() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2 text-2xl font-bold">
               <RefreshCw className="size-5" /> Recurring Invoices
@@ -66,14 +66,16 @@ export default async function RecurringInvoicesPage() {
               Invoice templates that generate automatically on a schedule.
             </CardDescription>
           </div>
-          <RecurringInvoiceDialog
-            clients={clients}
-            trigger={
-              <Button>
-                <PlusIcon className="mr-2 size-4" /> New Recurring Invoice
-              </Button>
-            }
-          />
+          <div className="shrink-0">
+            <RecurringInvoiceDialog
+              clients={clients}
+              trigger={
+                <Button>
+                  <PlusIcon className="mr-2 size-4" /> New Recurring Invoice
+                </Button>
+              }
+            />
+          </div>
         </div>
       </CardHeader>
       <CardContent>

@@ -451,8 +451,8 @@ export function RecurringInvoiceForm({
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 md:contents">
-                  <div className="md:col-span-2">
+                <div className="grid grid-cols-3 gap-2 md:contents">
+                  <div className="md:col-span-2 min-w-0">
                     <Label className="md:hidden mb-1 block text-sm">
                       Quantity
                     </Label>
@@ -482,7 +482,7 @@ export function RecurringInvoiceForm({
                     />
                   </div>
 
-                  <div className="md:col-span-2">
+                  <div className="md:col-span-2 min-w-0">
                     <Label className="md:hidden mb-1 block text-sm">Rate</Label>
                     <FormField
                       control={form.control}
@@ -510,7 +510,7 @@ export function RecurringInvoiceForm({
                     />
                   </div>
 
-                  <div className="md:col-span-2">
+                  <div className="md:col-span-2 min-w-0">
                     <Label className="md:hidden mb-1 block text-sm">
                       Amount
                     </Label>

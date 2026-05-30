@@ -36,6 +36,44 @@ const INTERVAL_LABELS: Record<string, string> = {
   YEARLY: "Yearly",
 };
 
+interface ItemActionsProps {
+  item: RecurringInvoiceWithClient;
+  isPending: boolean;
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+function ItemActions({ item, isPending, onToggle, onDelete }: ItemActionsProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" disabled={isPending}>
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onToggle(item.id)}>
+          {item.isActive ? (
+            <>
+              <Pause className="size-4 mr-2" /> Pause
+            </>
+          ) : (
+            <>
+              <Play className="size-4 mr-2" /> Resume
+            </>
+          )}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onDelete(item.id)}
+          className="text-destructive"
+        >
+          <Trash2 className="size-4 mr-2" /> Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function RecurringInvoiceList({ items }: RecurringInvoiceListProps) {
   const [list, setList] = useState(items);
   const [isPending, startTransition] = useTransition();
@@ -81,66 +119,81 @@ export function RecurringInvoiceList({ items }: RecurringInvoiceListProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
-    <Table className="min-w-[600px]">
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Client</TableHead>
-          <TableHead>Interval</TableHead>
-          <TableHead>Next Run</TableHead>
-          <TableHead>End Date</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      {/* Mobile: card list */}
+      <div className="md:hidden space-y-3">
         {list.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell className="font-medium">{item.invoiceName}</TableCell>
-            <TableCell>{item.client?.name ?? "—"}</TableCell>
-            <TableCell>{INTERVAL_LABELS[item.interval]}</TableCell>
-            <TableCell>{format(new Date(item.nextRunAt), "MMM d, yyyy")}</TableCell>
-            <TableCell>
-              {item.endDate ? format(new Date(item.endDate), "MMM d, yyyy") : "—"}
-            </TableCell>
-            <TableCell>
+          <div
+            key={item.id}
+            className="rounded-lg border bg-card p-4 flex flex-col gap-2"
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-medium">{item.invoiceName}</span>
               <Badge variant={item.isActive ? "default" : "secondary"}>
                 {item.isActive ? "Active" : "Paused"}
               </Badge>
-            </TableCell>
-            <TableCell className="text-right">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={isPending}>
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleToggle(item.id)}>
-                    {item.isActive ? (
-                      <>
-                        <Pause className="size-4 mr-2" /> Pause
-                      </>
-                    ) : (
-                      <>
-                        <Play className="size-4 mr-2" /> Resume
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleDelete(item.id)}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="size-4 mr-2" /> Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
-          </TableRow>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {item.client?.name ?? "—"} · {INTERVAL_LABELS[item.interval] ?? item.interval}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Next: {format(new Date(item.nextRunAt), "MMM d, yyyy")}
+              {item.endDate && ` · Ends: ${format(new Date(item.endDate), "MMM d, yyyy")}`}
+            </div>
+            <div className="flex justify-end">
+              <ItemActions
+                item={item}
+                isPending={isPending}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+              />
+            </div>
+          </div>
         ))}
-      </TableBody>
-    </Table>
-    </div>
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden md:block overflow-x-auto">
+        <Table className="min-w-[600px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Interval</TableHead>
+              <TableHead>Next Run</TableHead>
+              <TableHead>End Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {list.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium">{item.invoiceName}</TableCell>
+                <TableCell>{item.client?.name ?? "—"}</TableCell>
+                <TableCell>{INTERVAL_LABELS[item.interval] ?? item.interval}</TableCell>
+                <TableCell>{format(new Date(item.nextRunAt), "MMM d, yyyy")}</TableCell>
+                <TableCell>
+                  {item.endDate ? format(new Date(item.endDate), "MMM d, yyyy") : "—"}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={item.isActive ? "default" : "secondary"}>
+                    {item.isActive ? "Active" : "Paused"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <ItemActions
+                    item={item}
+                    isPending={isPending}
+                    onToggle={handleToggle}
+                    onDelete={handleDelete}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }
