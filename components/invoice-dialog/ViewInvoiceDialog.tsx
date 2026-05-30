@@ -68,7 +68,7 @@ export function ViewInvoiceDialog({
   return (
     <Dialog>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Invoice Details</DialogTitle>
           <DialogDescription>
@@ -137,14 +137,39 @@ export function ViewInvoiceDialog({
 
           <Card className="mt-8">
             <CardContent className="pt-6">
-              <div className="grid grid-cols-12 gap-4 mb-2 font-medium">
+              {/* Mobile: stacked item layout */}
+              <div className="sm:hidden flex flex-col gap-3 mb-4 text-sm">
+                <div className="whitespace-pre-line">
+                  {invoice.invoiceItemDescription}
+                </div>
+                <div className="flex gap-6 text-muted-foreground">
+                  <span>Qty: {invoice.invoiceItemQuantity}</span>
+                  <span>
+                    Rate:{" "}
+                    {formatCurrency({
+                      amount: invoice.invoiceItemRate,
+                      currency: invoice.currency as Currency,
+                    })}
+                  </span>
+                  <span>
+                    Amount:{" "}
+                    {formatCurrency({
+                      amount: invoice.total,
+                      currency: invoice.currency as Currency,
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Desktop: 12-col grid */}
+              <div className="hidden sm:grid grid-cols-12 gap-4 mb-2 font-medium">
                 <p className="col-span-6">Description</p>
                 <p className="col-span-2">Quantity</p>
                 <p className="col-span-2">Rate</p>
                 <p className="col-span-2">Amount</p>
               </div>
 
-              <div className="grid grid-cols-12 gap-4 mb-4">
+              <div className="hidden sm:grid grid-cols-12 gap-4 mb-4">
                 <div className="col-span-6">
                   <div className="whitespace-pre-line">
                     {invoice.invoiceItemDescription}
@@ -166,7 +191,7 @@ export function ViewInvoiceDialog({
               </div>
 
               <div className="flex justify-end">
-                <div className="w-1/3">
+                <div className="w-full sm:w-1/2 md:w-1/3">
                   <div className="flex justify-between py-2">
                     <span>Subtotal</span>
                     <span>

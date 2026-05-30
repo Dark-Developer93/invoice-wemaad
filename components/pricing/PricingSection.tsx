@@ -238,6 +238,9 @@ const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
             <CardDescription>See which plan is right for you</CardDescription>
           </CardHeader>
           <CardContent>
+            <p className="text-xs text-center text-muted-foreground mb-3 sm:hidden">
+              ← Scroll to compare all plans →
+            </p>
             <table className="w-full min-w-[600px] table-fixed">
               <colgroup>
                 <col className="w-[220px]" />

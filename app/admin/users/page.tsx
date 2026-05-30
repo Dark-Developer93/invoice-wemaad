@@ -124,7 +124,7 @@ export default async function AdminUsersPage() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[360px] text-sm">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-muted-foreground text-left">
                   <th className="pb-3 pr-4 font-medium">Name</th>

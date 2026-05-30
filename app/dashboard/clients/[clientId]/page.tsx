@@ -81,7 +81,7 @@ async function ClientDetailPage({ params }: { params: Params }) {
 
   return (
     <div className="container mx-auto py-10">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex flex-col items-start gap-2">
           <Link href="/dashboard/clients" className="flex items-center">
             <ArrowLeft className="h-4 w-4 mr-2" />

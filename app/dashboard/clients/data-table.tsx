@@ -108,7 +108,51 @@ export function DataTable<TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border overflow-x-auto">
+      {/* Mobile: card list */}
+      <div className="md:hidden space-y-3 mb-4">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => {
+            const nameCell = row.getAllCells().find((c) => c.column.id === "name");
+            const emailCell = row.getAllCells().find((c) => c.column.id === "email");
+            const phoneCell = row.getAllCells().find((c) => c.column.id === "phone");
+            const actionsCell = row.getAllCells().find((c) => c.column.id === "actions");
+            return (
+              <div
+                key={row.id}
+                className="rounded-lg border bg-card p-4 flex flex-col gap-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-sm truncate">
+                    {nameCell
+                      ? flexRender(nameCell.column.columnDef.cell, nameCell.getContext())
+                      : "—"}
+                  </span>
+                  {actionsCell && (
+                    <div className="shrink-0">
+                      {flexRender(actionsCell.column.columnDef.cell, actionsCell.getContext())}
+                    </div>
+                  )}
+                </div>
+                {emailCell && (
+                  <div className="text-sm text-muted-foreground">
+                    {flexRender(emailCell.column.columnDef.cell, emailCell.getContext())}
+                  </div>
+                )}
+                {phoneCell && (
+                  <div className="text-sm text-muted-foreground">
+                    {flexRender(phoneCell.column.columnDef.cell, phoneCell.getContext())}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <p className="text-center text-muted-foreground py-8">No clients found.</p>
+        )}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden md:block rounded-md border overflow-x-auto">
         <Table className="min-w-[500px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
