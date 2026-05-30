@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { parseWithZod } from "@conform-to/zod";
 import { SubmissionResult } from "@conform-to/react";
-import { addDays, format } from "date-fns";
+import { addDays } from "date-fns";
 
 import { getRequiredUserId } from "@/lib/session";
 import { invoiceSchema } from "@/lib/zodSchemas";
@@ -49,7 +49,7 @@ export async function createInvoice(
           contactEmail: client.contactPersons[0].email,
           templateName: "newInvoice",
           invoiceNumber: submission.value.invoiceNumber,
-          invoiceDueDate: submission.value.date,
+          invoiceDueDate: addDays(new Date(submission.value.date), submission.value.dueDate),
           total: submission.value.total,
           currency: submission.value.currency,
           invoiceId: data.id,
@@ -104,7 +104,7 @@ export async function editInvoice(
           contactEmail: client.contactPersons[0].email,
           templateName: "updatedInvoice",
           invoiceNumber: submission.value.invoiceNumber,
-          invoiceDueDate: submission.value.date,
+          invoiceDueDate: addDays(new Date(submission.value.date), submission.value.dueDate),
           total: submission.value.total,
           currency: submission.value.currency,
           invoiceId: data.id,
@@ -165,7 +165,7 @@ export async function sendReminderEmail(invoiceId: string) {
     contactEmail: invoiceData.client.contactPersons[0].email,
     templateName: "reminderInvoice",
     invoiceNumber: invoiceData.invoiceNumber,
-    invoiceDueDate: format(dueDate, "PPP"),
+    invoiceDueDate: dueDate,
     total: invoiceData.total,
     currency: invoiceData.currency,
     invoiceId: invoiceData.id,
