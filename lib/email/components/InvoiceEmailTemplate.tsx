@@ -11,6 +11,7 @@ import {
 
 import { EmailFooter } from "./EmailFooter";
 import { EmailHeader } from "./EmailHeader";
+import { useInvoiceEmail } from "./InvoiceEmailContext";
 import {
   button,
   buttonContainer,
@@ -27,17 +28,10 @@ interface InvoiceEmailTemplateProps {
   previewText: string;
   badge: { label: string; background: string; color: string };
   heading: string;
-  noticeText: string;
-  noticeBackground: string;
-  noticeBorderColor: string;
+  notice: { text: string; background: string; borderColor: string };
   detailsHeading: string;
   bodyText: string;
   buttonText: string;
-  clientName: string;
-  invoiceNumber: string;
-  invoiceDueDate: string;
-  invoiceAmount: string;
-  invoiceLink: string;
 }
 
 export function InvoiceEmailTemplate({
@@ -45,21 +39,17 @@ export function InvoiceEmailTemplate({
   previewText,
   badge,
   heading,
-  noticeText,
-  noticeBackground,
-  noticeBorderColor,
+  notice,
   detailsHeading,
   bodyText,
   buttonText,
-  clientName,
-  invoiceNumber,
-  invoiceDueDate,
-  invoiceAmount,
-  invoiceLink,
 }: InvoiceEmailTemplateProps) {
-  const notice = {
-    backgroundColor: noticeBackground,
-    borderLeft: `4px solid ${noticeBorderColor}`,
+  const { clientName, invoiceNumber, invoiceDueDate, invoiceAmount, invoiceLink } =
+    useInvoiceEmail();
+
+  const noticeStyle = {
+    backgroundColor: notice.background,
+    borderLeft: `4px solid ${notice.borderColor}`,
     padding: "16px",
     margin: "24px 0",
     borderRadius: "0 8px 8px 0",
@@ -84,8 +74,8 @@ export function InvoiceEmailTemplate({
 
             <Text style={text}>Hello {clientName},</Text>
 
-            <div style={notice}>
-              <Text style={text}>{noticeText}</Text>
+            <div style={noticeStyle}>
+              <Text style={text}>{notice.text}</Text>
             </div>
 
             <div style={details}>
