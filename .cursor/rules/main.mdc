@@ -8,7 +8,7 @@ alwaysApply: true
 **Stack**: Next.js 15 App Router · React 19 · TypeScript 5 · Prisma 6 + PostgreSQL · NextAuth v5 (magic-link) · Tailwind + shadcn/ui · pnpm · Vitest
 
 ## Key directories
-- `app/actions/` — ALL mutations via Server Actions. No REST for CRUD.
+- `app/actions/` — ALL mutations via Server Actions. No REST for CRUD. PDF helper: `generate-invoice.tsx` (`generateInvoicePDF`).
 - `app/dashboard/` — user pages · `app/admin/` — admin-only
 - `app/api/` — REST only: invoice PDF · chart-data · reports/export · cron/recurring-invoices
 - `components/` — PascalCase files, kebab-case folders · `components/ui/` = shadcn base only

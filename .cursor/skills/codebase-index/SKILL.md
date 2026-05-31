@@ -1,4 +1,8 @@
-# Skill: codebase-index
+---
+name: codebase-index
+description: Project map of server actions, lib modules, API routes, components, and DB models. Use at the start of new work or when orienting in the repo.
+---
+
 
 Reference this at the start of any new chat to restore full project context instantly.
 `@codebase-index` — no discovery calls needed after loading this.
@@ -18,7 +22,10 @@ profile.ts           updateProfile
 onboarding.ts        onboardUser
 notifications.ts     getUserNotifications · markAllNotificationsRead
 contact.ts           submitContactForm
+generate-invoice.tsx generateInvoicePDF(invoiceId, skipAuthCheck?)  [PDF ArrayBuffer — see auth exception below]
 ```
+
+**Auth exception — `generate-invoice.tsx`:** Not a typical form action. Uses `auth()` from `@/lib/auth` (not `getRequiredUserId()` / `requireUser()`). When `skipAuthCheck` is `true`, loads the invoice by `id` only (no `userId` in `where`) — used by the public PDF API after HMAC/token verification. Dashboard download passes `skipAuthCheck: false` so the invoice is scoped to `session.user.id`.
 
 ## Lib (`lib/`)
 ```

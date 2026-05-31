@@ -1,4 +1,8 @@
-# Skill: add-server-action
+---
+name: add-server-action
+description: Create or modify Server Actions in app/actions with auth guards, Conform parsing, plan limits, and tests. Use when adding mutations, form actions, or app/actions files.
+---
+
 
 ## Location
 `app/actions/<domain>.ts` — group by domain (invoices, clients, billing, admin, recurringInvoices).

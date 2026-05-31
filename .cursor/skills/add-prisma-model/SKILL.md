@@ -1,4 +1,8 @@
-# Skill: add-prisma-model
+---
+name: add-prisma-model
+description: Add Prisma models, relations, indexes, and migrations. Use for schema changes, new tables, or prisma/schema.prisma edits.
+---
+
 
 ## 1. Edit `prisma/schema.prisma`
 

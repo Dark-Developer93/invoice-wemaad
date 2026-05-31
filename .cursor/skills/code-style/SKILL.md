@@ -1,4 +1,8 @@
-# Skill: code-style
+---
+name: code-style
+description: Project style rules for imports, TypeScript, cn(), toasts, and Server Action return types. Use when writing or reviewing code style.
+---
+
 
 Project-specific style rules. Apply when writing new code or reviewing.
 

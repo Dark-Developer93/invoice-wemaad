@@ -1,4 +1,8 @@
-# Skill: pr-review
+---
+name: pr-review
+description: PR review checklist for correctness, DRY, SOLID, and production readiness. Use when reviewing pull requests or diffs.
+---
+
 
 Before reviewing, read these skills to load their rules — apply them during the review:
 - `@code-style` — import order, classNames, return types, error toast, comment policy

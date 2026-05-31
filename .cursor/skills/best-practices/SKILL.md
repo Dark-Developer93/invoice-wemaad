@@ -1,4 +1,8 @@
-# Skill: best-practices
+---
+name: best-practices
+description: Architecture rules: Server Actions vs REST, plan limits, email best-effort, admin isolation. Use when designing features or reviewing approaches.
+---
+
 
 Architecture decisions for this codebase. Consult when designing a new feature or reviewing a proposed approach.
 
@@ -7,9 +11,9 @@ Never add REST endpoints for CRUD operations.
 REST is reserved for: PDF streaming (`/api/invoice/[id]`), chart data, CSV export, Vercel Cron.
 If someone proposes a new REST route for a mutation — use a Server Action instead.
 
-## Progressive enhancement
-All forms must work without JavaScript via the native `action=` attribute + Server Action.
-React Hook Form + `toFormData` provide the JS-enhanced layer on top. Don't break the base form.
+## Forms — RHF-first; progressive enhancement where it fits
+Dashboard invoice/client flows use **React Hook Form** + `toFormData` → Server Action. They require JavaScript; do not add a parallel native `action=` form unless the task explicitly asks for it.
+For **public/marketing** forms (e.g. contact), prefer native `action=` + Server Action so submission works without JS. New dashboard forms: follow `add-component` (RHF + toast + `router.refresh()`).
 
 ## State management — no new libraries
 No Redux, Zustand, Jotai, or similar.

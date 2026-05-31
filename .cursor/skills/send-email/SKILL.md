@@ -1,4 +1,8 @@
-# Skill: send-email
+---
+name: send-email
+description: Send invoice and transactional email via dispatchInvoiceEmail or sendEmail with limit checks. Use for email templates, reminders, or notifications.
+---
+
 
 ## Two layers — use the higher one when possible
 

@@ -1,4 +1,8 @@
-# Skill: query-db
+---
+name: query-db
+description: Prisma query patterns: userId scoping, select vs include, transactions, and batching. Use for database reads/writes and performance fixes.
+---
+
 
 ## Import
 ```ts

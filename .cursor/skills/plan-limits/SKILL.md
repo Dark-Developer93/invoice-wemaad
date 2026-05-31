@@ -1,4 +1,8 @@
-# Skill: plan-limits
+---
+name: plan-limits
+description: Plan tiers, invoice/email limits, PLAN_FEATURES gates, and upgrade flow. Use when gating features, checking usage, or billing-related work.
+---
+
 
 ## Plan tiers
 Defined in `@/lib/plans` — source of truth for all limit and feature logic. Never hardcode checks inline.

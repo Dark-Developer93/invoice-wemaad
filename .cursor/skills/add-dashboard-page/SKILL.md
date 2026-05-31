@@ -1,4 +1,8 @@
-# Skill: add-dashboard-page
+---
+name: add-dashboard-page
+description: Add dashboard pages with metadata, Suspense, loading.tsx, and error.tsx. Use for new app/dashboard routes or page scaffolding.
+---
+
 
 ## File structure
 ```

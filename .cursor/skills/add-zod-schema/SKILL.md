@@ -1,4 +1,8 @@
-# Skill: add-zod-schema
+---
+name: add-zod-schema
+description: Add Zod schemas in lib/schemas and re-export from zodSchemas.ts. Use when validating forms or adding fields to existing schemas.
+---
+
 
 ## Location & re-export
 - File: `lib/schemas/<domain>.ts`

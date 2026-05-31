@@ -1,4 +1,8 @@
-# Skill: add-component
+---
+name: add-component
+description: Create React components and React Hook Form flows with toFormData and server actions. Use when building UI, forms, dialogs, or components folders.
+---
+
 
 ## File structure
 - Folder: `components/<feature-name>/` (kebab-case)

@@ -1,4 +1,8 @@
-# Skill: debug-auth
+---
+name: debug-auth
+description: Troubleshoot NextAuth magic-link sessions, requireUser redirects, and API auth. Use for login issues, session shape, or permission bugs.
+---
+
 
 ## Auth setup summary
 - Provider: NextAuth v5 · Nodemailer email magic-link
