@@ -12,7 +12,7 @@ import { env } from "@/lib/env";
 export const emailTransporter = nodemailer.createTransport({
   host: env.EMAIL_SERVER_HOST,
   port: env.EMAIL_SERVER_PORT,
-  secure: true,
+  secure: env.EMAIL_SERVER_PORT === 465,
   auth: {
     user: env.EMAIL_SERVER_USER,
     pass: env.EMAIL_SERVER_PASSWORD,

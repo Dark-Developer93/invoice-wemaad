@@ -55,52 +55,122 @@ A modern invoice management SaaS built with Next.js, allowing users to create, m
 
 ## Getting Started
 
-1. Clone the repository:
+### Option A — Docker (recommended)
+
+The easiest way to run the full stack locally with a single command.
+
+#### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
+
+#### 1. Clone the repository
 
 ```bash
 git clone https://github.com/yourusername/invoice-wemaad.git
 cd invoice-wemaad
 ```
 
-2. Install the dependencies:
-
-```bash
-pnpm install
-```
-
-3. Set up your environment variables:
+#### 2. Configure environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in the required values in `.env`. See `.env.example` for the full list.
+Open `.env` and fill in **at minimum** these required values:
 
-4. Run database migrations:
+| Variable | How to generate |
+|----------|----------------|
+| `AUTH_SECRET` | `openssl rand -base64 32` |
+| `CRON_SECRET` | `openssl rand -base64 32` |
+| `EMAIL_SERVER_*` | Your SMTP provider credentials |
+| `EMAIL_FROM` | Sender address, e.g. `hello@yourdomain.com` |
+
+The database variables (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`) are optional — they default to `invoice` / `invoice_pass` / `invoice_db` inside the Compose stack. `DATABASE_URL` is automatically assembled by `docker-compose.yml` from those values, so **you do not need to set `DATABASE_URL` manually** when using Docker.
+
+#### 3. Build and start
+
+```bash
+docker compose up --build
+```
+
+This will:
+1. Start a PostgreSQL 16 container.
+2. Build the Next.js app image (multi-stage, standalone output).
+3. Wait for the database to be healthy.
+4. Run `prisma migrate deploy` automatically on first boot.
+5. Start the app on **http://localhost:3000**.
+
+#### 4. Stopping and cleaning up
+
+```bash
+# Stop containers (keeps data volume)
+docker compose down
+
+# Stop and remove the volume (wipes the database)
+docker compose down -v
+```
+
+#### Re-building after code changes
+
+```bash
+docker compose up --build
+```
+
+---
+
+### Option B — Local development (without Docker)
+
+#### Prerequisites
+
+- Node.js 20+, pnpm, and a running PostgreSQL instance.
+
+#### 1. Install dependencies
+
+```bash
+pnpm install
+```
+
+#### 2. Configure environment variables
+
+```bash
+cp .env.example .env
+```
+
+Fill in all values in `.env`, including a valid `DATABASE_URL` pointing to your PostgreSQL instance.
+
+#### 3. Run database migrations
 
 ```bash
 pnpm prisma migrate deploy
 ```
 
-5. Run the development server:
+#### 4. Start the development server
 
 ```bash
 pnpm dev
 ```
 
-6. Visit `http://localhost:3000` in your browser.
+Visit **http://localhost:3000**.
 
-### Environment Variables
+---
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `AUTH_SECRET` | NextAuth secret key |
-| `EMAIL_SERVER_*` | SMTP credentials |
-| `EMAIL_FROM` | Sender email address |
-| `MAILTRAP_TOKEN` | Mailtrap API token (optional) |
-| `CRON_SECRET` | Secret for the recurring-invoices cron endpoint |
-| `VERCEL_URL` | Set automatically by Vercel; used for invoice email links |
+### Environment Variables Reference
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AUTH_SECRET` | ✅ | NextAuth secret — `openssl rand -base64 32` |
+| `NEXT_PUBLIC_APP_URL` | ✅ | Public app URL (used in email links) |
+| `DATABASE_URL` | ✅ | PostgreSQL connection string (auto-set in Docker) |
+| `EMAIL_SERVER_HOST` | ✅ | SMTP host |
+| `EMAIL_SERVER_PORT` | ✅ | SMTP port (default `587`) |
+| `EMAIL_SERVER_USER` | ✅ | SMTP username |
+| `EMAIL_SERVER_PASSWORD` | ✅ | SMTP password |
+| `EMAIL_FROM` | ✅ | Sender email address |
+| `CRON_SECRET` | ✅ | Secret for the recurring-invoices cron endpoint |
+| `MAILTRAP_TOKEN` | ➖ | Mailtrap API token (optional, for email testing) |
+| `POSTGRES_USER` | ➖ | DB username for Docker Compose (default: `invoice`) |
+| `POSTGRES_PASSWORD` | ➖ | DB password for Docker Compose (default: `invoice_pass`) |
+| `POSTGRES_DB` | ➖ | DB name for Docker Compose (default: `invoice_db`) |
 
 ## Project Structure
 
