@@ -4,25 +4,32 @@ const prisma = new PrismaClient();
 
 async function main() {
   const adminEmail = process.env.ADMIN_EMAIL;
+
   if (!adminEmail) {
-    throw new Error(
-      "ADMIN_EMAIL environment variable is required to seed the admin account.\n" +
-      "Example: ADMIN_EMAIL=you@example.com npx prisma db seed"
-    );
+    console.log("ADMIN_EMAIL not set — skipping admin seeding.");
+    return;
   }
 
-  const result = await prisma.user.updateMany({
+  const firstName = process.env.ADMIN_FIRST_NAME ?? "Admin";
+  const lastName = process.env.ADMIN_LAST_NAME ?? "User";
+
+  // Upsert: create the admin account if it doesn't exist, or promote if it does.
+  // Setting emailVerified ensures the NextAuth Prisma adapter treats the account
+  // as verified so magic-link sign-in works on the very first request.
+  await prisma.user.upsert({
     where: { email: adminEmail },
-    data: { isAdmin: true },
+    create: {
+      email: adminEmail,
+      firstName,
+      lastName,
+      emailVerified: new Date(),
+      isAdmin: true,
+      isActive: true,
+    },
+    update: { isAdmin: true },
   });
 
-  if (result.count === 0) {
-    throw new Error(
-      `No user found with email "${adminEmail}". The user must sign up before the seed can run.`
-    );
-  }
-
-  console.log(`Admin privileges granted to: ${adminEmail}`);
+  console.log(`✓ Admin account ready: ${adminEmail}`);
 }
 
 main()

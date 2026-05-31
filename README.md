@@ -1,215 +1,227 @@
 # InvoiceWeMaAd
 
-A modern invoice management SaaS built with Next.js, allowing users to create, manage, and track invoices efficiently.
+A modern invoice management SaaS built with Next.js — create, manage, and track invoices with plan-based feature gating, recurring billing, and a built-in admin panel.
+
+---
+
+## Quick Start (Docker — recommended)
+
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
+
+```bash
+# 1. Clone
+git clone https://github.com/yourusername/invoice-wemaad.git
+cd invoice-wemaad
+
+# 2. Copy env template
+cp .env.example .env
+
+# 3. Fill in the two required secrets (everything else has dev defaults)
+openssl rand -base64 32   # paste into AUTH_SECRET
+openssl rand -base64 32   # paste into CRON_SECRET
+
+# 4. Start
+docker compose up --build
+```
+
+That's it. On first boot the stack will:
+1. Start **PostgreSQL 16**
+2. Run all **database migrations** automatically
+3. **Seed the admin account** from `ADMIN_EMAIL` in your `.env`
+4. Start the **Next.js app** on http://localhost:3000
+5. Start **Mailhog** (local email catcher) on http://localhost:8025
+
+### Signing in for the first time
+
+1. Open http://localhost:3000
+2. Enter the email you set as `ADMIN_EMAIL` in `.env` (default: `admin@localhost.dev`)
+3. Open **http://localhost:8025** — the magic link email is there
+4. Click the link → complete onboarding → you're in as admin
+
+> **Tip:** All outgoing emails (invoice notifications, reminders, magic links) go to Mailhog in dev — no real inbox needed.
+
+---
+
+## Local Dev (without Docker)
+
+**Prerequisites:** Node.js 22+, pnpm, PostgreSQL running locally.
+
+```bash
+# Install dependencies
+pnpm install
+
+# Copy and fill in env
+cp .env.example .env
+# Set DATABASE_URL to your local Postgres, e.g.:
+# DATABASE_URL="postgresql://invoice:invoice_pass@localhost:5432/invoice_db"
+
+# Run migrations
+pnpm prisma migrate deploy
+
+# Seed admin account
+pnpm prisma db seed
+
+# Start dev server (Turbopack)
+pnpm dev
+```
+
+Visit http://localhost:3000. For email in local dev, either run Mailhog separately (`docker run -p 1025:1025 -p 8025:8025 mailhog/mailhog`) or point `EMAIL_SERVER_*` to a real SMTP provider.
+
+---
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `AUTH_SECRET` | ✅ | — | NextAuth secret — `openssl rand -base64 32` |
+| `CRON_SECRET` | ✅ | — | Protects the recurring-invoice cron endpoint |
+| `NEXT_PUBLIC_APP_URL` | ✅ | `http://localhost:3000` | Public app URL — used in email links |
+| `ADMIN_EMAIL` | ➖ | — | Auto-seeded admin account email |
+| `ADMIN_FIRST_NAME` | ➖ | `Admin` | Admin account first name |
+| `ADMIN_LAST_NAME` | ➖ | `User` | Admin account last name |
+| `EMAIL_SERVER_HOST` | ✅ | `mailhog` (Docker) | SMTP host |
+| `EMAIL_SERVER_PORT` | ✅ | `1025` (Docker) | SMTP port |
+| `EMAIL_SERVER_USER` | ➖ | _(empty)_ | SMTP username — not needed for Mailhog |
+| `EMAIL_SERVER_PASSWORD` | ➖ | _(empty)_ | SMTP password — not needed for Mailhog |
+| `EMAIL_FROM` | ✅ | `noreply@localhost.dev` | Sender address |
+| `MAILTRAP_TOKEN` | ➖ | — | Mailtrap API token (optional) |
+| `DATABASE_URL` | ✅ | _(auto in Docker)_ | PostgreSQL connection string |
+| `POSTGRES_USER` | ➖ | `invoice` | Docker Compose DB user |
+| `POSTGRES_PASSWORD` | ➖ | `invoice_pass` | Docker Compose DB password |
+| `POSTGRES_DB` | ➖ | `invoice_db` | Docker Compose DB name |
+
+> `DATABASE_URL` is assembled automatically in Docker Compose from the `POSTGRES_*` vars. You only need to set it manually for local non-Docker dev.
+
+---
+
+## Common Operations
+
+```bash
+# Stop containers (keeps data)
+docker compose down
+
+# Wipe database and start fresh
+docker compose down -v && docker compose up --build
+
+# Rebuild after code changes
+docker compose up --build
+
+# Run tests
+pnpm test
+
+# Run tests with coverage
+pnpm test -- --coverage
+
+# Open Prisma Studio (DB browser)
+pnpm prisma studio
+
+# Add a migration after schema changes
+pnpm prisma migrate dev --name your-migration-name
+```
+
+---
+
+## Production Deployment
+
+For production, override the dev defaults in your environment:
+
+```bash
+# Real SMTP instead of Mailhog
+EMAIL_SERVER_HOST=smtp.yourprovider.com
+EMAIL_SERVER_PORT=587
+EMAIL_SERVER_USER=your-smtp-user
+EMAIL_SERVER_PASSWORD=your-smtp-password
+EMAIL_FROM=hello@yourdomain.com
+
+# Real database
+DATABASE_URL=postgresql://user:pass@your-db-host/dbname?sslmode=require
+
+# Real app URL
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+```
+
+The Mailhog service is only included in the Docker Compose stack for local dev. Remove or exclude it in a production compose file.
+
+---
 
 ## Features
 
 ### Core
-- 🔐 Secure Authentication (NextAuth v5)
-- 💰 Invoice Management — create, edit, delete, mark as paid
-- 👥 Client Management — full client profiles with addresses, contact persons, and custom fields
-- 📧 Email Notifications — automatic emails on invoice create, update, and reminders; per-plan email limits
-- 🌙 Light / Dark Mode
-- 📱 Fully Responsive — mobile-first design across all pages, forms, tables, and charts
-- 🖨️ PDF Generation — download or send invoices as PDF
-- 🔢 Decimal Rates — invoice item rate and quantity support decimal values (e.g. 4.5 hours)
-- 📨 Email Toggle — optionally skip sending an email when creating or updating an invoice
+- 🔐 Magic-link authentication (NextAuth v5, passwordless)
+- 💰 Invoice management — create, edit, delete, mark paid, send reminders
+- 👥 Client management — full profiles with addresses, contact persons, custom fields
+- 📧 Email notifications — invoice create, update, reminders; per-plan limits enforced
+- 🖨️ PDF generation — download or send invoices as PDF (logo, stamp, bank details)
+- 🌙 Dark / light mode, fully responsive
 
 ### Analytics & Reporting
-- 📊 Interactive Dashboard Charts — switch between Line, Bar, and Pie views; filter by date range (7d / 30d / 90d) and status (Paid / Pending / All)
-- 📈 Reports Page — monthly revenue bar chart, paid/pending breakdown, top-clients revenue table, outstanding invoices list, and CSV export
+- 📊 Dashboard charts — line, bar, pie; filter by date range and status
+- 📈 Reports — monthly revenue, top clients, outstanding invoices, CSV export
 
 ### Billing & Plans
-- 💳 Pricing Plans — Free, Starter ($9/mo), Pro ($29/mo), Business (custom)
-- 🔒 Plan-gated features — analytics and advanced features unlock on Starter and above
-- 📉 Usage tracking — monthly invoice and email counts enforced per plan
-- 🧾 Billing dashboard — view current plan, usage progress bars, and request an upgrade or downgrade
-- 📬 Plan upgrade requests — users request a plan change; admin reviews and approves or rejects; user is notified via the in-app notification bell
-
-### Notifications
-- 🔔 In-app notification bell — shows unread count badge; marks all read when opened
-- ✅ Plan upgrade approved/rejected notifications delivered in real time
+- 💳 Plans: Free · Starter ($9/mo) · Pro ($29/mo) · Business (custom)
+- 🔒 Feature gating — analytics, recurring invoices, custom branding unlock by plan
+- 📉 Monthly usage tracking — invoice and email counts enforced per plan
+- 📬 Upgrade requests — users request a plan change; admin approves or rejects
 
 ### Automation
-- 🔄 Recurring Invoices — set up templates that auto-generate on monthly, quarterly, or yearly schedules; pause / resume at any time
-- ⏰ Daily cron job — Vercel-scheduled processor respects per-plan invoice limits and logs emails
+- 🔄 Recurring invoices — monthly, quarterly, or yearly auto-generation
+- ⏰ Daily cron — Vercel-scheduled, respects per-plan limits
 
 ### Admin Panel
-- 🛡️ Admin-only panel accessible from the main navigation (visible only to admins)
-- 👤 User management — view all users, stats, plan, and account status
-- ✏️ Manage users — change plan, activate/deactivate account, promote/demote admin privileges
-- 📋 Pending upgrade requests — review and approve or reject user plan change requests from the user detail page and a global pending list
-- 📱 Fully responsive admin panel with mobile sidebar
+- 🛡️ User management — view all users, change plans, activate/deactivate
+- ✏️ Promote / demote admin privileges
+- 📋 Review and action pending plan upgrade requests
+
+---
 
 ## Tech Stack
 
-- [Next.js 15](https://nextjs.org/) — React Framework (App Router)
-- [Prisma](https://www.prisma.io/) — Database ORM
-- [PostgreSQL](https://www.postgresql.org/) — Database
-- [TypeScript](https://www.typescriptlang.org/) — Type Safety
-- [Tailwind CSS](https://tailwindcss.com/) — Styling
-- [Shadcn/ui](https://ui.shadcn.com/) — UI Components
-- [Recharts](https://recharts.org/) — Charts
-- [Mailtrap](https://mailtrap.io/) — Email Testing
-- [NextAuth v5](https://authjs.dev/) — Authentication
-
-## Getting Started
-
-### Option A — Docker (recommended)
-
-The easiest way to run the full stack locally with a single command.
-
-#### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
-
-#### 1. Clone the repository
-
-```bash
-git clone https://github.com/yourusername/invoice-wemaad.git
-cd invoice-wemaad
-```
-
-#### 2. Configure environment variables
-
-```bash
-cp .env.example .env
-```
-
-Open `.env` and fill in **at minimum** these required values:
-
-| Variable | How to generate |
-|----------|----------------|
-| `AUTH_SECRET` | `openssl rand -base64 32` |
-| `CRON_SECRET` | `openssl rand -base64 32` |
-| `EMAIL_SERVER_*` | Your SMTP provider credentials |
-| `EMAIL_FROM` | Sender address, e.g. `hello@yourdomain.com` |
-
-The database variables (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`) are optional — they default to `invoice` / `invoice_pass` / `invoice_db` inside the Compose stack. `DATABASE_URL` is automatically assembled by `docker-compose.yml` from those values, so **you do not need to set `DATABASE_URL` manually** when using Docker.
-
-#### 3. Build and start
-
-```bash
-docker compose up --build
-```
-
-This will:
-1. Start a PostgreSQL 16 container.
-2. Build the Next.js app image (multi-stage, standalone output).
-3. Wait for the database to be healthy.
-4. Run `prisma migrate deploy` automatically on first boot.
-5. Start the app on **http://localhost:3000**.
-
-#### 4. Stopping and cleaning up
-
-```bash
-# Stop containers (keeps data volume)
-docker compose down
-
-# Stop and remove the volume (wipes the database)
-docker compose down -v
-```
-
-#### Re-building after code changes
-
-```bash
-docker compose up --build
-```
+- [Next.js 15](https://nextjs.org/) (App Router, Turbopack in dev)
+- [PostgreSQL](https://www.postgresql.org/) + [Prisma](https://www.prisma.io/) ORM
+- [NextAuth v5](https://authjs.dev/) — magic-link auth
+- [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- [Recharts](https://recharts.org/) — dashboard charts
+- [@react-pdf/renderer](https://react-pdf.org/) — PDF generation
+- [Mailhog](https://github.com/mailhog/MailHog) — local email catcher (dev)
+- [Vitest](https://vitest.dev/) — unit tests
 
 ---
-
-### Option B — Local development (without Docker)
-
-#### Prerequisites
-
-- Node.js 20+, pnpm, and a running PostgreSQL instance.
-
-#### 1. Install dependencies
-
-```bash
-pnpm install
-```
-
-#### 2. Configure environment variables
-
-```bash
-cp .env.example .env
-```
-
-Fill in all values in `.env`, including a valid `DATABASE_URL` pointing to your PostgreSQL instance.
-
-#### 3. Run database migrations
-
-```bash
-pnpm prisma migrate deploy
-```
-
-#### 4. Start the development server
-
-```bash
-pnpm dev
-```
-
-Visit **http://localhost:3000**.
-
----
-
-### Environment Variables Reference
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `AUTH_SECRET` | ✅ | NextAuth secret — `openssl rand -base64 32` |
-| `NEXT_PUBLIC_APP_URL` | ✅ | Public app URL (used in email links) |
-| `DATABASE_URL` | ✅ | PostgreSQL connection string (auto-set in Docker) |
-| `EMAIL_SERVER_HOST` | ✅ | SMTP host |
-| `EMAIL_SERVER_PORT` | ✅ | SMTP port (default `587`) |
-| `EMAIL_SERVER_USER` | ✅ | SMTP username |
-| `EMAIL_SERVER_PASSWORD` | ✅ | SMTP password |
-| `EMAIL_FROM` | ✅ | Sender email address |
-| `CRON_SECRET` | ✅ | Secret for the recurring-invoices cron endpoint |
-| `MAILTRAP_TOKEN` | ➖ | Mailtrap API token (optional, for email testing) |
-| `POSTGRES_USER` | ➖ | DB username for Docker Compose (default: `invoice`) |
-| `POSTGRES_PASSWORD` | ➖ | DB password for Docker Compose (default: `invoice_pass`) |
-| `POSTGRES_DB` | ➖ | DB name for Docker Compose (default: `invoice_db`) |
 
 ## Project Structure
 
 ```
 ├── app/
-│   ├── actions/            # Server actions (invoices, clients, billing, admin, notifications)
-│   ├── admin/              # Admin panel pages (users, user detail)
+│   ├── actions/        # Server actions (invoices, clients, billing, admin, notifications)
+│   ├── admin/          # Admin panel (users, user detail)
 │   ├── api/
-│   │   ├── cron/           # Scheduled job endpoints
-│   │   ├── dashboard/      # Chart data API
-│   │   ├── reports/        # Export endpoints
-│   │   └── invoice/        # PDF generation
-│   └── dashboard/          # Dashboard pages (invoices, clients, reports, recurring, billing, profile)
-├── components/             # React components
-│   ├── notifications/      # Notification bell (server + client)
-│   ├── mobile-nav/         # Mobile navigation (closes on route change)
-│   ├── invoice-form/       # Invoice create/edit form
-│   ├── client-form/        # Client create/edit form and dialog
-│   └── ...
+│   │   ├── cron/       # Recurring invoice scheduler
+│   │   ├── dashboard/  # Chart data
+│   │   ├── invoice/    # Public invoice PDF endpoint
+│   │   └── reports/    # CSV export
+│   └── dashboard/      # App pages (invoices, clients, reports, recurring, billing, profile)
+├── components/         # React components
 ├── lib/
-│   ├── plans.ts            # Plan definitions and feature flags
-│   ├── usage.ts            # Usage tracking helpers
-│   └── ...
-├── prisma/                 # Schema and migrations
-├── public/                 # Static assets
-└── types/                  # TypeScript types
+│   ├── plans.ts        # Plan definitions and feature flags
+│   ├── usage.ts        # Monthly usage tracking
+│   └── env.ts          # Validated environment variables
+├── prisma/
+│   ├── schema.prisma   # Database schema
+│   ├── migrations/     # Migration history
+│   └── seed.mjs        # Admin account seeder
+└── types/              # TypeScript type extensions
 ```
+
+---
 
 ## Roadmap
 
-- [ ] Stripe integration for payment processing and subscription management
-- [ ] White label / custom branding for clients
+- [ ] Stripe integration for subscription management
+- [ ] Multi-line invoice items
 - [ ] Multi-user organizations and team management
 - [ ] Client-facing portal to view and pay invoices
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a PR.
+- [ ] Public API with token authentication
 
 ## License
 
-This project is open-sourced under the MIT License — see the LICENSE file for details.
+MIT
