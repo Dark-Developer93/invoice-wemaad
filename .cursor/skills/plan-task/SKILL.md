@@ -67,7 +67,7 @@ Also note **domain entities** when obvious (affects Step 2c): `invoice` · `clie
 
 These are **already in context** (`alwaysApply: true` in `.cursor/rules/`):
 
-- `main.mdc` · `patterns.mdc` · `tech-stack.mdc`
+- `main.mdc` · `patterns.mdc` · `tech-stack.mdc` · `security.mdc`
 
 **Never** use the Read tool on them during plan-task. Reference them in the plan by name only.
 

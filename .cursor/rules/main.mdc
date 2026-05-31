@@ -10,7 +10,7 @@ alwaysApply: true
 ## Key directories
 - `app/actions/` — ALL mutations via Server Actions. No REST for CRUD. PDF helper: `generate-invoice.tsx` (`generateInvoicePDF`).
 - `app/dashboard/` — user pages · `app/admin/` — admin-only
-- `app/api/` — REST only: invoice PDF · chart-data · reports/export · cron/recurring-invoices
+- `app/api/` — REST only: auth/[...nextauth] (NextAuth handlers) · invoice PDF · chart-data · reports/export · cron/recurring-invoices
 - `components/` — PascalCase files, kebab-case folders · `components/ui/` = shadcn base only
 - `lib/` — db · session · auth · plans · usage · formatCurrency · formatDate · toFormData · utils
 - `lib/schemas/` — Zod schemas re-exported from `lib/zodSchemas.ts`

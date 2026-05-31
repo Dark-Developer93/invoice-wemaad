@@ -7,7 +7,7 @@ alwaysApply: true
 
 ## Server Actions
 - File: `app/actions/<domain>.ts` · directive: `"use server"` · return: `SubmissionResult<string[]>`
-- First line: auth guard — `getRequiredUserId()` / `requireUser()` / `requireAdmin()`
+- First line: auth guard — `getRequiredUserId()` / `requireUser()` / `requireAdmin()` (except `generate-invoice.tsx` — see `app/actions/AGENTS.md`)
 - Parse: `parseWithZod(formData, { schema })` from `@conform-to/zod`
 - Always include `userId` in DB `where` clauses
 - Delete/redirect actions: return `redirect("/path")` — no `SubmissionResult`

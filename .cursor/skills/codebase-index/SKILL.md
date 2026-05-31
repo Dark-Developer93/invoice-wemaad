@@ -61,11 +61,13 @@ components/submit-button/SubmitButton.tsx   SubmitButton({ text, isLoading, form
 components/upgrade-prompt/UpgradePrompt.tsx plan gate UI
 components/empty-state/EmptyState.tsx       empty list state
 components/invoice-form/InvoiceForm.tsx     main invoice create/edit form
-components/client-form/ClientForm.tsx       client form with nested arrays
+components/client-form/clientForm.tsx       client form with nested arrays (camelCase — existing exception to PascalCase)
+components/client-form/clientDialog.tsx     client create/edit dialog
 ```
 
 ## API Routes (`app/api/`)
 ```
+GET/POST /api/auth/[...nextauth]     NextAuth session handlers
 GET  /api/invoice/[invoiceId]        PDF stream  (HMAC-verified, public)
 GET  /api/dashboard/chart-data       revenue chart data  (session auth)
 GET  /api/reports/export             CSV export  (session auth)

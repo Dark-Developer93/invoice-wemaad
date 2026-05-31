@@ -2,10 +2,10 @@
 
 **Stack:** Next.js 15 App Router · React 19 · Prisma 6 + PostgreSQL · NextAuth v5 (magic-link) · Tailwind + shadcn/ui · pnpm · Vitest
 
-**Quick picker:** [.cursor/README.md](.cursor/README.md)
+**Quick picker:** [.cursor/README.md](.cursor/README.md) · Product roadmap (future work): [docs/roadmap-future.md](docs/roadmap-future.md)
 
 ## Always-on rules
-`.cursor/rules/` — `main.mdc` (layout, plans, naming) · `patterns.mdc` (actions, forms, Prisma) · `tech-stack.mdc` (framework conventions)
+`.cursor/rules/` — `main.mdc` (layout, plans, naming) · `patterns.mdc` (actions, forms, Prisma) · `tech-stack.mdc` (framework conventions) · `security.mdc` (auth boundaries, ownership, secrets)
 
 ## Path-scoped context
 | Path | File |
