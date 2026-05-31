@@ -2,6 +2,8 @@
 
 **Stack:** Next.js 15 App Router · React 19 · Prisma 6 + PostgreSQL · NextAuth v5 (magic-link) · Tailwind + shadcn/ui · pnpm · Vitest
 
+**Quick picker:** [.cursor/README.md](.cursor/README.md)
+
 ## Always-on rules
 `.cursor/rules/` — `main.mdc` (layout, plans, naming) · `patterns.mdc` (actions, forms, Prisma) · `tech-stack.mdc` (framework conventions)
 
@@ -16,7 +18,9 @@
 | `lib/` | `AGENTS.md` |
 
 ## Project skills (`.cursor/skills/<name>/SKILL.md`)
-Start with `@plan-task` for new work · `@codebase-index` for orientation · `@pr-review` for reviews.
+Start with `@plan-task` for new work · `@codebase-index` for orientation.
+
+**PR review (read-only):** `.cursor/agents/pr-reviewer.md` or `/review` + `@pr-fetch-review` (GitHub URL/number) · checklist `@pr-review`.
 
 Templates: `add-server-action` · `add-component` · `add-dashboard-page` · `add-prisma-model` · `add-zod-schema`
 

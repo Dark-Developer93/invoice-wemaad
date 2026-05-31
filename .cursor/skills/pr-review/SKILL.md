@@ -1,15 +1,31 @@
 ---
 name: pr-review
-description: PR review checklist for correctness, DRY, SOLID, and production readiness. Use when reviewing pull requests or diffs.
+description: >-
+  PR review checklist for correctness, DRY, SOLID, and production readiness. Use for diffs or after
+  @pr-fetch-review checkout. Prefer pr-reviewer agent + pr-fetch-review when the user gives a GitHub PR URL or number.
 ---
 
+## GitHub PR (URL or number)
 
-Before reviewing, read these skills to load their rules — apply them during the review:
-- `@code-style` — import order, classNames, return types, error toast, comment policy
-- `@best-practices` — architecture decisions (actions vs REST, plan limits, email, state management)
-- `@query-db` — Prisma patterns, N+1 risk, transaction usage, index requirements
-- `@send-email` — email layers, limit checks, fire-and-forget contract
-- `@plan-limits` — plan tier rules, `getUserUsage`, `PLAN_FEATURES` usage
+If the user gave a **PR link or number**, **first** follow `@pr-fetch-review` (checkout, diff, selective AGENTS/skills), **then** run sections 1–5 below.
+
+For **local-only** diffs (no GitHub PR), skip fetch. Load skills from changed paths only (max **4** skills, max **3** path `AGENTS.md`). Do not re-read `.cursor/rules/*.mdc` (always-on).
+
+---
+
+## Context loading (local diff or after fetch)
+
+Read only what applies — do not load every skill below:
+
+| Skill | Read when diff touches |
+| --- | --- |
+| `code-style` | TS/TSX style, imports, toasts |
+| `best-practices` | Architecture, scope, new surfaces |
+| `query-db` | Prisma queries, transactions, N+1 |
+| `send-email` | Email send/templates/reminders |
+| `plan-limits` | Plans, limits, upgrades, usage |
+
+Path `AGENTS.md` files: pick from diff paths (see `pr-fetch-review` routing table), max 3.
 
 Then run through the five sections below.
 

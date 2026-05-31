@@ -169,7 +169,7 @@ Path-scoped agents live **only** under these paths (no others exist):
 | `email` | `send-email`, `plan-limits` |
 | `auth` | `debug-auth`, `best-practices` |
 | `plan-billing` | `plan-limits`, `add-server-action` |
-| `pr-review` | `pr-review`, `code-style`, `best-practices` |
+| `pr-review` | `pr-fetch-review`, `pr-review` (+ at most one of `code-style` / `query-db` / `send-email` by diff) |
 
 **Step B — Prune** (drop candidates unless the task clearly needs them):
 
@@ -188,6 +188,7 @@ Path-scoped agents live **only** under these paths (no others exist):
 | `best-practices` | Architecture choice, new feature shape, auth/billing, or unclear boundaries — **not** for a one-line bug in a known file |
 | `codebase-index` | Unknown file locations, 3+ surfaces, or first-time area — **never** for narrow tasks with explicit paths |
 | `pr-review` | Only when type is `pr-review` |
+| `pr-fetch-review` | Only when type is `pr-review` and user gave a PR URL/number |
 
 **Step C — Refine by surface** (prefer skills that match **surfaces**, drop mismatches):
 
@@ -327,4 +328,4 @@ Post in chat after the plan (Plan UI or fallback):
 ## Handoff
 
 - Implement via **Build** from the plan.
-- After code exists, use `@pr-review` (it loads its own minimal skill set).
+- After code exists, use **PR reviewer** agent, `/review`, or `@pr-fetch-review` + `@pr-review`.
