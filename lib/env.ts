@@ -17,7 +17,7 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 function parseEnv(): Env {
-  if (process.env.SKIP_ENV_VALIDATION) {
+  if (process.env.SKIP_ENV_VALIDATION && process.env.NODE_ENV !== "production") {
     return process.env as unknown as Env;
   }
   const result = envSchema.safeParse(process.env);
