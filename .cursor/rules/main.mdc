@@ -1,0 +1,39 @@
+---
+description: Global project rules — loaded on every prompt
+alwaysApply: true
+---
+
+# invoice-wemaad
+
+**Stack**: Next.js 15 App Router · React 19 · TypeScript 5 · Prisma 6 + PostgreSQL · NextAuth v5 (magic-link) · Tailwind + shadcn/ui · pnpm · Vitest
+
+## Key directories
+- `app/actions/` — ALL mutations via Server Actions. No REST for CRUD.
+- `app/dashboard/` — user pages. `app/admin/` — admin-only.
+- `app/api/` — REST only: invoice PDF, chart-data, reports/export, cron/recurring-invoices.
+- `components/` — PascalCase files, kebab-case folders. `components/ui/` = shadcn base only.
+- `lib/` — db.ts · session.ts · auth.ts · plans.ts · usage.ts · formatCurrency.ts · formatDate.ts · toFormData.ts · utils.ts
+- `lib/schemas/` — Zod schemas (invoice, client, recurringInvoice, onboarding). Re-exported from `lib/zodSchemas.ts`.
+- `lib/email/` — index.ts (sendEmail) · invoice.ts (dispatchInvoiceEmail) · templates/
+- `prisma/schema.prisma` — DB schema · `types/` — global TS types
+
+## Naming
+- All imports: `@/*` absolute paths
+- Components: PascalCase files · kebab-case folders
+- Actions, lib files, schemas: camelCase
+- DB client: `import prisma from "@/lib/db"` (singleton — never `new PrismaClient()`)
+
+## Auth guards (use in Server Components & Actions — never in API route handlers)
+- `getRequiredUserId()` — returns userId string, redirects to /login if missing
+- `requireUser()` — returns full session, redirects if inactive or not authed
+- `requireAdmin()` — redirects non-admins to /dashboard
+- All three from `@/lib/session`
+
+## Plans: FREE · STARTER ($9) · PRO ($29) · BUSINESS
+- `PLAN_LIMITS` · `PLAN_FEATURES` · `PLAN_PRICE` · `PLAN_ORDER` — all from `@/lib/plans`
+- Usage: `getUserUsage()` · `isEmailLimitOk()` · `logEmailSent()` — from `@/lib/usage`
+
+## Styling
+- `cn()` from `@/lib/utils` — always use for className composition
+- Toasts: `toast` from `sonner`
+- Dark mode: `dark:` class (not media query) · mobile-first Tailwind

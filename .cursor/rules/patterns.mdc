@@ -1,0 +1,70 @@
+---
+description: Coding patterns — Server Actions, forms, DB, email, auth
+alwaysApply: true
+---
+
+# Patterns
+
+## Server Action signature
+```ts
+"use server";
+export async function myAction(
+  _prev: SubmissionResult<string[]> | null | undefined,
+  formData: FormData
+): Promise<SubmissionResult<string[]>> {
+  const userId = await getRequiredUserId();
+  const submission = parseWithZod(formData, { schema: mySchema });
+  if (submission.status !== "success") return submission.reply();
+  await prisma.model.create({ data: { ...submission.value, userId } });
+  return { status: "success", error: {} };
+}
+```
+- Redirect-only actions (delete, markPaid): return `redirect("/path")` directly — no `SubmissionResult`.
+- Admin actions: `await requireAdmin()` as first line; call `revalidatePath()` after mutations.
+
+## Form → Action flow (client component)
+```ts
+const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema) });
+// onSubmit:
+const fd = toFormData(data as Record<string, unknown>);
+const result = await myAction(null, fd);
+if (result.status === "error") {
+  toast.error(Object.values(result.error ?? {}).flat()[0] ?? "Something went wrong");
+  return;
+}
+toast.success("Done");
+router.refresh();
+```
+
+## Prisma rules
+- Always scope by userId: `where: { id, userId }` — ownership check in one query.
+- Prefer `select` over `include` when only a subset of fields is needed.
+- Multi-step mutations: `prisma.$transaction(async (tx) => { ... })`.
+- Use `findUniqueOrThrow` when the record must exist.
+
+## Plan guard (Server Component)
+```ts
+const usage = await getUserUsage(userId);
+if (!PLAN_FEATURES[usage.plan].someFeature) return <UpgradePrompt ... />;
+```
+
+## Usage limit check (action)
+```ts
+const usage = await getUserUsage(userId);
+if (usage.invoiceLimit !== null && usage.invoicesThisMonth >= usage.invoiceLimit) {
+  return { status: "error", error: { "": ["Monthly limit reached"] } };
+}
+```
+
+## Email
+- Use `dispatchInvoiceEmail()` from `@/lib/email/invoice` — handles logging + failure notification.
+- Always check `isEmailLimitOk(usage)` before calling.
+- In actions: fire-and-forget — `.catch(() => {})`. Only `await` for explicit reminder sends.
+
+## REST route handlers (`app/api/`)
+- Use `auth()` from `@/lib/auth` — NOT `requireUser()` (no redirect in route handlers).
+- Return `NextResponse.json({ error }, { status })` on failure.
+
+## Arrays via FormData
+- Client: `JSON.stringify(arr)` before appending to FormData.
+- Schema: `z.preprocess((v) => { try { return JSON.parse(v as string); } catch { return []; } }, z.array(...))`.
