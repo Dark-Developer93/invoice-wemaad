@@ -1,87 +1,78 @@
 # Skill: pr-review
 
-Review PRs across five dimensions. Report findings grouped by section.
-Flag as **blocker** (must fix) or **nit** (should fix).
+Before reviewing, read these skills to load their rules — apply them during the review:
+- `@code-style` — import order, classNames, return types, error toast, comment policy
+- `@best-practices` — architecture decisions (actions vs REST, plan limits, email, state management)
+- `@query-db` — Prisma patterns, N+1 risk, transaction usage, index requirements
+- `@send-email` — email layers, limit checks, fire-and-forget contract
+- `@plan-limits` — plan tier rules, `getUserUsage`, `PLAN_FEATURES` usage
+
+Then run through the five sections below.
 
 ---
 
-## 1. Correctness — project-specific rules
+## 1. Correctness — project-specific checklist
 
-- [ ] Every action has an auth guard as the first line (`getRequiredUserId`, `requireUser`, or `requireAdmin`)
-- [ ] All DB queries include `userId` in `where` (no cross-user data leakage)
-- [ ] New mutations that create invoices or send emails check plan limits via `getUserUsage()` first
-- [ ] Email sends use `dispatchInvoiceEmail()` from `@/lib/email/invoice`, not raw `sendEmail()` directly
-- [ ] `isEmailLimitOk(usage)` is checked before any email dispatch
-- [ ] New Zod schemas are re-exported from `lib/zodSchemas.ts`
-- [ ] Action files have `"use server"` · Client components have `"use client"`
+- [ ] Every action: auth guard as first line (`getRequiredUserId` / `requireUser` / `requireAdmin`)
+- [ ] All DB queries include `userId` in `where` — no cross-user data access
+- [ ] New invoice/email creation checks plan limits via `getUserUsage()` first
+- [ ] Email uses `dispatchInvoiceEmail()`, not raw `sendEmail()`, with `isEmailLimitOk()` check
+- [ ] New schemas re-exported from `lib/zodSchemas.ts`
+- [ ] Action files: `"use server"` · interactive components: `"use client"`
 - [ ] No `process.env.*` outside `@/lib/env.ts`
 - [ ] No `new PrismaClient()` — only `import prisma from "@/lib/db"`
-- [ ] Arrays through FormData: `JSON.stringify` on client + `z.preprocess(JSON.parse, ...)` in schema
-- [ ] Schema changes include a migration (`prisma/migrations/` has a new entry)
-- [ ] Destructive admin operations guard against affecting admin accounts (e.g., `isAdmin: false` in `where`)
-- [ ] Tests added or updated in `app/actions/__tests__/` for changed actions
+- [ ] Arrays through FormData: `JSON.stringify` client-side + `z.preprocess(JSON.parse, ...)` in schema
+- [ ] Schema changes include a new migration in `prisma/migrations/`
+- [ ] Destructive admin ops guard against affecting admin accounts (`isAdmin: false` in `where`)
+- [ ] Tests added/updated in `app/actions/__tests__/` for changed actions
 
 ---
 
-## 2. Minimal — flag over-engineering
-
-- New helper/abstraction with only one call site → suggest inlining
-- Error handling added for paths that cannot happen (Prisma throws, NextAuth guards redirect)
-- Backwards-compat shims, `_unused` variables, or dead code
-- Feature flags or conditional exports where the code can simply be changed
-
----
-
-## 3. DRY — flag reimplemented utilities
-
-| If the code does this... | It should use this instead |
-|---|---|
-| Plan limit check inline | `getUserUsage()` + `PLAN_FEATURES` from `@/lib/plans` |
-| `prisma.emailLog.count(...)` | `getUserUsage()` from `@/lib/usage` |
-| Currency formatting manually | `formatCurrency()` from `@/lib/formatCurrency` |
-| Date formatting manually | `formatDate()` from `@/lib/formatDate` |
-| `className={a + " " + b}` | `cn()` from `@/lib/utils` |
-| New Zod schema duplicating existing pattern | Extend existing schema in `lib/schemas/` |
-| `sendEmail()` for invoice email | `dispatchInvoiceEmail()` from `@/lib/email/invoice` |
+## 2. Minimal
+Apply rules from `@best-practices` ("No over-engineering" section) + flag:
+- New helper with only one call site → suggest inlining
+- Error handling for impossible paths
+- Dead code, unused imports, `_` prefixed variables used to silence TS
 
 ---
 
-## 4. SOLID — flag violations
+## 3. DRY
+Apply DRY rules from `@code-style` and `@best-practices` — flag any violations found in the diff.
+Focus areas: plan limits inline vs `getUserUsage()`, manual formatting vs `formatCurrency`/`formatDate`, raw `EmailLog` queries vs `@/lib/usage`.
 
-- **S (Single Responsibility)**: A Server Action doing DB write + email + notification + revalidation all flat — the email/notification layer belongs in `dispatchInvoiceEmail()`.
-- **O (Open/Closed)**: `if (plan === "PRO")` hardcoded in a utility — extend `PLAN_FEATURES` in `lib/plans.ts` instead.
-- **L (Liskov)**: Component accepting a fat object prop and only using 2 fields — prefer explicit props.
-- **I (Interface Segregation)**: A Context bundling unrelated state (form state + modal toggle) — split if consumed independently.
-- **D (Dependency Inversion)**: A UI component directly importing `prisma` — data fetching belongs in Server Components or actions.
+---
+
+## 4. SOLID
+Apply architecture rules from `@best-practices` — flag violations found in the diff.
+Focus areas: S (action doing too much inline), O (hardcoded plan checks instead of `PLAN_FEATURES`), D (component importing `prisma`).
 
 ---
 
 ## 5. Production readiness
-
-- N+1 risk: any loop calling `getUserUsage()` or a Prisma query per iteration — batch with `Promise.all`
-- Missing `@@index` on Prisma fields used in `where` filters
-- Expensive Server Component reads missing `unstable_cache`
-- Email failure swallowed silently (`.catch(() => {})` without creating a `Notification` record)
-- Admin mutations missing `revalidatePath()` on affected routes
-- `findUnique` where `findUniqueOrThrow` is safer (record must exist)
+Apply query rules from `@query-db` and email rules from `@send-email` — flag:
+- N+1 risk in loops
+- Missing `@@index` on new Prisma fields used in `where`
+- Expensive reads missing `unstable_cache`
+- Email failure swallowed without `Notification` record
+- Admin mutations missing `revalidatePath()`
 
 ---
 
-## Review output format
+## Output format
 
 ```
 ## Correctness
-- [blocker] `createClient` action is missing `userId` in the `where` clause on line 42 — potential cross-user data access.
+- [blocker] `createX` action missing `userId` in where clause — cross-user data risk.
 
 ## Minimal
-- [nit] `formatInvoiceNumber()` helper is only called once — inline it.
+- [nit] `formatLabel()` helper called once — inline it.
 
 ## DRY
-- [blocker] Manual email limit check on line 78 — use `isEmailLimitOk(usage)` from `@/lib/usage`.
+- [blocker] Manual email limit check on line 34 — use `isEmailLimitOk(usage)` from @/lib/usage.
 
 ## SOLID
-- [nit] `if (usage.plan === "PRO")` in `lib/email/invoice.ts` — extend `PLAN_FEATURES.attachPdf` instead.
+- [nit] `if (plan === "PRO")` in action — extend `PLAN_FEATURES` in lib/plans.ts instead.
 
 ## Production readiness
-- [blocker] `getUserUsage()` called inside a loop over recurring invoices — batch by userId first (see `processRecurringInvoices` pattern).
+- [blocker] `getUserUsage()` called inside a loop — batch by userId first.
 ```
