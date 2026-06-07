@@ -9,6 +9,7 @@ import {
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 import { InvoiceWithRelations } from "@/app/actions/generate-invoice";
+import { InvoiceItem } from "@/lib/invoiceItems";
 
 // Create styles
 const styles = StyleSheet.create({
@@ -339,26 +340,30 @@ export function InvoicePDF({ invoice }: { invoice: InvoiceWithRelations }) {
             </Text>
           </View>
 
-          <View style={styles.tableRow}>
-            <Text style={[styles.sectionContent, styles.descriptionCell]}>
-              {invoice.invoiceItemDescription}
-            </Text>
-            <Text style={[styles.sectionContent, styles.qtyCell]}>
-              {invoice.invoiceItemQuantity}
-            </Text>
-            <Text style={[styles.sectionContent, styles.rateCell]}>
-              {formatCurrency({
-                amount: invoice.invoiceItemRate,
-                currency: invoice.currency as Currency,
-              })}
-            </Text>
-            <Text style={[styles.sectionContent, styles.amountCell]}>
-              {formatCurrency({
-                amount: invoice.total,
-                currency: invoice.currency as Currency,
-              })}
-            </Text>
-          </View>
+          {((Array.isArray(invoice.items) ? invoice.items : []) as unknown as InvoiceItem[]).map(
+            (item, index) => (
+              <View key={index} style={styles.tableRow}>
+                <Text style={[styles.sectionContent, styles.descriptionCell]}>
+                  {item.description}
+                </Text>
+                <Text style={[styles.sectionContent, styles.qtyCell]}>
+                  {item.quantity}
+                </Text>
+                <Text style={[styles.sectionContent, styles.rateCell]}>
+                  {formatCurrency({
+                    amount: item.rate,
+                    currency: invoice.currency as Currency,
+                  })}
+                </Text>
+                <Text style={[styles.sectionContent, styles.amountCell]}>
+                  {formatCurrency({
+                    amount: item.quantity * item.rate,
+                    currency: invoice.currency as Currency,
+                  })}
+                </Text>
+              </View>
+            )
+          )}
 
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total</Text>

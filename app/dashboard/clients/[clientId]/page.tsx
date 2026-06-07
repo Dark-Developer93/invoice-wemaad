@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InvoiceDialog } from "@/components/invoice-dialog/InvoiceDialog";
 import { ViewInvoiceDialog } from "@/components/invoice-dialog/ViewInvoiceDialog";
+import { InvoiceItem } from "@/lib/invoiceItems";
 
 export const metadata: Metadata = {
   title: "Client Details | WeMaAd Invoice",
@@ -200,6 +201,7 @@ async function ClientDetailPage({ params }: { params: Params }) {
                         <ViewInvoiceDialog
                           invoice={{
                             ...invoice,
+                            items: (Array.isArray(invoice.items) ? invoice.items : []) as unknown as InvoiceItem[],
                             client: {
                               name: client.name,
                               email: client.email,

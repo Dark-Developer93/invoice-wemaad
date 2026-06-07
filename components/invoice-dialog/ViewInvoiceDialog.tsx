@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
+import { InvoiceItem } from "@/lib/invoiceItems";
 
 interface ViewInvoiceDialogProps {
   invoice: {
@@ -28,9 +29,7 @@ interface ViewInvoiceDialogProps {
     currency: string;
     invoiceNumber: number;
     invoiceNote: string | null;
-    invoiceItemDescription: string;
-    invoiceItemQuantity: number;
-    invoiceItemRate: number;
+    items: InvoiceItem[];
     client: {
       name: string;
       email: string | null;
@@ -138,27 +137,29 @@ export function ViewInvoiceDialog({
           <Card className="mt-8">
             <CardContent className="pt-6">
               {/* Mobile: stacked item layout */}
-              <div className="sm:hidden flex flex-col gap-3 mb-4 text-sm">
-                <div className="whitespace-pre-line">
-                  {invoice.invoiceItemDescription}
-                </div>
-                <div className="flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground">
-                  <span>Qty: {invoice.invoiceItemQuantity}</span>
-                  <span>
-                    Rate:{" "}
-                    {formatCurrency({
-                      amount: invoice.invoiceItemRate,
-                      currency: invoice.currency as Currency,
-                    })}
-                  </span>
-                  <span>
-                    Amount:{" "}
-                    {formatCurrency({
-                      amount: invoice.total,
-                      currency: invoice.currency as Currency,
-                    })}
-                  </span>
-                </div>
+              <div className="sm:hidden flex flex-col gap-4 mb-4 text-sm">
+                {invoice.items.map((item, index) => (
+                  <div key={index} className="flex flex-col gap-1">
+                    <div className="whitespace-pre-line">{item.description}</div>
+                    <div className="flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground">
+                      <span>Qty: {item.quantity}</span>
+                      <span>
+                        Rate:{" "}
+                        {formatCurrency({
+                          amount: item.rate,
+                          currency: invoice.currency as Currency,
+                        })}
+                      </span>
+                      <span>
+                        Amount:{" "}
+                        {formatCurrency({
+                          amount: item.quantity * item.rate,
+                          currency: invoice.currency as Currency,
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Desktop: 12-col grid */}
@@ -169,26 +170,26 @@ export function ViewInvoiceDialog({
                 <p className="col-span-2">Amount</p>
               </div>
 
-              <div className="hidden sm:grid grid-cols-12 gap-4 mb-4">
-                <div className="col-span-6">
-                  <div className="whitespace-pre-line">
-                    {invoice.invoiceItemDescription}
+              {invoice.items.map((item, index) => (
+                <div key={index} className="hidden sm:grid grid-cols-12 gap-4 mb-4">
+                  <div className="col-span-6">
+                    <div className="whitespace-pre-line">{item.description}</div>
+                  </div>
+                  <div className="col-span-2">{item.quantity}</div>
+                  <div className="col-span-2">
+                    {formatCurrency({
+                      amount: item.rate,
+                      currency: invoice.currency as Currency,
+                    })}
+                  </div>
+                  <div className="col-span-2">
+                    {formatCurrency({
+                      amount: item.quantity * item.rate,
+                      currency: invoice.currency as Currency,
+                    })}
                   </div>
                 </div>
-                <div className="col-span-2">{invoice.invoiceItemQuantity}</div>
-                <div className="col-span-2">
-                  {formatCurrency({
-                    amount: invoice.invoiceItemRate,
-                    currency: invoice.currency as Currency,
-                  })}
-                </div>
-                <div className="col-span-2">
-                  {formatCurrency({
-                    amount: invoice.total,
-                    currency: invoice.currency as Currency,
-                  })}
-                </div>
-              </div>
+              ))}
 
               <div className="flex justify-end">
                 <div className="w-full sm:w-1/2 md:w-1/3">

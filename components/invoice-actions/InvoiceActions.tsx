@@ -25,6 +25,7 @@ import Link from "next/link";
 import { ViewInvoiceDialog } from "../invoice-dialog/ViewInvoiceDialog";
 import { generateInvoicePDF } from "@/app/actions/generate-invoice";
 import { sendReminderEmail } from "@/app/actions/invoices";
+import { InvoiceItem } from "@/lib/invoiceItems";
 
 interface iAppProps {
   invoice: Prisma.InvoiceGetPayload<{
@@ -87,7 +88,10 @@ export function InvoiceActions({ invoice }: iAppProps) {
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
           <ViewInvoiceDialog
-            invoice={invoice}
+            invoice={{
+              ...invoice,
+              items: (Array.isArray(invoice.items) ? invoice.items : []) as unknown as InvoiceItem[],
+            }}
             trigger={
               <div className="flex items-center w-full">
                 <Eye className="size-4 mr-2" /> View Invoice

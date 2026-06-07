@@ -94,9 +94,7 @@ function makeRecurringInvoice(overrides = {}) {
     currency: "USD",
     dueDate: 30,
     invoiceNote: null,
-    invoiceItemDescription: "Consulting",
-    invoiceItemQuantity: 1,
-    invoiceItemRate: 10000,
+    items: [{ description: "Consulting", quantity: 1, rate: 10000 }],
     clientId: "client-1",
     client: {
       name: "Acme Corp",

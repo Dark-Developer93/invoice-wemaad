@@ -121,7 +121,6 @@ export function InvoiceMetaSection() {
                       )
                     }
                     initialFocus
-                    fromDate={new Date()}
                   />
                 </PopoverContent>
               </Popover>

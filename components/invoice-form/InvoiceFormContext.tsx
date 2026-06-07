@@ -52,7 +52,6 @@ interface InvoiceFormContextValue {
   data?: InvoiceData;
   selectedClient: InvoiceClient | null | undefined;
   currency: Currency;
-  localTotal: number;
   sendEmail: boolean;
   setSendEmail: (v: boolean) => void;
   isLoading: boolean;

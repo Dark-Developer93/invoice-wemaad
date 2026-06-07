@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { invoiceItemsSchema } from "@/lib/invoiceItems";
+
 export const invoiceSchema = z.object({
   invoiceName: z.string().min(1, "Invoice Name is required").max(100, "Invoice name is too long"),
   total: z.number().min(0.01, "$0.01 is minimum"),
@@ -15,7 +17,5 @@ export const invoiceSchema = z.object({
   }),
   invoiceNumber: z.number().min(1, "Minimum invoice number of 1"),
   note: z.string().max(1000, "Note is too long").optional(),
-  invoiceItemDescription: z.string().min(1, "Description is required").max(500, "Description is too long"),
-  invoiceItemQuantity: z.number().min(0.01, "Quantity must be greater than 0").max(100000, "Quantity is too large"),
-  invoiceItemRate: z.number().min(0.01, "Rate must be greater than 0").max(9999999, "Rate is too large"),
+  items: invoiceItemsSchema,
 });

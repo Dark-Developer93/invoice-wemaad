@@ -4,8 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Client } from "@prisma/client";
-import { useState, useEffect, useRef } from "react";
-import debounce from "lodash/debounce";
+import { useState, useEffect, useMemo } from "react";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import * as z from "zod";
@@ -45,8 +44,9 @@ import { createRecurringInvoice } from "@/app/actions/recurringInvoices";
 import { useUser } from "@/components/providers/UserProvider";
 import { toFormData } from "@/lib/toFormData";
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
+import { calculateInvoiceTotal } from "@/lib/invoiceItems";
+import { InvoiceItemsFieldArray } from "@/components/invoice-form/InvoiceItemsFieldArray";
 
 type FormValues = z.infer<typeof recurringInvoiceSchema>;
 
@@ -66,7 +66,6 @@ export function RecurringInvoiceForm({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [localTotal, setLocalTotal] = useState(0);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(recurringInvoiceSchema),
@@ -79,9 +78,7 @@ export function RecurringInvoiceForm({
       clientId: "",
       currency: "USD",
       dueDate: 30,
-      invoiceItemDescription: "",
-      invoiceItemQuantity: 1,
-      invoiceItemRate: 1,
+      items: [{ description: "", quantity: 1, rate: 1 }],
       total: 0,
       startDate: new Date().toISOString().split("T")[0],
       note: "",
@@ -92,37 +89,13 @@ export function RecurringInvoiceForm({
   const selectedClient = clients.find((c) => c.id === clientId) ?? null;
 
   const currency = form.watch("currency") as Currency;
-
-  const updateTotal = useRef(
-    debounce((quantity: number, rate: number) => {
-      const calculatedTotal = Math.round(quantity * rate * 100) / 100;
-      setLocalTotal(calculatedTotal);
-      form.setValue("total", calculatedTotal, { shouldValidate: true });
-    }, 300)
-  ).current;
+  const watchedItems = form.watch("items");
+  const items = useMemo(() => watchedItems ?? [], [watchedItems]);
+  const total = useMemo(() => calculateInvoiceTotal(items), [items]);
 
   useEffect(() => {
-    const subscription = form.watch((_, { name }) => {
-      if (name === "invoiceItemQuantity" || name === "invoiceItemRate") {
-        const quantity = form.getValues("invoiceItemQuantity") || 0;
-        const rate = form.getValues("invoiceItemRate") || 0;
-        updateTotal(quantity, rate);
-      }
-    });
-    return () => {
-      subscription.unsubscribe();
-      updateTotal.cancel();
-    };
-  }, [form]);
-
-  useEffect(() => {
-    const quantity = form.getValues("invoiceItemQuantity") || 0;
-    const rate = form.getValues("invoiceItemRate") || 0;
-    const calculatedTotal = Math.round(quantity * rate * 100) / 100;
-    setLocalTotal(calculatedTotal);
-    form.setValue("total", calculatedTotal, { shouldValidate: false });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    form.setValue("total", total, { shouldValidate: false });
+  }, [total, form]);
 
   async function onSubmit(values: FormValues) {
     try {
@@ -419,127 +392,7 @@ export function RecurringInvoiceForm({
               />
             </div>
 
-            {/* Invoice items */}
-            <div className="mb-4">
-              <div className="hidden md:grid md:grid-cols-12 gap-4 mb-2 font-medium text-sm">
-                <p className="col-span-6">Description</p>
-                <p className="col-span-2">Quantity</p>
-                <p className="col-span-2">Rate</p>
-                <p className="col-span-2">Amount</p>
-              </div>
-
-              <div className="flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4">
-                <div className="md:col-span-6">
-                  <Label className="md:hidden mb-1 block text-sm">
-                    Description
-                  </Label>
-                  <FormField
-                    control={form.control}
-                    name="invoiceItemDescription"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Item name & description"
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 md:contents">
-                  <div className="md:col-span-2 min-w-0">
-                    <Label className="md:hidden mb-1 block text-sm">
-                      Quantity
-                    </Label>
-                    <FormField
-                      control={form.control}
-                      name="invoiceItemQuantity"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="1"
-                              step="any"
-                              min="0.01"
-                              {...field}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(
-                                  val === "" ? 0 : parseFloat(val) || 0
-                                );
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="md:col-span-2 min-w-0">
-                    <Label className="md:hidden mb-1 block text-sm">Rate</Label>
-                    <FormField
-                      control={form.control}
-                      name="invoiceItemRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="0.00"
-                              step="any"
-                              min="0.01"
-                              {...field}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(
-                                  val === "" ? 0 : parseFloat(val) || 0
-                                );
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="md:col-span-2 min-w-0">
-                    <Label className="md:hidden mb-1 block text-sm">
-                      Amount
-                    </Label>
-                    <Input
-                      value={formatCurrency({ amount: localTotal, currency })}
-                      disabled
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Totals */}
-            <div className="flex justify-end mb-6">
-              <div className="w-full sm:w-1/2 md:w-1/3">
-                <div className="flex justify-between py-2 text-sm">
-                  <span>Subtotal</span>
-                  <span>
-                    {formatCurrency({ amount: localTotal, currency })}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2 border-t text-sm">
-                  <span>Total ({currency})</span>
-                  <span className="font-medium underline underline-offset-2">
-                    {formatCurrency({ amount: localTotal, currency })}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <InvoiceItemsFieldArray<FormValues> control={form.control} items={items} currency={currency} />
 
             {/* Note */}
             <div className="mb-6">

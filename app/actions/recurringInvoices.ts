@@ -3,6 +3,7 @@
 import { addMonths, addQuarters, addYears } from "date-fns";
 import { parseWithZod } from "@conform-to/zod";
 import { SubmissionResult } from "@conform-to/react";
+import { Prisma } from "@prisma/client";
 
 import { revalidatePath } from "next/cache";
 
@@ -159,9 +160,7 @@ export async function processRecurringInvoices() {
             currency: recurring.currency,
             invoiceNumber,
             invoiceNote: recurring.invoiceNote,
-            invoiceItemDescription: recurring.invoiceItemDescription,
-            invoiceItemQuantity: recurring.invoiceItemQuantity,
-            invoiceItemRate: recurring.invoiceItemRate,
+            items: recurring.items as Prisma.InputJsonValue,
             clientId: recurring.clientId,
             userId: recurring.userId,
             recurringInvoiceId: recurring.id,
