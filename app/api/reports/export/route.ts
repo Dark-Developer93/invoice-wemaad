@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
+import { parseInvoiceItems } from "@/lib/invoiceItems";
 
 export async function GET() {
   const session = await auth();
@@ -24,24 +25,27 @@ export async function GET() {
       "Due Date (days)",
       "Total",
       "Currency",
-      "Item Description",
-      "Quantity",
-      "Rate",
+      "Items",
     ];
 
-    const rows = invoices.map((inv) => [
-      inv.invoiceNumber,
-      `"${inv.invoiceName.replace(/"/g, '""')}"`,
-      `"${(inv.client?.name ?? "").replace(/"/g, '""')}"`,
-      inv.status,
-      new Date(inv.date).toISOString().split("T")[0],
-      inv.dueDate,
-      (inv.total / 100).toFixed(2),
-      inv.currency,
-      `"${inv.invoiceItemDescription.replace(/"/g, '""')}"`,
-      inv.invoiceItemQuantity,
-      (inv.invoiceItemRate / 100).toFixed(2),
-    ]);
+    const rows = invoices.map((inv) => {
+      const items = parseInvoiceItems(inv.items);
+      const itemsSummary = items
+        .map((item) => `${item.description} (${item.quantity} x ${(item.rate / 100).toFixed(2)})`)
+        .join("; ");
+
+      return [
+        inv.invoiceNumber,
+        `"${inv.invoiceName.replace(/"/g, '""')}"`,
+        `"${(inv.client?.name ?? "").replace(/"/g, '""')}"`,
+        inv.status,
+        new Date(inv.date).toISOString().split("T")[0],
+        inv.dueDate,
+        (inv.total / 100).toFixed(2),
+        inv.currency,
+        `"${itemsSummary.replace(/"/g, '""')}"`,
+      ];
+    });
 
     const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
 

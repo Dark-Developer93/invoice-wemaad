@@ -68,7 +68,11 @@ export function InvoiceMetaSection() {
                     type="number"
                     min="1"
                     {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    value={field.value || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      field.onChange(val === "" ? 0 : Number(val));
+                    }}
                   />
                 </FormControl>
               </div>
@@ -95,7 +99,7 @@ export function InvoiceMetaSection() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Date</FormLabel>
-              <Popover>
+              <Popover modal>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
@@ -121,7 +125,6 @@ export function InvoiceMetaSection() {
                       )
                     }
                     initialFocus
-                    fromDate={new Date()}
                   />
                 </PopoverContent>
               </Popover>

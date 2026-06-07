@@ -3,14 +3,14 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { useState, useEffect, useMemo, useRef } from "react";
-import debounce from "lodash/debounce";
+import { useState, useEffect, useMemo } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { createInvoice, editInvoice } from "@/app/actions/invoices";
 import { invoiceSchema } from "@/lib/zodSchemas";
+import { calculateInvoiceTotal, InvoiceItem, parseInvoiceItems } from "@/lib/invoiceItems";
 import { Currency } from "@/types";
 import { toFormData } from "@/lib/toFormData";
 import { useRouter } from "next/navigation";
@@ -45,9 +45,15 @@ export function InvoiceForm({
   const [isLoading, setIsLoading] = useState(false);
   const [sendEmail, setSendEmail] = useState(true);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [localTotal, setLocalTotal] = useState(
-    mode === "edit" ? Number(data?.total) || 0 : 0
-  );
+
+  const defaultItems: InvoiceItem[] = useMemo(() => {
+    const items = parseInvoiceItems(data?.items);
+    if (mode === "edit" && items.length > 0) {
+      return items;
+    }
+    return [{ description: "", quantity: 1, rate: 1 }];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema),
@@ -71,9 +77,7 @@ export function InvoiceForm({
       fromAddress:
         mode === "edit" ? data?.fromAddress || "" : companyAddress || address || "",
       clientId: mode === "edit" ? data?.clientId || "" : defaultClientId || "",
-      invoiceItemDescription: mode === "edit" ? data?.invoiceItemDescription || "" : "",
-      invoiceItemQuantity: mode === "edit" ? Number(data?.invoiceItemQuantity) || 1 : 1,
-      invoiceItemRate: mode === "edit" ? Number(data?.invoiceItemRate) || 1 : 1,
+      items: defaultItems,
       total: mode === "edit" ? Number(data?.total) || 0 : 0,
       note: mode === "edit" ? data?.invoiceNote || "" : "",
       status:
@@ -90,37 +94,12 @@ export function InvoiceForm({
   }, [form.watch("clientId"), clients]);
 
   const currency = form.watch("currency") as Currency;
-
-  const updateTotal = useRef(
-    debounce((quantity: number, rate: number) => {
-      const calculatedTotal = Math.round(quantity * rate * 100) / 100;
-      setLocalTotal(calculatedTotal);
-      form.setValue("total", calculatedTotal, { shouldValidate: true });
-    }, 300)
-  ).current;
+  const watchedItems = form.watch("items");
+  const total = useMemo(() => calculateInvoiceTotal(watchedItems ?? []), [watchedItems]);
 
   useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (name === "invoiceItemQuantity" || name === "invoiceItemRate") {
-        const quantity = form.getValues("invoiceItemQuantity") || 0;
-        const rate = form.getValues("invoiceItemRate") || 0;
-        updateTotal(quantity, rate);
-      }
-    });
-    return () => {
-      subscription.unsubscribe();
-      updateTotal.cancel();
-    };
-  }, [form]);
-
-  useEffect(() => {
-    const quantity = form.getValues("invoiceItemQuantity") || 0;
-    const rate = form.getValues("invoiceItemRate") || 0;
-    const calculatedTotal = Math.round(quantity * rate * 100) / 100;
-    setLocalTotal(calculatedTotal);
-    form.setValue("total", calculatedTotal, { shouldValidate: false });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    form.setValue("total", total, { shouldValidate: false });
+  }, [total, form]);
 
   async function onSubmit(formData: InvoiceFormValues) {
     try {
@@ -167,7 +146,6 @@ export function InvoiceForm({
             data,
             selectedClient,
             currency,
-            localTotal,
             sendEmail,
             setSendEmail,
             isLoading,

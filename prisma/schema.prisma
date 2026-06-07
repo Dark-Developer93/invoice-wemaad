@@ -214,9 +214,7 @@ model Invoice {
   invoiceNumber Int
   invoiceNote   String?
 
-  invoiceItemDescription String
-  invoiceItemQuantity    Float
-  invoiceItemRate        Float
+  items Json
 
   client   Client? @relation(fields: [clientId], references: [id])
   clientId String?
@@ -295,9 +293,7 @@ model RecurringInvoice {
   nextRunAt DateTime
 
   invoiceName            String
-  invoiceItemDescription String
-  invoiceItemQuantity    Float
-  invoiceItemRate        Float
+  items                  Json
   total                  Float
   currency               String
   dueDate                Int

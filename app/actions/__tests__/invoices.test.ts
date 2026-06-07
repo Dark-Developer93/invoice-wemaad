@@ -65,9 +65,7 @@ function makeValidFormData(overrides: Record<string, string> = {}): FormData {
     clientId: "client-1",
     currency: "USD",
     invoiceNumber: "5",
-    invoiceItemDescription: "Consulting",
-    invoiceItemQuantity: "1",
-    invoiceItemRate: "100",
+    items: JSON.stringify([{ description: "Consulting", quantity: 1, rate: 100 }]),
     sendEmail: "true",
     ...overrides,
   };

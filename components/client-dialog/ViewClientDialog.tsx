@@ -12,16 +12,30 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Client } from "@/app/dashboard/clients/columns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useControllableOpenState } from "@/lib/hooks/useControllableOpenState";
 
 interface ViewClientDialogProps {
   client: Client;
-  trigger: ReactNode;
+  trigger?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ViewClientDialog({ client, trigger }: ViewClientDialogProps) {
+export function ViewClientDialog({
+  client,
+  trigger,
+  open: openProp,
+  onOpenChange,
+}: ViewClientDialogProps) {
+  const [open, setOpen] = useControllableOpenState(openProp, onOpenChange);
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <Dialog open={open} onOpenChange={setOpen}>
+      {trigger && (
+        <DialogTrigger asChild onClick={() => setOpen(true)}>
+          {trigger}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto min-h-[450px]">
         <DialogHeader>
           <DialogTitle>Client Details</DialogTitle>

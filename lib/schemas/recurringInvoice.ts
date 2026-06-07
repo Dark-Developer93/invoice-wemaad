@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { invoiceItemsSchema } from "@/lib/invoiceItems";
+
 export const recurringInvoiceSchema = z
   .object({
     interval: z.enum(["MONTHLY", "QUARTERLY", "YEARLY"]),
@@ -19,9 +21,7 @@ export const recurringInvoiceSchema = z
       errorMap: () => ({ message: "Invalid currency" }),
     }),
     dueDate: z.number().min(0, "Due date is required"),
-    invoiceItemDescription: z.string().min(1, "Description is required").max(500, "Description is too long"),
-    invoiceItemQuantity: z.number().min(0.01, "Quantity must be greater than 0").max(100000, "Quantity is too large"),
-    invoiceItemRate: z.number().min(0.01, "Rate must be greater than 0").max(9999999, "Rate is too large"),
+    items: invoiceItemsSchema,
     total: z.number().min(0.01, "$0.01 is minimum"),
     note: z.string().max(1000, "Note is too long").optional(),
   })

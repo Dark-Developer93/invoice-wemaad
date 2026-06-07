@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ClientForm } from "./clientForm";
 import { Client } from "@/app/dashboard/clients/columns";
 import { Plus } from "lucide-react";
+import { useControllableOpenState } from "@/lib/hooks/useControllableOpenState";
 
 interface ClientDialogProps {
   client?: Client & {
@@ -41,26 +42,33 @@ interface ClientDialogProps {
     }>;
   };
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
 export function ClientDialog({
   client,
   trigger,
+  open: openProp,
+  onOpenChange,
   onSuccess,
 }: ClientDialogProps) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useControllableOpenState(openProp, onOpenChange);
+  const isControlled = openProp !== undefined;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Client
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Client
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
