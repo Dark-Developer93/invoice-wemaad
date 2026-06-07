@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
-import { InvoiceItem } from "@/lib/invoiceItems";
+import { parseInvoiceItems } from "@/lib/invoiceItems";
 
 export async function GET() {
   const session = await auth();
@@ -29,7 +29,7 @@ export async function GET() {
     ];
 
     const rows = invoices.map((inv) => {
-      const items = (Array.isArray(inv.items) ? inv.items : []) as unknown as InvoiceItem[];
+      const items = parseInvoiceItems(inv.items);
       const itemsSummary = items
         .map((item) => `${item.description} (${item.quantity} x ${(item.rate / 100).toFixed(2)})`)
         .join("; ");

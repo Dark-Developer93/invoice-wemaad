@@ -10,7 +10,7 @@ import { Form } from "@/components/ui/form";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { createInvoice, editInvoice } from "@/app/actions/invoices";
 import { invoiceSchema } from "@/lib/zodSchemas";
-import { calculateInvoiceTotal, InvoiceItem } from "@/lib/invoiceItems";
+import { calculateInvoiceTotal, InvoiceItem, parseInvoiceItems } from "@/lib/invoiceItems";
 import { Currency } from "@/types";
 import { toFormData } from "@/lib/toFormData";
 import { useRouter } from "next/navigation";
@@ -47,8 +47,9 @@ export function InvoiceForm({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const defaultItems: InvoiceItem[] = useMemo(() => {
-    if (mode === "edit" && Array.isArray(data?.items) && data.items.length > 0) {
-      return data.items as unknown as InvoiceItem[];
+    const items = parseInvoiceItems(data?.items);
+    if (mode === "edit" && items.length > 0) {
+      return items;
     }
     return [{ description: "", quantity: 1, rate: 1 }];
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -10,6 +10,7 @@ import { InvoiceActions } from "@/components/invoice-actions/InvoiceActions";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { calculateInvoiceTotal, parseInvoiceItems } from "@/lib/invoiceItems";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state/EmptyState";
 import { Currency } from "@/types";
@@ -122,7 +123,7 @@ export async function InvoiceList({ emptyButton }: { emptyButton?: ReactNode }) 
                 <div className="flex items-center justify-between text-sm">
                   <span>
                     {formatCurrency({
-                      amount: invoice.total,
+                      amount: calculateInvoiceTotal(parseInvoiceItems(invoice.items)),
                       currency: invoice.currency as Currency,
                     })}
                   </span>
@@ -159,7 +160,7 @@ export async function InvoiceList({ emptyButton }: { emptyButton?: ReactNode }) 
                     <TableCell>{invoice.client?.name || "—"}</TableCell>
                     <TableCell>
                       {formatCurrency({
-                        amount: invoice.total,
+                        amount: calculateInvoiceTotal(parseInvoiceItems(invoice.items)),
                         currency: invoice.currency as Currency,
                       })}
                     </TableCell>

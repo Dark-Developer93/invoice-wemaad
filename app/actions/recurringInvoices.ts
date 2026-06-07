@@ -12,6 +12,7 @@ import { recurringInvoiceSchema } from "@/lib/zodSchemas";
 import { PLAN_FEATURES } from "@/lib/plans";
 import { getUserUsage, isEmailLimitOk } from "@/lib/usage";
 import { dispatchInvoiceEmail } from "@/lib/email/invoice";
+import { calculateInvoiceTotal, parseInvoiceItems } from "@/lib/invoiceItems";
 import prisma from "@/lib/db";
 
 function computeNextRunAt(
@@ -57,6 +58,7 @@ export async function createRecurringInvoice(
         clientId,
         userId,
         ...rest,
+        total: calculateInvoiceTotal(rest.items),
       },
     });
   } catch (error) {
@@ -145,12 +147,14 @@ export async function processRecurringInvoices() {
       // Atomic: create invoice + advance schedule in one transaction.
       const nextRunAt = computeNextRunAt(now, recurring.interval);
       const expired = !!recurring.endDate && nextRunAt > recurring.endDate;
+      const items = parseInvoiceItems(recurring.items);
+      const total = calculateInvoiceTotal(items);
 
       const invoice = await prisma.$transaction(async (tx) => {
         const created = await tx.invoice.create({
           data: {
             invoiceName: recurring.invoiceName,
-            total: recurring.total,
+            total,
             status: "PENDING",
             date: now,
             dueDate: recurring.dueDate,
@@ -160,7 +164,7 @@ export async function processRecurringInvoices() {
             currency: recurring.currency,
             invoiceNumber,
             invoiceNote: recurring.invoiceNote,
-            items: recurring.items as Prisma.InputJsonValue,
+            items: items as unknown as Prisma.InputJsonValue,
             clientId: recurring.clientId,
             userId: recurring.userId,
             recurringInvoiceId: recurring.id,
@@ -190,7 +194,7 @@ export async function processRecurringInvoices() {
           logType: "recurringInvoice",
           invoiceNumber,
           invoiceDueDate: now,
-          total: recurring.total,
+          total,
           currency: recurring.currency,
           invoiceId: invoice.id,
           notificationHref: "/dashboard/recurring-invoices",

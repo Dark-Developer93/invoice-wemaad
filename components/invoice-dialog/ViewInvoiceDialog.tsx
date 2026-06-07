@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
-import { InvoiceItem } from "@/lib/invoiceItems";
+import { calculateInvoiceTotal, InvoiceItem } from "@/lib/invoiceItems";
 import { useControllableOpenState } from "@/lib/hooks/useControllableOpenState";
 
 interface ViewInvoiceDialogProps {
@@ -69,6 +69,7 @@ export function ViewInvoiceDialog({
   const [open, setOpen] = useControllableOpenState(openProp, onOpenChange);
   const dueDate = new Date(invoice.date);
   dueDate.setDate(dueDate.getDate() + invoice.dueDate);
+  const total = calculateInvoiceTotal(invoice.items);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -207,7 +208,7 @@ export function ViewInvoiceDialog({
                     <span>Subtotal</span>
                     <span>
                       {formatCurrency({
-                        amount: invoice.total,
+                        amount: total,
                         currency: invoice.currency as Currency,
                       })}
                     </span>
@@ -216,7 +217,7 @@ export function ViewInvoiceDialog({
                     <span>Total ({invoice.currency})</span>
                     <span className="font-medium">
                       {formatCurrency({
-                        amount: invoice.total,
+                        amount: total,
                         currency: invoice.currency as Currency,
                       })}
                     </span>

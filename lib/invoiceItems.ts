@@ -25,3 +25,9 @@ export function calculateInvoiceTotal(items: Array<Pick<InvoiceItem, "quantity" 
   const total = items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
   return Math.round(total * 100) / 100;
 }
+
+// Invoice/RecurringInvoice store items as a JSON column (Prisma.JsonValue),
+// so any value read back from the DB needs this guard before use as InvoiceItem[].
+export function parseInvoiceItems(value: unknown): InvoiceItem[] {
+  return Array.isArray(value) ? (value as unknown as InvoiceItem[]) : [];
+}

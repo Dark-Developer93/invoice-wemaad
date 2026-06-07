@@ -25,7 +25,7 @@ import Link from "next/link";
 import { ViewInvoiceDialog } from "../invoice-dialog/ViewInvoiceDialog";
 import { generateInvoicePDF } from "@/app/actions/generate-invoice";
 import { sendReminderEmail } from "@/app/actions/invoices";
-import { InvoiceItem } from "@/lib/invoiceItems";
+import { parseInvoiceItems } from "@/lib/invoiceItems";
 import { openAfterMenuCloses } from "@/lib/openAfterMenuCloses";
 
 interface iAppProps {
@@ -122,7 +122,7 @@ export function InvoiceActions({ invoice }: iAppProps) {
         onOpenChange={setViewOpen}
         invoice={{
           ...invoice,
-          items: (Array.isArray(invoice.items) ? invoice.items : []) as unknown as InvoiceItem[],
+          items: parseInvoiceItems(invoice.items),
         }}
       />
       <InvoiceDialog open={editOpen} onOpenChange={setEditOpen} invoice={invoice} />

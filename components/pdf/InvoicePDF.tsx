@@ -9,7 +9,7 @@ import {
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 import { InvoiceWithRelations } from "@/app/actions/generate-invoice";
-import { InvoiceItem } from "@/lib/invoiceItems";
+import { calculateInvoiceTotal, parseInvoiceItems } from "@/lib/invoiceItems";
 
 // Create styles
 const styles = StyleSheet.create({
@@ -340,7 +340,7 @@ export function InvoicePDF({ invoice }: { invoice: InvoiceWithRelations }) {
             </Text>
           </View>
 
-          {((Array.isArray(invoice.items) ? invoice.items : []) as unknown as InvoiceItem[]).map(
+          {parseInvoiceItems(invoice.items).map(
             (item, index) => (
               <View key={index} style={styles.tableRow}>
                 <Text style={[styles.sectionContent, styles.descriptionCell]}>
@@ -369,7 +369,7 @@ export function InvoicePDF({ invoice }: { invoice: InvoiceWithRelations }) {
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalAmount}>
               {formatCurrency({
-                amount: invoice.total,
+                amount: calculateInvoiceTotal(parseInvoiceItems(invoice.items)),
                 currency: invoice.currency as Currency,
               })}
             </Text>

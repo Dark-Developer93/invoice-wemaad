@@ -7,6 +7,7 @@ import { addDays } from "date-fns";
 
 import { getRequiredUserId } from "@/lib/session";
 import { invoiceSchema } from "@/lib/zodSchemas";
+import { calculateInvoiceTotal } from "@/lib/invoiceItems";
 import prisma from "@/lib/db";
 import { getUserUsage, isEmailLimitOk } from "@/lib/usage";
 import { dispatchInvoiceEmail } from "@/lib/email/invoice";
@@ -32,7 +33,11 @@ export async function createInvoice(
 
   try {
     const data = await prisma.invoice.create({
-      data: { ...submission.value, userId },
+      data: {
+        ...submission.value,
+        total: calculateInvoiceTotal(submission.value.items),
+        userId,
+      },
     });
 
     const shouldSendEmail = formData.get("sendEmail") !== "false";
@@ -50,7 +55,7 @@ export async function createInvoice(
           templateName: "newInvoice",
           invoiceNumber: submission.value.invoiceNumber,
           invoiceDueDate: addDays(new Date(submission.value.date), submission.value.dueDate),
-          total: submission.value.total,
+          total: data.total,
           currency: submission.value.currency,
           invoiceId: data.id,
         }).catch(() => { /* email is best-effort; failure creates an in-app notification */ });
@@ -83,7 +88,11 @@ export async function editInvoice(
   try {
     const data = await prisma.invoice.update({
       where: { id: invoiceId, userId },
-      data: { ...submission.value, userId },
+      data: {
+        ...submission.value,
+        total: calculateInvoiceTotal(submission.value.items),
+        userId,
+      },
     });
 
     const shouldSendEmail = formData.get("sendEmail") !== "false";
@@ -105,7 +114,7 @@ export async function editInvoice(
           templateName: "updatedInvoice",
           invoiceNumber: submission.value.invoiceNumber,
           invoiceDueDate: addDays(new Date(submission.value.date), submission.value.dueDate),
-          total: submission.value.total,
+          total: data.total,
           currency: submission.value.currency,
           invoiceId: data.id,
         }).catch(() => { /* email is best-effort; failure creates an in-app notification */ });
