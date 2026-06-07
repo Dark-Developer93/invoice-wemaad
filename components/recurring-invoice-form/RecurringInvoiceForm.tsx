@@ -194,7 +194,7 @@ export function RecurringInvoiceForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Start Date</FormLabel>
-                    <Popover>
+                    <Popover modal>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -347,7 +347,7 @@ export function RecurringInvoiceForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>End Date (optional)</FormLabel>
-                    <Popover>
+                    <Popover modal>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
