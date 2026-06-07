@@ -1,6 +1,7 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
+import { useControllableOpenState } from "@/lib/hooks/useControllableOpenState";
 import { Prisma, Client } from "@prisma/client";
 import {
   Dialog,
@@ -14,6 +15,8 @@ import { InvoiceForm } from "../invoice-form/InvoiceForm";
 
 interface InvoiceDialogProps {
   trigger?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onSuccess?: () => void;
   defaultClientId?: string;
   clients?: (Client & {
@@ -57,12 +60,14 @@ interface InvoiceDialogProps {
 
 export function InvoiceDialog({
   trigger,
+  open: openProp,
+  onOpenChange,
   onSuccess,
   clients = [],
   defaultClientId,
   invoice,
 }: InvoiceDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useControllableOpenState(openProp, onOpenChange);
 
   const handleSuccess = () => {
     setOpen(false);
@@ -73,9 +78,11 @@ export function InvoiceDialog({
 
   return (
     <Dialog modal open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild onClick={() => setOpen(true)}>
-        {trigger}
-      </DialogTrigger>
+      {trigger && (
+        <DialogTrigger asChild onClick={() => setOpen(true)}>
+          {trigger}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>

@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 import { InvoiceItem } from "@/lib/invoiceItems";
+import { useControllableOpenState } from "@/lib/hooks/useControllableOpenState";
 
 interface ViewInvoiceDialogProps {
   invoice: {
@@ -54,19 +55,28 @@ interface ViewInvoiceDialogProps {
       }>;
     } | null;
   };
-  trigger: ReactNode;
+  trigger?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function ViewInvoiceDialog({
   invoice,
   trigger,
+  open: openProp,
+  onOpenChange,
 }: ViewInvoiceDialogProps) {
+  const [open, setOpen] = useControllableOpenState(openProp, onOpenChange);
   const dueDate = new Date(invoice.date);
   dueDate.setDate(dueDate.getDate() + invoice.dueDate);
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <Dialog open={open} onOpenChange={setOpen}>
+      {trigger && (
+        <DialogTrigger asChild onClick={() => setOpen(true)}>
+          {trigger}
+        </DialogTrigger>
+      )}
       <DialogContent className="w-full max-w-none sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Invoice Details</DialogTitle>

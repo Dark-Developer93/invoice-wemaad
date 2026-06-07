@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +17,7 @@ import { ClientDialog } from "@/components/client-form/clientDialog";
 import { useRouter } from "next/navigation";
 import { InvoiceDialog } from "@/components/invoice-dialog/InvoiceDialog";
 import { ViewClientDialog } from "@/components/client-dialog/ViewClientDialog";
+import { openAfterMenuCloses } from "@/lib/openAfterMenuCloses";
 
 export type Client = {
   id: string;
@@ -67,60 +69,73 @@ interface ActionCellProps {
 
 export function ActionCell({ client, allClients }: ActionCellProps) {
   const router = useRouter();
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const [editClientOpen, setEditClientOpen] = useState(false);
+  const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false);
+
   const clientWithRequiredFields = {
     ...client,
     customFields: client.customFields || [],
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Open menu</span>
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuItem
-          onSelect={(e) => {
-            e.preventDefault();
-            router.push(`/dashboard/clients/${client.id}`);
-          }}
-        >
-          <span className="w-full">Full View</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-          <ViewClientDialog
-            client={client}
-            trigger={<span className="w-full">Quick View</span>}
-          />
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-          <ClientDialog
-            client={clientWithRequiredFields}
-            trigger={<span className="w-full">Edit Client</span>}
-            onSuccess={() => router.refresh()}
-          />
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-          <InvoiceDialog
-            clients={allClients.map((c) => ({
-              ...c,
-              addresses: c.addresses
-                .filter((addr) => addr.id)
-                .map((addr) => ({ ...addr, id: addr.id! })),
-              contactPersons: c.contactPersons
-                .filter((contact) => contact.id)
-                .map((contact) => ({ ...contact, id: contact.id! })),
-            }))}
-            defaultClientId={client.id}
-            trigger={<span className="w-full">Create Invoice</span>}
-          />
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              router.push(`/dashboard/clients/${client.id}`);
+            }}
+          >
+            <span className="w-full">Full View</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => openAfterMenuCloses(setQuickViewOpen)}>
+            <span className="w-full">Quick View</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => openAfterMenuCloses(setEditClientOpen)}>
+            <span className="w-full">Edit Client</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => openAfterMenuCloses(setCreateInvoiceOpen)}>
+            <span className="w-full">Create Invoice</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ViewClientDialog
+        client={client}
+        open={quickViewOpen}
+        onOpenChange={setQuickViewOpen}
+      />
+      <ClientDialog
+        client={clientWithRequiredFields}
+        open={editClientOpen}
+        onOpenChange={setEditClientOpen}
+        onSuccess={() => router.refresh()}
+      />
+      <InvoiceDialog
+        open={createInvoiceOpen}
+        onOpenChange={setCreateInvoiceOpen}
+        clients={allClients.map((c) => ({
+          ...c,
+          addresses: c.addresses
+            .filter((addr) => addr.id)
+            .map((addr) => ({ ...addr, id: addr.id! })),
+          contactPersons: c.contactPersons
+            .filter((contact) => contact.id)
+            .map((contact) => ({ ...contact, id: contact.id! })),
+        }))}
+        defaultClientId={client.id}
+      />
+    </>
   );
 }
 
