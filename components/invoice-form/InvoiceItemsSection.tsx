@@ -13,11 +13,10 @@ import { InvoiceItemsFieldArray } from "./InvoiceItemsFieldArray";
 
 export function InvoiceItemsSection() {
   const { form, currency } = useInvoiceForm();
-  const items = form.watch("items") ?? [];
 
   return (
     <>
-      <InvoiceItemsFieldArray<InvoiceFormValues> control={form.control} items={items} currency={currency} />
+      <InvoiceItemsFieldArray<InvoiceFormValues> control={form.control} currency={currency} />
 
       {/* Note */}
       <div className="mb-6">

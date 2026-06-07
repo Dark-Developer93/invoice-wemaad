@@ -90,8 +90,7 @@ export function RecurringInvoiceForm({
 
   const currency = form.watch("currency") as Currency;
   const watchedItems = form.watch("items");
-  const items = useMemo(() => watchedItems ?? [], [watchedItems]);
-  const total = useMemo(() => calculateInvoiceTotal(items), [items]);
+  const total = useMemo(() => calculateInvoiceTotal(watchedItems ?? []), [watchedItems]);
 
   useEffect(() => {
     form.setValue("total", total, { shouldValidate: false });
@@ -392,7 +391,7 @@ export function RecurringInvoiceForm({
               />
             </div>
 
-            <InvoiceItemsFieldArray<FormValues> control={form.control} items={items} currency={currency} />
+            <InvoiceItemsFieldArray<FormValues> control={form.control} currency={currency} />
 
             {/* Note */}
             <div className="mb-6">

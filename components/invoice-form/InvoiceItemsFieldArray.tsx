@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrayPath, Control, FieldValues, Path, useFieldArray } from "react-hook-form";
+import { ArrayPath, Control, FieldValues, Path, useFieldArray, useWatch } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,6 @@ import { Currency } from "@/types";
 
 interface InvoiceItemsFieldArrayProps<TFieldValues extends FieldValues & { items: InvoiceItem[] }> {
   control: Control<TFieldValues>;
-  items: InvoiceItem[];
   currency: Currency;
 }
 
@@ -27,13 +26,13 @@ const EMPTY_ITEM: InvoiceItem = { description: "", quantity: 1, rate: 1 };
 
 export function InvoiceItemsFieldArray<TFieldValues extends FieldValues & { items: InvoiceItem[] }>({
   control,
-  items,
   currency,
 }: InvoiceItemsFieldArrayProps<TFieldValues>) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: "items" as ArrayPath<TFieldValues>,
   });
+  const items = (useWatch({ control, name: "items" as Path<TFieldValues> }) ?? []) as InvoiceItem[];
   const total = calculateInvoiceTotal(items);
 
   return (
