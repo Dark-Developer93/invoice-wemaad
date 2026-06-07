@@ -164,7 +164,7 @@ export async function processRecurringInvoices() {
             currency: recurring.currency,
             invoiceNumber,
             invoiceNote: recurring.invoiceNote,
-            items: items as unknown as Prisma.InputJsonValue,
+            items: items as Prisma.InputJsonValue,
             clientId: recurring.clientId,
             userId: recurring.userId,
             recurringInvoiceId: recurring.id,
