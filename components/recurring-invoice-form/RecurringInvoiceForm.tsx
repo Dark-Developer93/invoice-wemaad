@@ -331,9 +331,11 @@ export function RecurringInvoiceForm({
                         type="number"
                         min={0}
                         {...field}
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value, 10) || 0)
-                        }
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          field.onChange(val === "" ? 0 : parseInt(val, 10) || 0);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

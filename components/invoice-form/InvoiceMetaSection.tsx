@@ -68,7 +68,11 @@ export function InvoiceMetaSection() {
                     type="number"
                     min="1"
                     {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    value={field.value || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      field.onChange(val === "" ? 0 : Number(val));
+                    }}
                   />
                 </FormControl>
               </div>

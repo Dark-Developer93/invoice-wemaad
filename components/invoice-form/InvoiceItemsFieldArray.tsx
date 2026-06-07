@@ -90,6 +90,7 @@ export function InvoiceItemsFieldArray<TFieldValues extends FieldValues & { item
                             step="any"
                             min="0.01"
                             {...field}
+                            value={field.value || ""}
                             onChange={(e) => {
                               const val = e.target.value;
                               field.onChange(val === "" ? 0 : parseFloat(val) || 0);
@@ -116,6 +117,7 @@ export function InvoiceItemsFieldArray<TFieldValues extends FieldValues & { item
                             step="any"
                             min="0.01"
                             {...field}
+                            value={field.value || ""}
                             onChange={(e) => {
                               const val = e.target.value;
                               field.onChange(val === "" ? 0 : parseFloat(val) || 0);
