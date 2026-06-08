@@ -12,14 +12,16 @@ import { env } from "@/lib/env";
 export const emailTransporter = nodemailer.createTransport({
   host: env.EMAIL_SERVER_HOST,
   port: env.EMAIL_SERVER_PORT,
-  secure: true,
+  secure: env.EMAIL_SERVER_PORT === 465,
   auth: {
     user: env.EMAIL_SERVER_USER,
     pass: env.EMAIL_SERVER_PASSWORD,
   },
 });
 
-if (env.NODE_ENV === "production") {
+// Verify SMTP connection at runtime only — skip during `next build` (SKIP_ENV_VALIDATION=1)
+// because no SMTP server is reachable inside the Docker builder stage.
+if (env.NODE_ENV === "production" && !process.env.SKIP_ENV_VALIDATION) {
   emailTransporter.verify((error) => {
     if (error) {
       console.error("Email transport verification failed:", error);
