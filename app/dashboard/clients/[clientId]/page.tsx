@@ -14,8 +14,9 @@ import { ViewInvoiceDialog } from "@/components/invoice-dialog/ViewInvoiceDialog
 import { parseInvoiceItems } from "@/lib/invoiceItems";
 
 export const metadata: Metadata = {
-  title: "Client Details | WeMaAd Invoice",
-  description: "View client details and information",
+  title: "Client Details",
+  description: "View client contact details, invoice history, and payment status.",
+  robots: { index: false, follow: false },
 };
 
 type Params = Promise<{ clientId: string }>;

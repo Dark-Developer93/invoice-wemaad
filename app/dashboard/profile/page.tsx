@@ -5,8 +5,9 @@ import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 
 export const metadata = {
-  title: "Profile | WeMaAd Invoice",
-  description: "View your invoice profile",
+  title: "Profile",
+  description: "Manage your account profile, business details, and preferences.",
+  robots: { index: false, follow: false },
 };
 
 async function getUserData(userId: string) {

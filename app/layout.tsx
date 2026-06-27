@@ -20,11 +20,77 @@ const geistMono = localFont({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 export const metadata: Metadata = {
-  title: "InvoiceWeMaAd",
-  description: "InvoiceWeMaAd",
+  metadataBase: new URL("https://invoice-wemaad.vercel.app"),
+  title: {
+    default: "WeMaAd Invoice – Professional Invoicing & Billing Software",
+    template: "%s | WeMaAd Invoice",
+  },
+  description:
+    "Create, send, and track professional invoices in minutes. WeMaAd Invoice helps freelancers and small businesses manage clients, automate recurring billing, and get paid faster.",
+  keywords: [
+    "invoice software",
+    "online invoicing",
+    "billing software",
+    "invoice generator",
+    "recurring invoices",
+    "freelance invoicing",
+    "small business billing",
+    "client management",
+    "WeMaAd Invoice",
+  ],
+  authors: [{ name: "WeMaAd" }],
+  creator: "WeMaAd",
+  publisher: "WeMaAd",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://invoice-wemaad.vercel.app",
+    siteName: "WeMaAd Invoice",
+    title: "WeMaAd Invoice – Professional Invoicing & Billing Software",
+    description:
+      "Create, send, and track professional invoices in minutes. Manage clients, automate recurring billing, and get paid faster.",
+    images: [
+      {
+        url: "/hero.png",
+        width: 1200,
+        height: 630,
+        alt: "WeMaAd Invoice – Professional Invoicing Software",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "WeMaAd Invoice – Professional Invoicing & Billing Software",
+    description:
+      "Create, send, and track professional invoices in minutes. Manage clients, automate recurring billing, and get paid faster.",
+    images: ["/hero.png"],
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/logo.svg", type: "image/svg+xml" },
+    ],
+    apple: "/logo.png",
+  },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({

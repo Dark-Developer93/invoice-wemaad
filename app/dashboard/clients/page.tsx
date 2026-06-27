@@ -9,8 +9,9 @@ import { EmptyState } from "@/components/empty-state/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
-  title: "Clients | WeMaAd Invoice",
-  description: "Manage your client directory",
+  title: "Clients",
+  description: "Manage your client directory — add, edit, and view client contact details.",
+  robots: { index: false, follow: false },
 };
 
 async function ClientsTable({ userId }: { userId: string }) {

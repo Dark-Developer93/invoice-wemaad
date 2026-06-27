@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "Login",
+  description: "Sign in to your WeMaAd Invoice account to manage invoices, clients, and billing.",
+  robots: { index: false, follow: false },
+};
 
 import {
   Card,

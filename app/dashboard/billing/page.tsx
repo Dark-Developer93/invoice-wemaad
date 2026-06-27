@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Billing",
+  description: "Manage your subscription plan, usage limits, and billing details.",
+  robots: { index: false, follow: false },
+};
 import { format } from "date-fns";
 
 import { requireUser } from "@/lib/session";

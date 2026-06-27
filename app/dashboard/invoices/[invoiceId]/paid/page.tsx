@@ -16,8 +16,9 @@ import { markAsPaid } from "@/app/actions/invoices";
 import { getRequiredUserId, requireInvoiceOwnership } from "@/lib/session";
 
 export const metadata = {
-  title: "Mark as Paid | WeMaAd Invoice",
-  description: "Mark an invoice as paid",
+  title: "Mark as Paid",
+  description: "Mark an invoice as paid and update its payment status.",
+  robots: { index: false, follow: false },
 };
 
 type Params = Promise<{ invoiceId: string }>;

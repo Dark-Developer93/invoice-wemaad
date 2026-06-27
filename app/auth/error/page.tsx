@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Authentication Error",
+  description: "An error occurred during authentication. Please try again.",
+  robots: { index: false, follow: false },
+};
 
 import { buttonVariants } from "@/components/ui/button";
 import {

@@ -18,8 +18,9 @@ import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 
 export const metadata = {
-  title: "Delete Client | WeMaAd Invoice",
-  description: "Delete a client from your account",
+  title: "Delete Client",
+  description: "Permanently remove a client and their associated data from your account.",
+  robots: { index: false, follow: false },
 };
 
 async function Authorize(clientId: string, userId: string) {

@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AlertCircle, ArrowLeft, Mail } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Verify Email",
+  description: "Check your email for a magic link to sign in to WeMaAd Invoice.",
+  robots: { index: false, follow: false },
+};
 
 import { buttonVariants } from "@/components/ui/button";
 import {

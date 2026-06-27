@@ -20,8 +20,9 @@ import { getUserUsage } from "@/lib/usage";
 import { PLAN_FEATURES } from "@/lib/plans";
 
 export const metadata = {
-  title: "Recurring Invoices | WeMaAd Invoice",
-  description: "Manage your recurring invoices",
+  title: "Recurring Invoices",
+  description: "Create and manage automated recurring invoices sent on a schedule.",
+  robots: { index: false, follow: false },
 };
 
 async function RecurringInvoiceListContent({ userId }: { userId: string }) {

@@ -16,8 +16,9 @@ import { deleteInvoice } from "@/app/actions/invoices";
 import { getRequiredUserId, requireInvoiceOwnership } from "@/lib/session";
 
 export const metadata = {
-  title: "Delete Invoice | WeMaAd Invoice",
-  description: "Delete an invoice from your account",
+  title: "Delete Invoice",
+  description: "Permanently delete an invoice from your WeMaAd Invoice account.",
+  robots: { index: false, follow: false },
 };
 
 type Params = Promise<{ invoiceId: string }>;
