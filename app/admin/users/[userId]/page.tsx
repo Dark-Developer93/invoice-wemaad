@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Admin – User Details",
+  description: "View and manage individual user account details.",
+  robots: { index: false, follow: false },
+};
 import {
   ArrowLeft,
   Building2,

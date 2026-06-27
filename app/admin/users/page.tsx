@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { Users, UserCheck, UserX, Crown, Clock } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Admin – Users",
+  description: "Manage platform users and subscriptions.",
+  robots: { index: false, follow: false },
+};
 import {
   Card,
   CardContent,

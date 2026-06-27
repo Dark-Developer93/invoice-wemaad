@@ -24,10 +24,10 @@ const getHasInvoices = unstable_cache(
   { revalidate: 60 }
 );
 
-// Add metadata for better SEO and caching
 export const metadata = {
-  title: "Dashboard | WeMaAd Invoice",
-  description: "View your invoice dashboard",
+  title: "Dashboard",
+  description: "Overview of your invoices, revenue, and recent activity.",
+  robots: { index: false, follow: false },
 };
 
 // Change to ISR with 1 minute revalidation

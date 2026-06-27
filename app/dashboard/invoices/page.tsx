@@ -19,8 +19,9 @@ import {
 import { InvoiceDialog } from "@/components/invoice-dialog/InvoiceDialog";
 
 export const metadata = {
-  title: "Invoices | WeMaAd Invoice",
-  description: "View your invoice invoices",
+  title: "Invoices",
+  description: "View, create, and manage all your invoices.",
+  robots: { index: false, follow: false },
 };
 
 export default async function InvoicesRoute() {

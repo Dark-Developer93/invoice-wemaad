@@ -14,8 +14,9 @@ import { getUserUsage } from "@/lib/usage";
 import { PLAN_FEATURES } from "@/lib/plans";
 
 export const metadata = {
-  title: "Reports | WeMaAd Invoice",
-  description: "Financial reports and analytics",
+  title: "Reports",
+  description: "View financial reports, revenue analytics, and invoice summaries.",
+  robots: { index: false, follow: false },
 };
 
 async function ReportsContent({ userId }: { userId: string }) {

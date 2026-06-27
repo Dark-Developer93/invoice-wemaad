@@ -1,9 +1,19 @@
+import type { Metadata } from "next";
 import Features from "@/components/features/Features";
 import Hero from "@/components/hero/Hero";
 import Navbar from "@/components/navbar/Navbar";
 import PricingSection from "@/components/pricing/PricingSection";
 import ContactSection from "@/components/contact/ContactSection";
 import { auth } from "@/lib/auth";
+
+export const metadata: Metadata = {
+  title: "WeMaAd Invoice – Professional Invoicing & Billing Software",
+  description:
+    "Create, send, and track professional invoices in minutes. WeMaAd Invoice helps freelancers and small businesses manage clients, automate recurring billing, and get paid faster.",
+  alternates: {
+    canonical: "/",
+  },
+};
 
 const Home = async () => {
   const session = await auth();
