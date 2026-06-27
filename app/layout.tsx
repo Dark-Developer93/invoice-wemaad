@@ -91,6 +91,9 @@ export const metadata: Metadata = {
     apple: "/logo.png",
   },
   manifest: "/manifest.webmanifest",
+  other: {
+    "llms-txt": "https://invoice-wemaad.vercel.app/llms.txt",
+  },
 };
 
 export default function RootLayout({
