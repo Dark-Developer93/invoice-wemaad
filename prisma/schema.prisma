@@ -118,7 +118,7 @@ model Client {
   taxId    String?
   website  String?
   notes    String?
-  tags     String[] // Stored as JSON array
+  tags     String[] // Native Postgres text array
   category String?
 
   // Relations
@@ -203,7 +203,7 @@ model Invoice {
   id String @id @default(uuid())
 
   invoiceName   String
-  total         Float
+  total         Decimal       @db.Decimal(12, 2)
   status        InvoiceStatus
   date          DateTime
   dueDate       Int
@@ -226,6 +226,11 @@ model Invoice {
   updatedAt DateTime @updatedAt
   User      User?    @relation(fields: [userId], references: [id])
   userId    String?
+
+  @@unique([userId, invoiceNumber])
+  @@index([userId])
+  @@index([clientId])
+  @@index([status])
 }
 
 enum InvoiceStatus {
@@ -294,7 +299,7 @@ model RecurringInvoice {
 
   invoiceName            String
   items                  Json
-  total                  Float
+  total                  Decimal @db.Decimal(12, 2)
   currency               String
   dueDate                Int
   fromName               String
@@ -313,4 +318,6 @@ model RecurringInvoice {
   updatedAt DateTime @updatedAt
 
   @@index([isActive, nextRunAt])
+  @@index([userId])
+  @@index([clientId])
 }

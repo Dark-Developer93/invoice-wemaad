@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { parseWithZod } from "@conform-to/zod";
 import { SubmissionResult } from "@conform-to/react";
 import { addDays } from "date-fns";
@@ -9,8 +10,14 @@ import { getRequiredUserId } from "@/lib/session";
 import { invoiceSchema } from "@/lib/zodSchemas";
 import { calculateInvoiceTotal } from "@/lib/invoiceItems";
 import prisma from "@/lib/db";
-import { getUserUsage, isEmailLimitOk } from "@/lib/usage";
+import { getUserUsage, isEmailLimitOk, type UserUsage } from "@/lib/usage";
 import { dispatchInvoiceEmail } from "@/lib/email/invoice";
+
+class InvoiceLimitReachedError extends Error {
+  constructor(public usage: UserUsage) {
+    super("Invoice limit reached");
+  }
+}
 
 export async function createInvoice(
   _prevState: SubmissionResult<string[]> | null | undefined,
@@ -18,28 +25,48 @@ export async function createInvoice(
 ): Promise<SubmissionResult<string[]>> {
   const userId = await getRequiredUserId();
 
-  const usage = await getUserUsage(userId);
-  if (usage.invoiceLimit !== null && usage.invoicesThisMonth >= usage.invoiceLimit) {
-    return {
-      status: "error",
-      error: { "": [`Monthly invoice limit (${usage.invoiceLimit}) reached on the ${usage.plan} plan. Upgrade to create more.`] },
-    };
-  }
-
   const submission = parseWithZod(formData, { schema: invoiceSchema });
   if (submission.status !== "success") {
     return { status: "error", error: { form: ["Invalid form data"] } };
   }
 
+  let data;
   try {
-    const data = await prisma.invoice.create({
-      data: {
-        ...submission.value,
-        total: calculateInvoiceTotal(submission.value.items),
-        userId,
-      },
-    });
+    data = await prisma.$transaction(async (tx) => {
+      // Serialize invoice creation per user (Postgres advisory lock, released
+      // automatically at transaction end) so the usage-limit check below can't
+      // race with a concurrent createInvoice call for the same user and let
+      // both requests slip past the limit.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
 
+      const usage = await getUserUsage(userId, tx);
+      if (usage.invoiceLimit !== null && usage.invoicesThisMonth >= usage.invoiceLimit) {
+        throw new InvoiceLimitReachedError(usage);
+      }
+
+      return tx.invoice.create({
+        data: {
+          ...submission.value,
+          total: calculateInvoiceTotal(submission.value.items),
+          userId,
+        },
+      });
+    });
+  } catch (error) {
+    if (error instanceof InvoiceLimitReachedError) {
+      return {
+        status: "error",
+        error: { "": [`Monthly invoice limit (${error.usage.invoiceLimit}) reached on the ${error.usage.plan} plan. Upgrade to create more.`] },
+      };
+    }
+    console.error("Failed to create invoice:", error);
+    return { status: "error", error: { "": ["Failed to create invoice"] } };
+  }
+
+  // The invoice itself was created successfully at this point — email dispatch
+  // is best-effort and must not turn a successful create into a reported failure.
+  try {
+    const usage = await getUserUsage(userId);
     const shouldSendEmail = formData.get("sendEmail") !== "false";
     if (shouldSendEmail && isEmailLimitOk(usage)) {
       const client = await prisma.client.findUnique({
@@ -55,18 +82,19 @@ export async function createInvoice(
           templateName: "newInvoice",
           invoiceNumber: submission.value.invoiceNumber,
           invoiceDueDate: addDays(new Date(submission.value.date), submission.value.dueDate),
-          total: data.total,
+          total: Number(data.total),
           currency: submission.value.currency,
           invoiceId: data.id,
         }).catch(() => { /* email is best-effort; failure creates an in-app notification */ });
       }
     }
-
-    return { status: "success", error: {} };
   } catch (error) {
-    console.error("Failed to create invoice:", error);
-    return { status: "error", error: { "": ["Failed to create invoice"] } };
+    console.error(`Failed to dispatch email for invoice ${data.id}:`, error);
   }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/invoices");
+  return { status: "success", error: {} };
 }
 
 export async function editInvoice(
@@ -114,13 +142,15 @@ export async function editInvoice(
           templateName: "updatedInvoice",
           invoiceNumber: submission.value.invoiceNumber,
           invoiceDueDate: addDays(new Date(submission.value.date), submission.value.dueDate),
-          total: data.total,
+          total: Number(data.total),
           currency: submission.value.currency,
           invoiceId: data.id,
         }).catch(() => { /* email is best-effort; failure creates an in-app notification */ });
       }
     }
 
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/invoices");
     return { status: "success", error: {} };
   } catch (error) {
     console.error("Failed to update invoice:", error);
@@ -138,6 +168,7 @@ export async function deleteInvoice(invoiceId: string) {
     return { error: "Failed to delete invoice" };
   }
 
+  revalidatePath("/dashboard");
   return redirect("/dashboard/invoices");
 }
 
@@ -175,7 +206,7 @@ export async function sendReminderEmail(invoiceId: string) {
     templateName: "reminderInvoice",
     invoiceNumber: invoiceData.invoiceNumber,
     invoiceDueDate: dueDate,
-    total: invoiceData.total,
+    total: Number(invoiceData.total),
     currency: invoiceData.currency,
     invoiceId: invoiceData.id,
   });
@@ -193,6 +224,8 @@ export async function markAsPaid(invoiceId: string) {
     console.error("Failed to mark invoice as paid:", error);
     return { error: "Failed to update invoice status" };
   }
+
+  revalidatePath("/dashboard");
 
   return redirect("/dashboard/invoices");
 }

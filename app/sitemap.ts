@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { getBaseUrl } from "@/lib/urls";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://invoice-wemaad.vercel.app";
+  const baseUrl = getBaseUrl();
 
   return [
     {

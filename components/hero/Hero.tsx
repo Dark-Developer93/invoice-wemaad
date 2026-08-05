@@ -27,7 +27,7 @@ const Hero = () => {
           <Link href="/login">
             <ColoredButton>Start Free Trial</ColoredButton>
           </Link>
-          <Link href="#pricing">
+          <Link href="/#pricing">
             <Button variant="outline" className="h-[44px] w-[171px] rounded-xl">
               View Pricing
             </Button>

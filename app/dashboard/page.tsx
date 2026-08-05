@@ -55,7 +55,7 @@ export default async function DashboardRoute() {
           title="No invoices found"
           description="Create an invoice to see it right here"
           buttontext="Create Invoice"
-          href="/dashboard/invoices/create"
+          href="/dashboard/invoices"
         />
       ) : (
         <>

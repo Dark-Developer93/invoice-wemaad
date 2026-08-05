@@ -102,7 +102,7 @@ export async function InvoiceList({ emptyButton }: { emptyButton?: ReactNode }) 
           description="Create an invoice to get started"
           button={emptyButton}
           buttontext="Create invoice"
-          href="/dashboard/invoices/create"
+          href="/dashboard/invoices"
         />
       ) : (
         <>

@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/session", () => ({
   requireUser: vi.fn(),
+  getRequiredUserId: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -11,12 +12,14 @@ vi.mock("@/lib/db", () => ({
     invoice: { create: vi.fn(), update: vi.fn(), delete: vi.fn() },
     client: { findUnique: vi.fn() },
     notification: { create: vi.fn() },
+    $transaction: vi.fn(),
   },
 }));
 
 vi.mock("@/lib/usage", () => ({
   getUserUsage: vi.fn(),
   logEmailSent: vi.fn(),
+  isEmailLimitOk: vi.fn(() => true),
 }));
 
 vi.mock("@/lib/email/index", () => ({
@@ -31,10 +34,14 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
+
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 
 import prisma from "@/lib/db";
-import { requireUser } from "@/lib/session";
+import { getRequiredUserId } from "@/lib/session";
 import { getUserUsage } from "@/lib/usage";
 import { sendEmail } from "@/lib/email/index";
 import { createInvoice, deleteInvoice, markAsPaid } from "../invoices";
@@ -45,9 +52,10 @@ const db = prisma as unknown as {
   invoice: { create: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> };
   client: { findUnique: ReturnType<typeof vi.fn> };
   notification: { create: ReturnType<typeof vi.fn> };
+  $transaction: ReturnType<typeof vi.fn>;
 };
 
-const mockRequireUser = vi.mocked(requireUser);
+const mockGetRequiredUserId = vi.mocked(getRequiredUserId);
 const mockGetUserUsage = vi.mocked(getUserUsage);
 const mockSendEmail = vi.mocked(sendEmail);
 
@@ -95,8 +103,11 @@ const AT_LIMIT_USAGE = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockRequireUser.mockResolvedValue({ user: { id: "user-1" } } as never);
+  mockGetRequiredUserId.mockResolvedValue("user-1");
   db.notification.create.mockResolvedValue({});
+  db.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
+    fn({ $executeRaw: vi.fn().mockResolvedValue(undefined), invoice: db.invoice })
+  );
 });
 
 describe("createInvoice", () => {

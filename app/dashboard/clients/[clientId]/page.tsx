@@ -202,6 +202,7 @@ async function ClientDetailPage({ params }: { params: Params }) {
                         <ViewInvoiceDialog
                           invoice={{
                             ...invoice,
+                            total: Number(invoice.total),
                             items: parseInvoiceItems(invoice.items),
                             client: {
                               name: client.name,

@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getBaseUrl } from "@/lib/urls";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/dashboard/", "/admin/", "/api/", "/onboarding", "/verify"],
       },
     ],
-    sitemap: "https://invoice-wemaad.vercel.app/sitemap.xml",
+    sitemap: `${getBaseUrl()}/sitemap.xml`,
   };
 }

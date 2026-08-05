@@ -42,7 +42,7 @@ export async function GET(request: Request) {
 
     const aggregated = rawData.reduce((acc: Record<number, number>, curr) => {
       const timestamp = new Date(curr.createdAt).setHours(0, 0, 0, 0);
-      acc[timestamp] = (acc[timestamp] ?? 0) + curr.total;
+      acc[timestamp] = (acc[timestamp] ?? 0) + Number(curr.total);
       return acc;
     }, {});
 

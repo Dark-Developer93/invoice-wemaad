@@ -116,7 +116,7 @@ const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
     if (plan.exclusive) {
       return {
         text: "Contact Sales",
-        href: isAuthenticated ? "/dashboard/billing" : "/login",
+        href: "mailto:sales@invoicewemaad.com",
       };
     }
     return {
