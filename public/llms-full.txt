@@ -1,0 +1,123 @@
+# WeMaAd Invoice — Full Site Content
+
+> This file contains the full text content of WeMaAd Invoice's public pages, for
+> AI tools and agents that want the complete site content in a single fetch.
+> See /llms.txt for a curated summary and page index instead.
+
+---
+
+## Home Page (/)
+
+### Hero
+
+Streamline Your Invoicing Process
+
+# Professional Invoicing made simple
+
+Create, send, and track invoices with ease. Automated email reminders
+ensure you get paid on time, every time.
+
+Calls to action: "Start Free Trial" (sign in) and "View Pricing" (#pricing).
+
+### Features
+
+Everything you need to manage invoices — powerful features to help you
+create, automate, and track invoices efficiently.
+
+- **Quick Creation** — Create and send professional invoices in minutes with an intuitive editor.
+- **Recurring Invoices** — Automate repeat billing by scheduling invoice templates that generate and send on your defined cadence.
+- **Automated Email Reminders** — Never chase payments again — automated reminder emails go out on your schedule.
+- **Client Management** — Organise clients with full contact details, multiple addresses, and complete invoice history.
+- **Financial Reports** — Track revenue trends, outstanding balances, and payment patterns with exportable reports.
+- **Invoice Analytics** — Get insights into your cash flow and invoice performance with clear visual charts.
+- **PDF Generation** — Download polished PDF invoices instantly — perfect for sharing or your own records.
+- **Secure Sharing** — Client-facing invoice links are signed so only the intended recipient can access them.
+- **Real-time Updates** — Track payment status and invoice activity in real-time with instant notifications.
+
+### Pricing
+
+Simple Pricing — choose your plan. Start with our free tier and upgrade as
+you grow. All plans include a 14-day free trial. Monthly and yearly billing
+available (yearly at a discount).
+
+**Free** — $0/mo — Perfect for freelancers just starting out
+- 5 invoices per month
+- 20 emails per month
+- Client management
+- PDF generation & secure sharing
+- Automated invoice emails
+- Basic invoice templates
+
+**Starter** — $9/mo ($90/yr) — Great for growing businesses
+- 25 invoices per month
+- 50 emails per month
+- Everything in Free
+- Recurring invoices automation
+- Financial reports & analytics
+- Priority email support
+
+**Pro** — $29/mo ($290/yr) — For established businesses (most popular)
+- 100 invoices per month
+- 500 emails per month
+- Everything in Starter
+- Advanced analytics
+- Custom branding
+- Team collaboration
+- Basic API access
+- Priority support
+
+**Business** — Custom pricing — For large organizations
+- Unlimited invoices
+- Unlimited emails
+- Everything in Pro
+- Multi-user access
+- Advanced API access
+- Full custom branding
+- Custom integrations
+- Dedicated support
+- SLA guarantee
+
+Note: plan upgrade/downgrade requests are currently reviewed manually by an
+administrator; the product does not yet process payment cards directly.
+
+### Contact
+
+Get in Touch — have questions? We're here to help you. Contact form fields:
+first name, last name, email, message. Direct contact: hello@wemaad.net.
+Address: 3, Makram Ebeid, Nasr City, Cairo Governorate, Egypt.
+
+---
+
+## Privacy Policy (/privacy)
+
+See the full, current Privacy Policy at /privacy. Summary: WeMaAd collects
+account information (email, name, address, company/bank details you choose
+to display on invoices), content you create (client records, invoices,
+recurring schedules), contact-form messages, and a single essential
+session cookie — no third-party advertising or tracking cookies. Data is
+used solely to operate the Service (creating/sending invoices, recurring
+billing, authentication, abuse prevention) and is not sold. WeMaAd acts as
+a data processor for client information you enter about your own
+customers. Shared only with the infrastructure providers necessary to run
+the Service (hosting, database, transactional email delivery).
+
+## Terms of Service (/terms)
+
+See the full, current Terms of Service at /terms. Summary: by using
+WeMaAd Invoice you agree to use it lawfully, not attempt unauthorized
+access to other accounts, and not abuse rate limits or send spam through
+it. You own the client/invoice data you create; WeMaAd hosts and
+transmits it on your behalf. WeMaAd Invoice does not process payments
+directly (plan changes are manually reviewed) and is not a substitute for
+professional accounting, tax, or legal advice — you are responsible for
+the accuracy of every invoice you send. The Service is provided "as is"
+without warranty; liability is limited as described in the full Terms.
+Governed by the laws of the Arab Republic of Egypt.
+
+---
+
+## Technical
+
+Built with Next.js 15 (App Router), TypeScript, Tailwind CSS, Prisma,
+PostgreSQL (Neon). Authentication via passwordless magic link email
+(Auth.js / NextAuth v5). Hosted on Vercel.

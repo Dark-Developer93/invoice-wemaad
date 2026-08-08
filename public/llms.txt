@@ -39,3 +39,8 @@ Reach the team via the contact form at https://invoice-wemaad.vercel.app/#contac
 - Built with Next.js 15 (App Router), TypeScript, Tailwind CSS
 - Authentication via magic link (email)
 - Hosted on Vercel
+
+## Full Content
+
+For the complete text content of our public pages in a single file, see
+[llms-full.txt](https://invoice-wemaad.vercel.app/llms-full.txt).

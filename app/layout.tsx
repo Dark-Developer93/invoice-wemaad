@@ -94,6 +94,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   other: {
     "llms-txt": `${getBaseUrl()}/llms.txt`,
+    "llms-full-txt": `${getBaseUrl()}/llms-full.txt`,
   },
 };
 
