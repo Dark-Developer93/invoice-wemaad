@@ -19,7 +19,7 @@ import { RecurringInvoiceDialog } from "@/components/recurring-invoice-dialog/Re
 import { RecurringInvoiceList } from "@/components/recurring-invoice-list/RecurringInvoiceList";
 import { UpgradePrompt } from "@/components/upgrade-prompt/UpgradePrompt";
 import { getUserUsage } from "@/lib/usage";
-import { PLAN_FEATURES } from "@/lib/plans";
+import { getPlanConfig } from "@/lib/planConfig";
 
 export const metadata = {
   title: "Recurring Invoices",
@@ -108,7 +108,8 @@ export default async function RecurringInvoicesPage() {
     )(),
   ]);
 
-  if (!PLAN_FEATURES[usage.plan].recurringInvoices) {
+  const planConfig = await getPlanConfig(usage.plan);
+  if (!planConfig.recurringInvoices) {
     return (
       <UpgradePrompt
         title="Recurring Invoices"

@@ -305,6 +305,24 @@ model CronRun {
   @@index([jobName, startedAt])
 }
 
+// Admin-editable pricing/limits/features per plan tier. Seeded with the
+// values that used to be hardcoded in lib/plans.ts so editing this in the
+// admin panel is the only way values change going forward.
+model PlanConfig {
+  id                String   @id @default(cuid())
+  plan              PlanType @unique
+  price             Int? // whole dollars/month; null = custom pricing (e.g. Business)
+  invoiceLimit      Int? // per calendar month; null = unlimited
+  emailLimit        Int? // per calendar month; null = unlimited
+  recurringInvoices Boolean  @default(false)
+  analytics         Boolean  @default(false)
+  customBranding    Boolean  @default(false)
+  teamCollaboration Boolean  @default(false)
+  apiAccess         Boolean  @default(false)
+  multiUser         Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+}
+
 enum RecurrenceInterval {
   MONTHLY
   QUARTERLY

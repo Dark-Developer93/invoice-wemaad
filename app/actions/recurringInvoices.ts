@@ -9,7 +9,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 
 import { getRequiredUserId } from "@/lib/session";
 import { recurringInvoiceSchema } from "@/lib/zodSchemas";
-import { PLAN_FEATURES } from "@/lib/plans";
+import { getPlanConfig } from "@/lib/planConfig";
 import { getUserUsage, isEmailLimitOk, type UserUsage } from "@/lib/usage";
 import { dispatchInvoiceEmail } from "@/lib/email/invoice";
 import { calculateInvoiceTotal, parseInvoiceItems } from "@/lib/invoiceItems";
@@ -32,7 +32,8 @@ export async function createRecurringInvoice(
   const userId = await getRequiredUserId();
 
   const usage = await getUserUsage(userId);
-  if (!PLAN_FEATURES[usage.plan].analytics) {
+  const planConfig = await getPlanConfig(usage.plan);
+  if (!planConfig.recurringInvoices) {
     return {
       status: "error",
       error: { "": ["Recurring invoices require a Starter plan or above."] },

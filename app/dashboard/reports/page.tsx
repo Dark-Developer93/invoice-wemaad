@@ -12,7 +12,7 @@ import { ClientRevenueTable } from "@/components/reports/ClientRevenueTable";
 import { OutstandingInvoicesCard } from "@/components/reports/OutstandingInvoicesCard";
 import { UpgradePrompt } from "@/components/upgrade-prompt/UpgradePrompt";
 import { getUserUsage } from "@/lib/usage";
-import { PLAN_FEATURES } from "@/lib/plans";
+import { getPlanConfig } from "@/lib/planConfig";
 import { cacheTags } from "@/lib/cache";
 
 export const metadata = {
@@ -181,8 +181,9 @@ function ReportsContentSkeleton() {
 export default async function ReportsPage() {
   const session = await requireUser();
   const usage = await getUserUsage(session.user!.id!);
+  const planConfig = await getPlanConfig(usage.plan);
 
-  if (!PLAN_FEATURES[usage.plan].analytics) {
+  if (!planConfig.analytics) {
     return (
       <UpgradePrompt
         title="Reports"

@@ -9,4 +9,6 @@ export const cacheTags = {
   recurringInvoices: (userId: string) => `recurring-invoices-${userId}`,
   notifications: (userId: string) => `notifications-${userId}`,
   billing: (userId: string) => `billing-${userId}`,
+  // Platform-wide, not per-user — every plan tier's price/limits/features.
+  planConfig: "plan-config",
 };

@@ -10,7 +10,8 @@ import RecentInvoices, {
 import { Card } from "@/components/ui/card";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { PLAN_FEATURES, PlanType } from "@/lib/plans";
+import { PlanType } from "@/lib/plans";
+import { getPlanConfig } from "@/lib/planConfig";
 import { cacheTags } from "@/lib/cache";
 
 // Cached until invalidated by revalidateTag(cacheTags.invoices(userId)) in
@@ -47,7 +48,7 @@ export default async function DashboardRoute() {
     prisma.user.findUniqueOrThrow({ where: { id: session.user.id }, select: { plan: true } }),
   ]);
 
-  const planFeatures = PLAN_FEATURES[user.plan as PlanType];
+  const planFeatures = await getPlanConfig(user.plan as PlanType);
 
   return (
     <main className="p-4 flex flex-col gap-5">
