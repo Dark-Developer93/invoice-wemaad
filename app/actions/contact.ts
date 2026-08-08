@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { sendEmail } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rateLimit";
 
-const CONTACT_EMAIL = "abdullah@wemaad.net";
+const CONTACT_EMAIL = "hello@wemaad.net";
 
 const contactFormSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(100, "First name is too long"),
