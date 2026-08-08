@@ -1,8 +1,9 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Trash } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -106,6 +107,11 @@ export function ActionCell({ client, allClients }: ActionCellProps) {
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => openAfterMenuCloses(setCreateInvoiceOpen)}>
             <span className="w-full">Create Invoice</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={`/dashboard/clients/${client.id}/delete`}>
+              <Trash className="size-4 mr-2" /> Delete Client
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

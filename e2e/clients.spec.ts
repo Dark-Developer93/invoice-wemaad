@@ -44,16 +44,10 @@ test("create, edit, and delete a client", async ({ page }) => {
   await expect(page.getByRole("table").getByText(updatedName, { exact: true })).toBeVisible();
 
   // ── Delete ──────────────────────────────────────────────────────────────
-  // No UI element currently links to the delete confirmation route — the
-  // server action + page work, they're just unreachable by click today.
-  // Navigate straight to it to still exercise the real delete path.
   const updatedRow = page.getByRole("row").filter({ hasText: updatedName });
   await updatedRow.getByRole("button", { name: "Open menu" }).click();
-  await page.getByRole("menuitem", { name: "Full View" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/clients\/[^/]+$/);
-  const clientId = page.url().split("/clients/")[1];
-
-  await page.goto(`/dashboard/clients/${clientId}/delete`);
+  await page.getByRole("menuitem", { name: "Delete Client" }).click();
+  await expect(page).toHaveURL(/\/delete$/);
   await page.getByRole("button", { name: "Delete Client" }).click();
   await expect(page).toHaveURL(/\/dashboard\/clients$/);
   await expect(page.getByRole("table").getByText(updatedName, { exact: true })).toHaveCount(0);
