@@ -24,7 +24,8 @@ each one inventing its own approach.
 app/
   actions/            Server actions ("use server"), one file per domain
     __tests__/        Vitest tests for actions
-  admin/              Admin-only pages (requireAdmin())
+  admin/              Admin-only pages (requireAdmin()): users, insights,
+                      plans (pricing/limits/features), monitoring
   api/                Route handlers: cron, health, PDF generation, chart data
   dashboard/          Authenticated user pages (requireUser())
   (marketing pages)   /, /privacy, /terms, /login, /onboarding, /auth/error
@@ -35,7 +36,10 @@ lib/
   auth.ts             Auth.js config, auth() wrapped in React.cache()
   session.ts          requireUser/requireAdmin/getRequiredUserId helpers
   usage.ts            Plan usage limits (invoices/emails per month)
+  plans.ts            PlanType, PLAN_ORDER, PLAN_NAMES, DEFAULT_PLAN_CONFIG
+  planConfig.ts        Cached DB-backed reader for admin-editable plan config
   monitoring.ts       recordCronRun / alertAdmins
+  retention.ts        Data-retention pruning (see pattern 9)
   rateLimit.ts         In-memory best-effort rate limiter
   env.ts              Zod-validated env access
   email/              Transport + templates
@@ -168,6 +172,28 @@ is what backs `/admin/monitoring` and `/api/health` — without it, a
 silently-failing cron is invisible until a user complains. See
 `app/api/cron/data-retention/route.ts` for the reference example besides
 the original recurring-invoices cron.
+
+### 9. Admin-editable settings live in their own DB table, not env/code
+
+Plan pricing, usage limits, and feature flags used to be hardcoded in
+`lib/plans.ts`. They're now the `PlanConfig` table (one row per
+`PlanType`), edited via `/admin/plans` →
+`adminUpdatePlanConfig()`. `lib/planConfig.ts` wraps the read in
+`unstable_cache` (tag `cacheTags.planConfig`, global — not per-user) with
+`lib/plans.ts`'s `DEFAULT_PLAN_CONFIG` as a fallback if a row is ever
+missing. Every consumer that used to import `PLAN_LIMITS`/`PLAN_FEATURES`/
+`PLAN_PRICE` now calls `getPlanConfig(plan)` / `getPlanConfigs()` instead
+— all were already in async Server Component/Server Action contexts, so
+this didn't require any client-side restructuring. If you add another
+admin-editable setting, follow the same shape: a table (not a JSON blob —
+keeps it validate-able and diffable), a cached reader with a sane
+fallback, and an admin action that revalidates the cache tag.
+
+Note: the public marketing pricing section on the homepage
+(`components/pricing/PricingSection.tsx`) is separate static content with
+richer copy (yearly pricing, bullet descriptions) — it's intentionally
+*not* wired to `PlanConfig`. Don't assume editing a plan in the admin
+panel changes what the homepage displays.
 
 ## Testing
 
