@@ -10,7 +10,7 @@ import { revalidatePath } from "next/cache";
 import { getRequiredUserId } from "@/lib/session";
 import { recurringInvoiceSchema } from "@/lib/zodSchemas";
 import { PLAN_FEATURES } from "@/lib/plans";
-import { getUserUsage, isEmailLimitOk } from "@/lib/usage";
+import { getUserUsage, isEmailLimitOk, type UserUsage } from "@/lib/usage";
 import { dispatchInvoiceEmail } from "@/lib/email/invoice";
 import { calculateInvoiceTotal, parseInvoiceItems } from "@/lib/invoiceItems";
 import prisma from "@/lib/db";
@@ -105,55 +105,63 @@ export async function deleteRecurringInvoice(id: string) {
   }
 }
 
-export async function processRecurringInvoices() {
+export interface ProcessRecurringInvoicesResult {
+  processed: number;
+  skippedAtLimit: number;
+  failed: number;
+  errors: string[];
+}
+
+export async function processRecurringInvoices(): Promise<ProcessRecurringInvoicesResult> {
   const now = new Date();
+  const result: ProcessRecurringInvoicesResult = {
+    processed: 0,
+    skippedAtLimit: 0,
+    failed: 0,
+    errors: [],
+  };
 
   const due = await prisma.recurringInvoice.findMany({
     where: { isActive: true, nextRunAt: { lte: now }, User: { isActive: true } },
     include: { client: { include: { contactPersons: { where: { isPrimary: true }, take: 1 } } } },
   });
 
-  // Batch usage checks — one lookup per unique user, not one per invoice.
-  const userIds = [...new Set(due.map((r) => r.userId).filter(Boolean) as string[])];
-  const usageMap = Object.fromEntries(
-    await Promise.all(userIds.map(async (uid) => [uid, await getUserUsage(uid)] as const))
-  );
-
-  // Batch last invoice numbers per user to avoid N queries in the loop.
-  const lastInvoiceMap = Object.fromEntries(
-    await Promise.all(
-      userIds.map(async (uid) => {
-        const last = await prisma.invoice.findFirst({
-          where: { userId: uid },
-          orderBy: { invoiceNumber: "desc" },
-          select: { invoiceNumber: true },
-        });
-        return [uid, last?.invoiceNumber ?? 0] as const;
-      })
-    )
-  );
+  // In-memory only, for the best-effort email-limit check below (not the
+  // invoice-limit check itself, which is re-verified fresh under lock).
+  const emailUsageCache = new Map<string, UserUsage>();
 
   for (const recurring of due) {
     if (!recurring.userId) continue;
-
-    const usage = usageMap[recurring.userId];
-    const atLimit =
-      usage.invoiceLimit !== null && usage.invoicesThisMonth >= usage.invoiceLimit;
-    if (atLimit) continue;
+    const userId = recurring.userId;
 
     try {
-      const invoiceNumber = ++lastInvoiceMap[recurring.userId];
-
-      // Atomic: create invoice + advance schedule in one transaction.
-      // Base the next run on the schedule's own nextRunAt, not wall-clock `now` —
-      // otherwise a late cron run (downtime, retry) permanently drifts the
-      // billing schedule forward by the delay.
       const nextRunAt = computeNextRunAt(recurring.nextRunAt, recurring.interval);
       const expired = !!recurring.endDate && nextRunAt > recurring.endDate;
       const items = parseInvoiceItems(recurring.items);
       const total = calculateInvoiceTotal(items);
 
+      // Atomic: lock per-user, re-check the usage limit fresh, assign the next
+      // invoice number, create the invoice, and advance the schedule, all in
+      // one transaction. The advisory lock (released automatically at
+      // transaction end) serializes this against both a concurrent manual
+      // createInvoice call AND a second, overlapping cron invocation for the
+      // same user — the previous per-run batched usage/number lookups could
+      // both pass a stale check if two cron runs overlapped.
       const invoice = await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
+
+        const usage = await getUserUsage(userId, tx);
+        if (usage.invoiceLimit !== null && usage.invoicesThisMonth >= usage.invoiceLimit) {
+          return null;
+        }
+
+        const last = await tx.invoice.findFirst({
+          where: { userId },
+          orderBy: { invoiceNumber: "desc" },
+          select: { invoiceNumber: true },
+        });
+        const invoiceNumber = (last?.invoiceNumber ?? 0) + 1;
+
         const created = await tx.invoice.create({
           data: {
             invoiceName: recurring.invoiceName,
@@ -169,7 +177,7 @@ export async function processRecurringInvoices() {
             invoiceNote: recurring.invoiceNote,
             items: items as Prisma.InputJsonValue,
             clientId: recurring.clientId,
-            userId: recurring.userId,
+            userId,
             recurringInvoiceId: recurring.id,
           },
         });
@@ -182,29 +190,47 @@ export async function processRecurringInvoices() {
         return created;
       });
 
-      // Update local usage so subsequent invoices for the same user see the new count.
-      usage.invoicesThisMonth++;
+      if (!invoice) {
+        result.skippedAtLimit++;
+        continue;
+      }
+      result.processed++;
 
       const contact = recurring.client?.contactPersons[0];
+      if (contact) {
+        // Best-effort: fetches usage once per user and caches it across this
+        // batch rather than trusting an in-loop counter, since the
+        // authoritative invoice-limit check already happened under lock above.
+        let emailUsage = emailUsageCache.get(userId);
+        if (!emailUsage) {
+          emailUsage = await getUserUsage(userId);
+          emailUsageCache.set(userId, emailUsage);
+        }
 
-      if (contact && isEmailLimitOk(usage)) {
-        usage.emailsThisMonth++;
-        dispatchInvoiceEmail({
-          userId: recurring.userId!,
-          clientName: recurring.client!.name,
-          contactEmail: contact.email,
-          templateName: "newInvoice",
-          logType: "recurringInvoice",
-          invoiceNumber,
-          invoiceDueDate: now,
-          total,
-          currency: recurring.currency,
-          invoiceId: invoice.id,
-          notificationHref: "/dashboard/recurring-invoices",
-        }).catch(() => { /* email is best-effort; failure creates an in-app notification */ });
+        if (isEmailLimitOk(emailUsage)) {
+          emailUsage.emailsThisMonth++;
+          dispatchInvoiceEmail({
+            userId,
+            clientName: recurring.client!.name,
+            contactEmail: contact.email,
+            templateName: "newInvoice",
+            logType: "recurringInvoice",
+            invoiceNumber: invoice.invoiceNumber,
+            invoiceDueDate: now,
+            total,
+            currency: recurring.currency,
+            invoiceId: invoice.id,
+            notificationHref: "/dashboard/recurring-invoices",
+          }).catch(() => { /* email is best-effort; failure creates an in-app notification */ });
+        }
       }
     } catch (err) {
+      result.failed++;
+      const message = err instanceof Error ? err.message : String(err);
+      result.errors.push(`${recurring.id}: ${message}`);
       console.error(`Failed to process recurring invoice ${recurring.id}:`, err);
     }
   }
+
+  return result;
 }
