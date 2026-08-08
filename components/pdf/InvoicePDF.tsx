@@ -244,6 +244,7 @@ export function InvoicePDF({ invoice }: { invoice: InvoiceWithRelations }) {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             {invoice.User?.companyLogoUrl ? (
+              // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer's Image has no alt prop; this isn't HTML.
               <Image style={styles.logo} src={invoice.User.companyLogoUrl} />
             ) : (
               <View style={styles.headerText}>
@@ -424,6 +425,7 @@ export function InvoicePDF({ invoice }: { invoice: InvoiceWithRelations }) {
           {/* Stamp Section */}
           {invoice.User?.stampsUrl && (
             <View style={styles.stampSection}>
+              {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer's Image has no alt prop; this isn't HTML. */}
               <Image style={styles.stamp} src={invoice.User.stampsUrl} />
             </View>
           )}

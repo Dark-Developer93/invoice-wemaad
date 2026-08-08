@@ -14,6 +14,7 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/usage", () => ({
   getUserUsage: vi.fn(),
   logEmailSent: vi.fn(),
+  isEmailLimitOk: vi.fn(() => true),
 }));
 
 vi.mock("@/lib/email/index", () => ({
@@ -26,6 +27,7 @@ vi.mock("@/lib/env", () => ({
 
 vi.mock("@/lib/session", () => ({
   requireUser: vi.fn(),
+  getRequiredUserId: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -42,7 +44,7 @@ import {
   toggleRecurringInvoice,
   deleteRecurringInvoice,
 } from "../recurringInvoices";
-import { requireUser } from "@/lib/session";
+import { getRequiredUserId } from "@/lib/session";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -59,7 +61,7 @@ const db = prisma as unknown as {
 
 const mockGetUserUsage = vi.mocked(getUserUsage);
 const mockSendEmail = vi.mocked(sendEmail);
-const mockRequireUser = vi.mocked(requireUser);
+const mockGetRequiredUserId = vi.mocked(getRequiredUserId);
 
 const UNLIMITED_USAGE = {
   plan: "BUSINESS" as const,
@@ -110,7 +112,7 @@ function makeRecurringInvoice(overrides = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   db.notification.create.mockResolvedValue({});
-  mockRequireUser.mockResolvedValue({ user: { id: "user-1" } } as never);
+  mockGetRequiredUserId.mockResolvedValue("user-1");
 });
 
 describe("processRecurringInvoices", () => {
@@ -269,7 +271,7 @@ describe("processRecurringInvoices", () => {
       expect.objectContaining({
         data: expect.objectContaining({
           userId: "user-1",
-          title: "Recurring invoice email failed",
+          title: "Email delivery failed",
         }),
       })
     );
@@ -278,16 +280,15 @@ describe("processRecurringInvoices", () => {
 
 describe("toggleRecurringInvoice", () => {
   it("flips isActive from true to false", async () => {
-    db.recurringInvoice.findMany; // not used here
-    const dbRec = db.recurringInvoice as unknown as {
+    type RecurringInvoiceDb = {
       findUnique: ReturnType<typeof vi.fn>;
       update: ReturnType<typeof vi.fn>;
     };
-    (prisma as unknown as { recurringInvoice: typeof dbRec }).recurringInvoice = {
+    (prisma as unknown as { recurringInvoice: RecurringInvoiceDb }).recurringInvoice = {
       ...db.recurringInvoice,
       findUnique: vi.fn().mockResolvedValue({ isActive: true }),
       update: vi.fn().mockResolvedValue({}),
-    } as unknown as typeof dbRec;
+    } as unknown as RecurringInvoiceDb;
 
     const result = await toggleRecurringInvoice("rec-1");
     expect(result).toEqual({ success: true });

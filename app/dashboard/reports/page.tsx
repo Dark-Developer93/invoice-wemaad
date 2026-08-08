@@ -83,7 +83,7 @@ async function ReportsContent({ userId }: { userId: string }) {
     .map((i) => ({
       id: i.id,
       invoiceName: i.invoiceName,
-      total: i.total,
+      total: Number(i.total),
       currency: i.currency,
       date: i.date,
       dueDate: i.dueDate,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,12 +120,14 @@ export default function ContactSection() {
               <div>
                 <h3 className="font-semibold">Email</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  abdullah@wemaad.net
+                  hello@wemaad.net
                 </p>
               </div>
             </CardContent>
           </Card>
 
+          {/* Phone number hidden per request — re-enable by uncommenting
+              and restoring `Phone` to the lucide-react import above.
           <Card>
             <CardContent className="p-6 flex items-start gap-4">
               <Phone className="size-5 text-primary mt-1" />
@@ -137,6 +139,7 @@ export default function ContactSection() {
               </div>
             </CardContent>
           </Card>
+          */}
 
           <Card>
             <CardContent className="p-6 flex items-start gap-4">

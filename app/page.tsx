@@ -103,7 +103,7 @@ const Home = async () => {
         </div>
       </main>
 
-      <Footer />
+      <Footer isAuthenticated={isAuthenticated} />
     </div>
   );
 };

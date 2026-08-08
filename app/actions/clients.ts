@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { parseWithZod } from "@conform-to/zod";
 import { SubmissionResult } from "@conform-to/react";
 
@@ -52,6 +53,7 @@ export async function createClient(
       },
     });
 
+    revalidatePath("/dashboard/clients");
     return { status: "success", error: {} };
   } catch (error) {
     console.error(error);
@@ -154,6 +156,8 @@ export async function editClient(
       });
     });
 
+    revalidatePath("/dashboard/clients");
+    revalidatePath(`/dashboard/clients/${clientId}`);
     return { status: "success", error: {} };
   } catch (error) {
     console.error("Database error:", error);
@@ -179,6 +183,7 @@ export async function deleteClient(clientId: string) {
       },
     });
 
+    revalidatePath("/dashboard/clients");
     return redirect("/dashboard/clients");
   } catch (error) {
     console.error(error);

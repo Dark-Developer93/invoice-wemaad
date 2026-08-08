@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import nodemailer, { Transporter } from "nodemailer";
 import { render } from "@react-email/render";
 import { z } from "zod";
 
@@ -9,24 +9,23 @@ import ContactFormEmail from "./templates/contactForm";
 import { InvoiceEmailProps, ContactFormEmailProps } from "@/types";
 import { env } from "@/lib/env";
 
-export const emailTransporter = nodemailer.createTransport({
-  host: env.EMAIL_SERVER_HOST,
-  port: env.EMAIL_SERVER_PORT,
-  secure: true,
-  auth: {
-    user: env.EMAIL_SERVER_USER,
-    pass: env.EMAIL_SERVER_PASSWORD,
-  },
-});
-
-if (env.NODE_ENV === "production") {
-  emailTransporter.verify((error) => {
-    if (error) {
-      console.error("Email transport verification failed:", error);
-    } else {
-      console.log("Email transport ready");
-    }
-  });
+// Lazy singleton — created on first send, not at module load, so Next.js
+// build-time page-data collection doesn't require email env vars or make
+// live SMTP network calls.
+let _transporter: Transporter | null = null;
+export function getEmailTransporter(): Transporter {
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      host: env.EMAIL_SERVER_HOST,
+      port: env.EMAIL_SERVER_PORT,
+      secure: true,
+      auth: {
+        user: env.EMAIL_SERVER_USER,
+        pass: env.EMAIL_SERVER_PASSWORD,
+      },
+    });
+  }
+  return _transporter;
 }
 
 const INVOICE_TEMPLATES = {
@@ -64,7 +63,7 @@ export async function sendEmail({ to, templateName, variables }: SendEmailProps)
       ? await render(ContactFormEmail(variables))
       : await render(INVOICE_TEMPLATES[templateName](variables));
 
-  await emailTransporter.sendMail({
+  await getEmailTransporter().sendMail({
     from: { name: "InvoiceWeMaAd", address: env.EMAIL_FROM },
     to,
     subject: EMAIL_SUBJECTS[templateName],

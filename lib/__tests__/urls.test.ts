@@ -7,6 +7,11 @@ vi.mock("@/lib/env", () => ({
   },
 }));
 
+// getBaseUrl() reads process.env directly (not the validated env proxy) so
+// it stays safe to call at build time without the full env schema present.
+delete process.env.VERCEL_URL;
+process.env.NEXT_PUBLIC_APP_URL = "https://example.com";
+
 import { getInvoiceUrl, verifyInvoiceToken } from "../urls";
 
 describe("getInvoiceUrl", () => {

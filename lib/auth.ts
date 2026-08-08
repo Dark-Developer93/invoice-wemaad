@@ -5,6 +5,7 @@ import { render } from "@react-email/render";
 import WelcomeEmail from "./email/templates/welcomeEmail";
 
 import prisma from "@/lib/db";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 const THIRTY_DAYS = 30 * 24 * 60 * 60;
 const TWENTY_FOUR_HOURS = 24 * 60 * 60;
@@ -54,6 +55,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         url,
         provider: { server, from },
       }) {
+        if (!checkRateLimit(`magic-link:${email.toLowerCase()}`, 3, 5 * 60 * 1000)) {
+          throw new Error("RATE_LIMITED");
+        }
+
         const { createTransport } = await import("nodemailer");
         const transport = createTransport(server);
 

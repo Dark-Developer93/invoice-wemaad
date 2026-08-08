@@ -122,6 +122,7 @@ export function InvoiceActions({ invoice }: iAppProps) {
         onOpenChange={setViewOpen}
         invoice={{
           ...invoice,
+          total: Number(invoice.total),
           items: parseInvoiceItems(invoice.items),
         }}
       />

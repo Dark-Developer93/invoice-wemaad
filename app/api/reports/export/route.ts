@@ -31,7 +31,7 @@ export async function GET() {
     const rows = invoices.map((inv) => {
       const items = parseInvoiceItems(inv.items);
       const itemsSummary = items
-        .map((item) => `${item.description} (${item.quantity} x ${(item.rate / 100).toFixed(2)})`)
+        .map((item) => `${item.description} (${item.quantity} x ${item.rate.toFixed(2)})`)
         .join("; ");
 
       return [
@@ -41,7 +41,7 @@ export async function GET() {
         inv.status,
         new Date(inv.date).toISOString().split("T")[0],
         inv.dueDate,
-        (inv.total / 100).toFixed(2),
+        Number(inv.total).toFixed(2),
         inv.currency,
         `"${itemsSummary.replace(/"/g, '""')}"`,
       ];

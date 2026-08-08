@@ -145,7 +145,10 @@ export async function processRecurringInvoices() {
       const invoiceNumber = ++lastInvoiceMap[recurring.userId];
 
       // Atomic: create invoice + advance schedule in one transaction.
-      const nextRunAt = computeNextRunAt(now, recurring.interval);
+      // Base the next run on the schedule's own nextRunAt, not wall-clock `now` —
+      // otherwise a late cron run (downtime, retry) permanently drifts the
+      // billing schedule forward by the delay.
+      const nextRunAt = computeNextRunAt(recurring.nextRunAt, recurring.interval);
       const expired = !!recurring.endDate && nextRunAt > recurring.endDate;
       const items = parseInvoiceItems(recurring.items);
       const total = calculateInvoiceTotal(items);

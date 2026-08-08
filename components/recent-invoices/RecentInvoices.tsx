@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import prisma from "@/lib/db";
 
 export async function getRecentInvoices(userId: string) {
-  return prisma.invoice.findMany({
+  const invoices = await prisma.invoice.findMany({
     where: {
       userId,
     },
@@ -30,6 +30,8 @@ export async function getRecentInvoices(userId: string) {
     },
     take: 5,
   });
+
+  return invoices.map((invoice) => ({ ...invoice, total: Number(invoice.total) }));
 }
 
 interface RecentInvoicesProps {
