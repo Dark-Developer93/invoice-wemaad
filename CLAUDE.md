@@ -165,7 +165,9 @@ Any new scheduled job (`vercel.json` → `crons`) should call
 `recordCronRun()` (`lib/monitoring.ts`) with start/end time and
 processed/failed counts, and `alertAdmins()` on unexpected failure. This
 is what backs `/admin/monitoring` and `/api/health` — without it, a
-silently-failing cron is invisible until a user complains.
+silently-failing cron is invisible until a user complains. See
+`app/api/cron/data-retention/route.ts` for the reference example besides
+the original recurring-invoices cron.
 
 ## Testing
 
@@ -192,10 +194,11 @@ here so they're not rediscovered from scratch:
 - **No E2E test suite.** Unit/action tests are solid (65 passing), but
   there's no committed browser-driven regression suite — UI regressions
   currently rely on manual testing before merge.
-- **No data retention/pruning job.** `EmailLog`, `Notification`, and
-  `CronRun` rows accumulate indefinitely. On Neon's free tier (0.5 GB
-  storage cap) this is worth revisiting once real usage data exists (see
-  the capacity note below).
+- **Data retention is fixed at 90 days** (`lib/retention.ts`, run daily by
+  `/api/cron/data-retention`) for `EmailLog`, read `Notification`, and
+  `CronRun` rows. That's deliberately generous while the user base is
+  small — shorten `RETENTION_DAYS` once storage pressure on Neon's free
+  tier (0.5 GB cap) actually warrants it (see the capacity note below).
 - **Single-region deployment**, no multi-region failover — acceptable at
   current scale, matches the single-region Neon free-tier database.
 - **No external alerting integration** (PagerDuty/Slack/etc.) —
