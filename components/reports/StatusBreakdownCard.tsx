@@ -31,7 +31,7 @@ export function StatusBreakdownCard({
   currency = "USD",
 }: StatusBreakdownCardProps) {
   const fmt = (v: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency }).format(v / 100);
+    new Intl.NumberFormat("en-US", { style: "currency", currency }).format(v);
 
   const data = [
     { name: "Paid", value: paid },

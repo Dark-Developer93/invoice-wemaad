@@ -35,7 +35,7 @@ export function RevenueSummaryCard({
   const formatted = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
-  }).format(ytdTotal / 100);
+  }).format(ytdTotal);
 
   return (
     <Card>
@@ -66,7 +66,7 @@ export function RevenueSummaryCard({
                     currency,
                     notation: "compact",
                     maximumFractionDigits: 1,
-                  }).format(v / 100)
+                  }).format(v)
                 }
               />
               <ChartTooltip
@@ -79,7 +79,7 @@ export function RevenueSummaryCard({
                         {new Intl.NumberFormat("en-US", {
                           style: "currency",
                           currency,
-                        }).format((payload[0].value as number) / 100)}
+                        }).format(payload[0].value as number)}
                       </p>
                     </div>
                   );
