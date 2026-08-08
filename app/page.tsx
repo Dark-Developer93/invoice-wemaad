@@ -6,8 +6,9 @@ import PricingSection from "@/components/pricing/PricingSection";
 import ContactSection from "@/components/contact/ContactSection";
 import Footer from "@/components/footer/Footer";
 import { auth } from "@/lib/auth";
+import { getBaseUrl } from "@/lib/urls";
 
-const SITE_URL = "https://invoice-wemaad.vercel.app";
+const SITE_URL = getBaseUrl();
 
 export const metadata: Metadata = {
   title: "WeMaAd Invoice – Professional Invoicing & Billing Software",

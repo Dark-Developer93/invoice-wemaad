@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
     ];
   },
   async redirects() {
+    // NOTE: hardcoded to the current *.vercel.app domain. If a custom domain
+    // is added later, update this rule to that domain's www/apex pair —
+    // it can't be derived from an env var here since next.config.ts runs at
+    // build time, before request-time env vars like the deployment's real
+    // production host are meaningful for this purpose.
     return [
       {
         source: "/:path*",
