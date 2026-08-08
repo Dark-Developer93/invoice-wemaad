@@ -178,10 +178,45 @@ the original recurring-invoices cron.
   throw "Invariant: static generation store missing."
 - `npx tsc --noEmit` and `npm run lint` should both be clean before
   committing.
-- No E2E/browser test suite exists yet. UI changes and cache-invalidation
-  behavior have so far been verified manually (Playwright driven ad hoc,
-  plus direct Postgres query-log inspection) rather than via a committed
-  automated E2E suite — see "Known limitations" below.
+- `npm run test:e2e` (`npx playwright test`) runs the committed E2E suite
+  against a real browser, a real Postgres database, and a real `next
+  start` server — see "E2E tests" below.
+
+### E2E tests (`e2e/`, `playwright.config.ts`)
+
+Covers the golden paths a unit test can't: auth guard redirects, invoice
+CRUD, client CRUD, and the billing-upgrade request/approve/reject flow
+(including a regression test for the `requestPlanUpgrade` race fix — see
+pattern 3).
+
+- **Requires a real Postgres database** — `DATABASE_URL` pointed at a
+  disposable database with migrations applied (`npx prisma migrate
+  deploy`). Never point this at a database with real data; the suite
+  creates and deletes rows.
+- **Auth is bypassed, not exercised.** `e2e/global-setup.ts` creates two
+  users directly via Prisma (`e2e-user@example.test`,
+  `e2e-admin@example.test`) and a `Session` row with a known token for
+  each, then writes that token into Playwright `storageState` files
+  (`e2e/.auth/*.json`) as the `authjs.session-token` cookie. This works
+  because Auth.js's database session strategy uses the cookie value as a
+  literal lookup key into `Session.sessionToken` — no JWT/signing
+  involved. It deliberately never touches `lib/auth.ts`, so there's no
+  test-only code path in the real login flow to accidentally leave
+  enabled in production.
+- Needs the full env-var set from `.env.example` (dummy SMTP values are
+  fine — email send failures are non-blocking, see `createInvoice`) plus
+  `AUTH_TRUST_HOST=true` (only needed for local `next start`; Vercel sets
+  the equivalent automatically) and `E2E_PORT` if 3100 is taken.
+- `playwright.config.ts`'s `webServer` runs `next start` directly (not
+  through the `pnpm start` script — `pnpm start -- -p PORT` mangles the
+  arg forwarding and Next.js misparses `-p` as a project directory).
+- Tests run serially (`workers: 1`) against shared seeded users rather
+  than fully isolated per-test data — keep new specs either idempotent
+  (reset their own state in `beforeEach`) or scoped to data they create
+  and tear down themselves (see `invoices.spec.ts`,
+  `billing-upgrade.spec.ts` for examples of both).
+- `e2e/global-teardown.ts` deletes the seeded users (and everything they
+  own, in FK order — see `e2e/cleanup.ts`) after the run.
 
 ## Known limitations (surfaced by audits, not yet addressed)
 
@@ -191,9 +226,6 @@ here so they're not rediscovered from scratch:
 - **Rate limiting doesn't survive multi-instance/serverless scale-out**
   (see pattern 5). Fine for current traffic; revisit with a shared store
   if abuse becomes a real problem.
-- **No E2E test suite.** Unit/action tests are solid (65 passing), but
-  there's no committed browser-driven regression suite — UI regressions
-  currently rely on manual testing before merge.
 - **Data retention is fixed at 90 days** (`lib/retention.ts`, run daily by
   `/api/cron/data-retention`) for `EmailLog`, read `Notification`, and
   `CronRun` rows. That's deliberately generous while the user base is
