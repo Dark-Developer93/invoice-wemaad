@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { sendEmail } from "@/lib/email/index";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatDate } from "@/lib/formatDate";
@@ -5,6 +6,7 @@ import { logEmailSent } from "@/lib/usage";
 import { getInvoiceUrl } from "@/lib/urls";
 import { Currency } from "@/types";
 import prisma from "@/lib/db";
+import { cacheTags } from "@/lib/cache";
 
 export async function dispatchInvoiceEmail({
   userId,
@@ -53,6 +55,8 @@ export async function dispatchInvoiceEmail({
         message: `Invoice email to ${clientName} could not be sent. Please resend manually.`,
         href: notificationHref,
       },
+    }).then(() => {
+      revalidateTag(cacheTags.notifications(userId));
     }).catch((notifError: unknown) => {
       console.error(`Failed to create notification for user ${userId}:`, notifError);
     });

@@ -1,9 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import prisma from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
+import { cacheTags } from "@/lib/cache";
 
 const planSchema = z.enum(["FREE", "STARTER", "PRO", "BUSINESS"]);
 
@@ -105,6 +106,7 @@ export async function adminToggleUserActive(userId: string, isActive: boolean) {
       where: { userId },
       data: { isActive: false },
     });
+    revalidateTag(cacheTags.recurringInvoices(userId));
   }
 
   revalidatePath("/admin/users");
@@ -192,6 +194,8 @@ export async function adminApproveUpgradeRequest(requestId: string) {
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${request.userId}`);
   revalidatePath("/dashboard/billing");
+  revalidateTag(cacheTags.notifications(request.userId));
+  revalidateTag(cacheTags.billing(request.userId));
 }
 
 export async function adminRejectUpgradeRequest(requestId: string, adminNote?: string) {
@@ -229,6 +233,8 @@ export async function adminRejectUpgradeRequest(requestId: string, adminNote?: s
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${request.userId}`);
   revalidatePath("/dashboard/billing");
+  revalidateTag(cacheTags.notifications(request.userId));
+  revalidateTag(cacheTags.billing(request.userId));
 }
 
 export async function adminDeleteUser(userId: string) {

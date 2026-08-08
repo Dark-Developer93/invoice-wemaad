@@ -11,27 +11,28 @@ import { Card } from "@/components/ui/card";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { PLAN_FEATURES, PlanType } from "@/lib/plans";
+import { cacheTags } from "@/lib/cache";
 
-// Cache the invoice check for 1 minute
-const getHasInvoices = unstable_cache(
-  async (userId: string) => {
-    const count = await prisma.invoice.count({
-      where: { userId },
-    });
-    return count > 0;
-  },
-  ["has-invoices"],
-  { revalidate: 60 }
-);
+// Cached until invalidated by revalidateTag(cacheTags.invoices(userId)) in
+// every invoice-mutating action — no time-based staleness.
+function getHasInvoices(userId: string): Promise<boolean> {
+  return unstable_cache(
+    async () => {
+      const count = await prisma.invoice.count({
+        where: { userId },
+      });
+      return count > 0;
+    },
+    ["has-invoices", userId],
+    { tags: [cacheTags.invoices(userId)] }
+  )();
+}
 
 export const metadata = {
   title: "Dashboard",
   description: "Overview of your invoices, revenue, and recent activity.",
   robots: { index: false, follow: false },
 };
-
-// Change to ISR with 1 minute revalidation
-export const revalidate = 60;
 
 export default async function DashboardRoute() {
   const session = await requireUser();

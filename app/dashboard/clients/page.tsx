@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { DataTable } from "./data-table";
@@ -7,6 +8,7 @@ import { columns } from "./columns";
 import { ClientDialog } from "@/components/client-form/clientDialog";
 import { EmptyState } from "@/components/empty-state/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cacheTags } from "@/lib/cache";
 
 export const metadata: Metadata = {
   title: "Clients",
@@ -14,55 +16,75 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-async function ClientsTable({ userId }: { userId: string }) {
-  const clients = await prisma.client.findMany({
-    where: { userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      category: true,
-      createdAt: true,
-      updatedAt: true,
-      userId: true,
-      taxId: true,
-      website: true,
-      notes: true,
-      tags: true,
-      addresses: {
-        where: { isDefault: true },
+// Cached until invalidated by revalidateTag(cacheTags.clients(userId)) in
+// every client-mutating action — no time-based staleness.
+async function getClients(userId: string) {
+  const clients = await unstable_cache(
+    () =>
+      prisma.client.findMany({
+        where: { userId },
         select: {
           id: true,
-          type: true,
-          street: true,
-          city: true,
-          state: true,
-          country: true,
-          zipCode: true,
-          isDefault: true,
-        },
-        take: 1,
-      },
-      contactPersons: {
-        where: { isPrimary: true },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
+          name: true,
           email: true,
           phone: true,
-          position: true,
-          isPrimary: true,
+          category: true,
+          createdAt: true,
+          updatedAt: true,
+          userId: true,
+          taxId: true,
+          website: true,
+          notes: true,
+          tags: true,
+          addresses: {
+            where: { isDefault: true },
+            select: {
+              id: true,
+              type: true,
+              street: true,
+              city: true,
+              state: true,
+              country: true,
+              zipCode: true,
+              isDefault: true,
+            },
+            take: 1,
+          },
+          contactPersons: {
+            where: { isPrimary: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              position: true,
+              isPrimary: true,
+            },
+            take: 1,
+          },
+          customFields: {
+            select: { id: true, key: true, value: true },
+          },
         },
-        take: 1,
-      },
-      customFields: {
-        select: { id: true, key: true, value: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+        orderBy: { createdAt: "desc" },
+      }),
+    ["clients-list", userId],
+    { tags: [cacheTags.clients(userId)] }
+  )();
+
+  // unstable_cache serializes its return value, so Date fields come back as
+  // ISO strings on a cache hit — normalize back to Date so callers always
+  // get the same shape regardless of cache hit/miss.
+  return clients.map((client) => ({
+    ...client,
+    createdAt: new Date(client.createdAt),
+    updatedAt: new Date(client.updatedAt),
+  }));
+}
+
+async function ClientsTable({ userId }: { userId: string }) {
+  const clients = await getClients(userId);
 
   if (clients.length === 0) {
     return (

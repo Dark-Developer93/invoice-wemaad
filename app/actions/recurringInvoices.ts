@@ -5,7 +5,7 @@ import { parseWithZod } from "@conform-to/zod";
 import { SubmissionResult } from "@conform-to/react";
 import { Prisma } from "@prisma/client";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { getRequiredUserId } from "@/lib/session";
 import { recurringInvoiceSchema } from "@/lib/zodSchemas";
@@ -14,6 +14,7 @@ import { getUserUsage, isEmailLimitOk, type UserUsage } from "@/lib/usage";
 import { dispatchInvoiceEmail } from "@/lib/email/invoice";
 import { calculateInvoiceTotal, parseInvoiceItems } from "@/lib/invoiceItems";
 import prisma from "@/lib/db";
+import { cacheTags } from "@/lib/cache";
 
 function computeNextRunAt(
   from: Date,
@@ -67,6 +68,7 @@ export async function createRecurringInvoice(
   }
 
   revalidatePath("/dashboard/recurring-invoices");
+  revalidateTag(cacheTags.recurringInvoices(userId));
   return { status: "success", error: {} };
 }
 
@@ -86,6 +88,8 @@ export async function toggleRecurringInvoice(id: string) {
       data: { isActive: !current.isActive },
     });
 
+    revalidatePath("/dashboard/recurring-invoices");
+    revalidateTag(cacheTags.recurringInvoices(userId));
     return { success: true };
   } catch (error) {
     console.error("Failed to toggle recurring invoice:", error);
@@ -98,6 +102,8 @@ export async function deleteRecurringInvoice(id: string) {
 
   try {
     await prisma.recurringInvoice.delete({ where: { id, userId } });
+    revalidatePath("/dashboard/recurring-invoices");
+    revalidateTag(cacheTags.recurringInvoices(userId));
     return { success: true };
   } catch (error) {
     console.error("Failed to delete recurring invoice:", error);
@@ -129,6 +135,10 @@ export async function processRecurringInvoices(): Promise<ProcessRecurringInvoic
   // In-memory only, for the best-effort email-limit check below (not the
   // invoice-limit check itself, which is re-verified fresh under lock).
   const emailUsageCache = new Map<string, UserUsage>();
+  // Tracks which users' cached invoice/recurring-invoice lists need
+  // invalidating — dedup'd so a user with several due invoices only gets
+  // each tag revalidated once per run.
+  const usersToInvalidate = new Set<string>();
 
   for (const recurring of due) {
     if (!recurring.userId) continue;
@@ -195,6 +205,7 @@ export async function processRecurringInvoices(): Promise<ProcessRecurringInvoic
         continue;
       }
       result.processed++;
+      usersToInvalidate.add(userId);
 
       const contact = recurring.client?.contactPersons[0];
       if (contact) {
@@ -230,6 +241,11 @@ export async function processRecurringInvoices(): Promise<ProcessRecurringInvoic
       result.errors.push(`${recurring.id}: ${message}`);
       console.error(`Failed to process recurring invoice ${recurring.id}:`, err);
     }
+  }
+
+  for (const userId of usersToInvalidate) {
+    revalidateTag(cacheTags.invoices(userId));
+    revalidateTag(cacheTags.recurringInvoices(userId));
   }
 
   return result;

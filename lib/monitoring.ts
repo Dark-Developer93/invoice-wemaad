@@ -1,5 +1,7 @@
+import { revalidateTag } from "next/cache";
 import prisma from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { cacheTags } from "@/lib/cache";
 
 const ERROR_MESSAGE_MAX_LENGTH = 2000;
 
@@ -57,6 +59,10 @@ export async function alertAdmins({ title, message, href }: AlertAdminsInput) {
     ...admins.map((admin) =>
       prisma.notification.create({
         data: { userId: admin.id, title, message, href },
+      }).then(() => {
+        revalidateTag(cacheTags.notifications(admin.id));
+      }).catch((err) => {
+        console.error(`Failed to create system alert notification for admin ${admin.id}:`, err);
       })
     ),
     ...admins.map((admin) =>

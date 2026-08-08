@@ -11,27 +11,37 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import prisma from "@/lib/db";
+import { unstable_cache } from "next/cache";
+import { cacheTags } from "@/lib/cache";
 
-export async function getRecentInvoices(userId: string) {
-  const invoices = await prisma.invoice.findMany({
-    where: {
-      userId,
-    },
-    include: {
-      client: {
-        select: {
-          name: true,
-          email: true,
+// Cached until invalidated by revalidateTag(cacheTags.invoices(userId)) in
+// every invoice-mutating action — no time-based staleness.
+export function getRecentInvoices(userId: string) {
+  return unstable_cache(
+    async () => {
+      const invoices = await prisma.invoice.findMany({
+        where: {
+          userId,
         },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 5,
-  });
+        include: {
+          client: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 5,
+      });
 
-  return invoices.map((invoice) => ({ ...invoice, total: Number(invoice.total) }));
+      return invoices.map((invoice) => ({ ...invoice, total: Number(invoice.total) }));
+    },
+    ["recent-invoices", userId],
+    { tags: [cacheTags.invoices(userId)] }
+  )();
 }
 
 interface RecentInvoicesProps {

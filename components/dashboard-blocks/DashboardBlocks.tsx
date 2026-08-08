@@ -4,48 +4,52 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { cacheTags } from "@/lib/cache";
 
-// Cache dashboard metrics for 1 minute
-const getDashboardMetrics = unstable_cache(
-  async (userId: string) => {
-    const [data, openInvoices, paidinvoices] = await Promise.all([
-      prisma.invoice.findMany({
-        where: {
-          userId: userId,
-        },
-        select: {
-          total: true,
-        },
-      }),
-      prisma.invoice.findMany({
-        where: {
-          userId: userId,
-          status: "PENDING",
-        },
-        select: {
-          id: true,
-        },
-      }),
-      prisma.invoice.findMany({
-        where: {
-          userId: userId,
-          status: "PAID",
-        },
-        select: {
-          id: true,
-        },
-      }),
-    ]);
+// Cached until invalidated by revalidateTag(cacheTags.invoices(userId)) in
+// every invoice-mutating action — no time-based staleness.
+function getDashboardMetrics(userId: string) {
+  return unstable_cache(
+    async () => {
+      const [data, openInvoices, paidinvoices] = await Promise.all([
+        prisma.invoice.findMany({
+          where: {
+            userId: userId,
+          },
+          select: {
+            total: true,
+          },
+        }),
+        prisma.invoice.findMany({
+          where: {
+            userId: userId,
+            status: "PENDING",
+          },
+          select: {
+            id: true,
+          },
+        }),
+        prisma.invoice.findMany({
+          where: {
+            userId: userId,
+            status: "PAID",
+          },
+          select: {
+            id: true,
+          },
+        }),
+      ]);
 
-    return {
-      data,
-      openInvoices,
-      paidinvoices,
-    };
-  },
-  ["dashboard-metrics"],
-  { revalidate: 60 }
-);
+      return {
+        data,
+        openInvoices,
+        paidinvoices,
+      };
+    },
+    ["dashboard-metrics", userId],
+    { tags: [cacheTags.invoices(userId)] }
+  )();
+}
 
 export async function DashboardBlocks() {
   const session = await requireUser();

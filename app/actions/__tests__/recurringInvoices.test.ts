@@ -34,6 +34,11 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+}));
+
 // ── Imports ───────────────────────────────────────────────────────────────────
 
 import prisma from "@/lib/db";

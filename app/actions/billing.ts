@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 
 import { requireUser } from "@/lib/session";
 import prisma from "@/lib/db";
 import { PlanType } from "@/lib/plans";
+import { cacheTags } from "@/lib/cache";
 
 export async function requestPlanUpgrade(newPlan: PlanType) {
   try {
@@ -41,6 +42,7 @@ export async function requestPlanUpgrade(newPlan: PlanType) {
     });
 
     revalidatePath("/dashboard/billing");
+    revalidateTag(cacheTags.billing(session.user.id));
 
     return { status: "success" as const };
   } catch (error) {
@@ -49,13 +51,36 @@ export async function requestPlanUpgrade(newPlan: PlanType) {
   }
 }
 
+// Cached until invalidated by revalidateTag(cacheTags.billing(userId)) —
+// called here after requestPlanUpgrade, and by
+// adminApproveUpgradeRequest/adminRejectUpgradeRequest in app/actions/admin.ts
+// since those change the same pending-request status from the admin side.
+// No time-based staleness.
 export async function getUserPendingUpgradeRequest() {
   try {
     const session = await requireUser();
-    return prisma.planUpgradeRequest.findFirst({
-      where: { userId: session.user.id, status: "PENDING" },
-      orderBy: { createdAt: "desc" },
-    });
+    const userId = session.user!.id as string;
+
+    const request = await unstable_cache(
+      () =>
+        prisma.planUpgradeRequest.findFirst({
+          where: { userId, status: "PENDING" },
+          orderBy: { createdAt: "desc" },
+        }),
+      ["pending-upgrade-request", userId],
+      { tags: [cacheTags.billing(userId)] }
+    )();
+
+    if (!request) return null;
+
+    // unstable_cache serializes its return value, so Date fields come back
+    // as ISO strings on a cache hit — normalize back to Date so callers
+    // always get the same shape regardless of cache hit/miss.
+    return {
+      ...request,
+      createdAt: new Date(request.createdAt),
+      updatedAt: new Date(request.updatedAt),
+    };
   } catch {
     return null;
   }

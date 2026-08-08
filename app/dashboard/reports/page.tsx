@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { subMonths, format } from "date-fns";
+import { unstable_cache } from "next/cache";
 import { requireUser } from "@/lib/session";
 import prisma from "@/lib/db";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { OutstandingInvoicesCard } from "@/components/reports/OutstandingInvoice
 import { UpgradePrompt } from "@/components/upgrade-prompt/UpgradePrompt";
 import { getUserUsage } from "@/lib/usage";
 import { PLAN_FEATURES } from "@/lib/plans";
+import { cacheTags } from "@/lib/cache";
 
 export const metadata = {
   title: "Reports",
@@ -19,24 +21,44 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
+// Cached until invalidated by revalidateTag(cacheTags.invoices(userId)) in
+// every invoice-mutating action — no time-based staleness.
+async function getReportInvoices(userId: string) {
+  const invoices = await unstable_cache(
+    () =>
+      prisma.invoice.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          invoiceName: true,
+          total: true,
+          status: true,
+          date: true,
+          dueDate: true,
+          currency: true,
+          createdAt: true,
+          clientId: true,
+          client: { select: { id: true, name: true } },
+        },
+      }),
+    ["report-invoices", userId],
+    { tags: [cacheTags.invoices(userId)] }
+  )();
+
+  // unstable_cache serializes its return value, so Date fields come back as
+  // ISO strings on a cache hit — normalize back to Date so callers always
+  // get the same shape regardless of cache hit/miss.
+  return invoices.map((inv) => ({
+    ...inv,
+    date: new Date(inv.date),
+    createdAt: new Date(inv.createdAt),
+  }));
+}
+
 async function ReportsContent({ userId }: { userId: string }) {
   const now = new Date();
 
-  const allInvoices = await prisma.invoice.findMany({
-    where: { userId },
-    select: {
-      id: true,
-      invoiceName: true,
-      total: true,
-      status: true,
-      date: true,
-      dueDate: true,
-      currency: true,
-      createdAt: true,
-      clientId: true,
-      client: { select: { id: true, name: true } },
-    },
-  });
+  const allInvoices = await getReportInvoices(userId);
 
   const monthlyMap: Record<string, number> = {};
   for (let i = 11; i >= 0; i--) {
