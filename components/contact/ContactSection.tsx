@@ -126,6 +126,21 @@ export default function ContactSection() {
             </CardContent>
           </Card>
 
+          {/* Phone number hidden per request — re-enable by uncommenting
+              and restoring `Phone` to the lucide-react import above.
+          <Card>
+            <CardContent className="p-6 flex items-start gap-4">
+              <Phone className="size-5 text-primary mt-1" />
+              <div>
+                <h3 className="font-semibold">Phone</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  +201142549787
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          */}
+
           <Card>
             <CardContent className="p-6 flex items-start gap-4">
               <MapPin className="size-5 text-primary mt-1" />
