@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, FileText, Users2, CreditCard, RefreshCw, BarChart2, Shield } from "lucide-react";
+import { HomeIcon, FileText, Users2, CreditCard, RefreshCw, BarChart2, Shield, Activity } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -65,18 +65,32 @@ export function DashboardLinks({ isAdmin }: { isAdmin?: boolean }) {
         </Link>
       ))}
       {isAdmin && (
-        <Link
-          className={cn(
-            pathname.startsWith("/admin")
-              ? "text-blue-600 bg-blue-600/10"
-              : "text-muted-foreground hover:text-foreground",
-            "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-blue-600 mt-2 border-t pt-4"
-          )}
-          href="/admin/users"
-        >
-          <Shield className="size-4" />
-          Admin Panel
-        </Link>
+        <>
+          <Link
+            className={cn(
+              pathname.startsWith("/admin/users")
+                ? "text-blue-600 bg-blue-600/10"
+                : "text-muted-foreground hover:text-foreground",
+              "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-blue-600 mt-2 border-t pt-4"
+            )}
+            href="/admin/users"
+          >
+            <Shield className="size-4" />
+            Admin Panel
+          </Link>
+          <Link
+            className={cn(
+              pathname.startsWith("/admin/monitoring")
+                ? "text-blue-600 bg-blue-600/10"
+                : "text-muted-foreground hover:text-foreground",
+              "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-blue-600"
+            )}
+            href="/admin/monitoring"
+          >
+            <Activity className="size-4" />
+            Monitoring
+          </Link>
+        </>
       )}
     </>
   );

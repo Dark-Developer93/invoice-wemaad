@@ -283,6 +283,28 @@ model EmailLog {
   @@index([userId, sentAt])
 }
 
+enum CronRunStatus {
+  SUCCESS
+  PARTIAL_FAILURE
+  FAILURE
+}
+
+// One row per scheduled job execution — gives operational visibility into
+// whether a cron job ran, how long it took, and what it did, instead of
+// that information only existing transiently in Vercel's function logs.
+model CronRun {
+  id           String        @id @default(cuid())
+  jobName      String
+  status       CronRunStatus
+  startedAt    DateTime
+  finishedAt   DateTime
+  processed    Int           @default(0)
+  failed       Int           @default(0)
+  errorMessage String?
+
+  @@index([jobName, startedAt])
+}
+
 enum RecurrenceInterval {
   MONTHLY
   QUARTERLY

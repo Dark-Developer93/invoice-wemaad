@@ -6,7 +6,8 @@ import NewInvoiceEmail from "./templates/newInvoice";
 import UpdatedInvoiceEmail from "./templates/updatedInvoice";
 import ReminderInvoiceEmail from "./templates/reminderInvoice";
 import ContactFormEmail from "./templates/contactForm";
-import { InvoiceEmailProps, ContactFormEmailProps } from "@/types";
+import SystemAlertEmail from "./templates/systemAlert";
+import { InvoiceEmailProps, ContactFormEmailProps, SystemAlertEmailProps } from "@/types";
 import { env } from "@/lib/env";
 
 // Lazy singleton — created on first send, not at module load, so Next.js
@@ -34,11 +35,15 @@ const INVOICE_TEMPLATES = {
   reminderInvoice: ReminderInvoiceEmail,
 } as const;
 
-const EMAIL_SUBJECTS: Record<keyof typeof INVOICE_TEMPLATES | "contactForm", string> = {
+const EMAIL_SUBJECTS: Record<
+  keyof typeof INVOICE_TEMPLATES | "contactForm" | "systemAlert",
+  string
+> = {
   newInvoice: "New Invoice - InvoiceWeMaAd",
   updatedInvoice: "Invoice Updated - InvoiceWeMaAd",
   reminderInvoice: "Invoice Payment Reminder - InvoiceWeMaAd",
   contactForm: "New Contact Form Submission - InvoiceWeMaAd",
+  systemAlert: "System Alert - InvoiceWeMaAd",
 };
 
 type InvoiceSendEmailProps = {
@@ -53,7 +58,16 @@ type ContactFormSendEmailProps = {
   variables: ContactFormEmailProps;
 };
 
-export type SendEmailProps = InvoiceSendEmailProps | ContactFormSendEmailProps;
+type SystemAlertSendEmailProps = {
+  to: string;
+  templateName: "systemAlert";
+  variables: SystemAlertEmailProps;
+};
+
+export type SendEmailProps =
+  | InvoiceSendEmailProps
+  | ContactFormSendEmailProps
+  | SystemAlertSendEmailProps;
 
 export async function sendEmail({ to, templateName, variables }: SendEmailProps) {
   z.string().email().parse(to);
@@ -61,6 +75,8 @@ export async function sendEmail({ to, templateName, variables }: SendEmailProps)
   const emailHtml =
     templateName === "contactForm"
       ? await render(ContactFormEmail(variables))
+      : templateName === "systemAlert"
+      ? await render(SystemAlertEmail(variables))
       : await render(INVOICE_TEMPLATES[templateName](variables));
 
   await getEmailTransporter().sendMail({

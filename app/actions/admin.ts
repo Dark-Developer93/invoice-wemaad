@@ -250,3 +250,14 @@ export async function adminDeleteUser(userId: string) {
   // Sessions are cascade-deleted at the DB level (Session.onDelete: Cascade).
   revalidatePath("/admin/users");
 }
+
+const CRON_RUN_HISTORY_LIMIT = 50;
+
+export async function adminGetRecentCronRuns() {
+  await requireAdmin();
+
+  return prisma.cronRun.findMany({
+    orderBy: { startedAt: "desc" },
+    take: CRON_RUN_HISTORY_LIMIT,
+  });
+}
