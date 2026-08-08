@@ -28,17 +28,27 @@ export async function requestPlanUpgrade(newPlan: PlanType) {
       return { status: "error" as const, message: "You are already on this plan." };
     }
 
-    await prisma.planUpgradeRequest.updateMany({
-      where: { userId: session.user.id, status: "PENDING" },
-      data: { status: "REJECTED", adminNote: "Superseded by a new request" },
-    });
+    // Serialize per user (Postgres advisory lock, released automatically at
+    // transaction end) so two concurrent requests can't both miss each
+    // other's still-uncommitted PENDING row: without the lock, a second
+    // call's "reject existing pending" update could run before the first
+    // call's create is visible, leaving two PENDING rows instead of
+    // superseding the older one.
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${session.user.id}))`;
 
-    await prisma.planUpgradeRequest.create({
-      data: {
-        userId: session.user.id,
-        requestedPlan: newPlan,
-        status: "PENDING",
-      },
+      await tx.planUpgradeRequest.updateMany({
+        where: { userId: session.user.id, status: "PENDING" },
+        data: { status: "REJECTED", adminNote: "Superseded by a new request" },
+      });
+
+      await tx.planUpgradeRequest.create({
+        data: {
+          userId: session.user.id,
+          requestedPlan: newPlan,
+          status: "PENDING",
+        },
+      });
     });
 
     revalidatePath("/dashboard/billing");
