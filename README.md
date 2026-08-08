@@ -50,7 +50,7 @@ A modern invoice management SaaS built with Next.js, allowing users to create, m
 - [Tailwind CSS](https://tailwindcss.com/) — Styling
 - [Shadcn/ui](https://ui.shadcn.com/) — UI Components
 - [Recharts](https://recharts.org/) — Charts
-- [Mailtrap](https://mailtrap.io/) — Email Testing
+- [Nodemailer](https://nodemailer.com/) — Email (SMTP)
 - [NextAuth v5](https://authjs.dev/) — Authentication
 
 ## Getting Started
@@ -98,7 +98,6 @@ pnpm dev
 | `AUTH_SECRET` | NextAuth secret key |
 | `EMAIL_SERVER_*` | SMTP credentials |
 | `EMAIL_FROM` | Sender email address |
-| `MAILTRAP_TOKEN` | Mailtrap API token (optional) |
 | `CRON_SECRET` | Secret for the recurring-invoices cron endpoint |
 | `VERCEL_URL` | Set automatically by Vercel; used for invoice email links |
 
