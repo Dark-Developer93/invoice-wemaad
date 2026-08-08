@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import NextAuth from "next-auth";
 import Nodemailer from "next-auth/providers/nodemailer";
@@ -32,7 +33,12 @@ const customPrismaAdapter = () => {
   };
 };
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+const {
+  handlers,
+  signIn,
+  signOut,
+  auth: nextAuthAuth,
+} = NextAuth({
   adapter: customPrismaAdapter(),
   session: {
     strategy: "database",
@@ -103,3 +109,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 });
+
+export { handlers, signIn, signOut };
+
+// The database session strategy means every auth() call queries Postgres
+// (session lookup + the user select in the session callback above). Several
+// independent layouts/pages/actions each call auth()/requireUser() on a
+// single request (dashboard layout, page, DashboardBlocks, NotificationBell,
+// etc.) — wrapping in React's per-request cache() so they share one result
+// instead of each re-querying the database.
+export const auth = cache(nextAuthAuth);
