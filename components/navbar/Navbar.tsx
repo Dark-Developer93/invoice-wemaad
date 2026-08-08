@@ -18,7 +18,7 @@ const Navbar = () => {
       <div className="flex items-center gap-2 md:gap-4">
         <ThemeToggle />
         <Link href="/login">
-          <ColoredButton>
+          <ColoredButton className="px-5 sm:px-8">
             <span className="hidden sm:inline">Try for Free</span>
             <span className="sm:hidden">Start</span>
           </ColoredButton>
