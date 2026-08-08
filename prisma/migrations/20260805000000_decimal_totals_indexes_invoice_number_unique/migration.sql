@@ -14,18 +14,19 @@ WITH ranked AS (
   SELECT
     id,
     "userId",
+    "createdAt",
     ROW_NUMBER() OVER (PARTITION BY "userId", "invoiceNumber" ORDER BY "createdAt") AS rn
   FROM "Invoice"
   WHERE "userId" IS NOT NULL
 ),
 dupes AS (
-  SELECT id, "userId" FROM ranked WHERE rn > 1
+  SELECT id, "userId", "createdAt" FROM ranked WHERE rn > 1
 ),
 renumbered AS (
   SELECT
     d.id,
     (SELECT COALESCE(MAX("invoiceNumber"), 0) FROM "Invoice" WHERE "userId" = d."userId")
-      + ROW_NUMBER() OVER (PARTITION BY d."userId" ORDER BY d.id) AS new_number
+      + ROW_NUMBER() OVER (PARTITION BY d."userId" ORDER BY d."createdAt") AS new_number
   FROM dupes d
 )
 UPDATE "Invoice" i
