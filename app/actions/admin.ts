@@ -320,14 +320,19 @@ export interface PlatformInsights {
   activeUsers: number;
   totalClients: number;
   totalInvoices: number;
-  totalRevenue: number;
-  pendingRevenue: number;
   estimatedMrr: number;
   planDistribution: Array<{ plan: PlanType; count: number; price: number | null }>;
-  monthlyRevenue: Array<{ month: string; total: number }>;
   monthlySignups: Array<{ month: string; count: number }>;
 }
 
+// Deliberately does NOT aggregate invoice totals/amounts: those belong to
+// individual users' own businesses (what they bill their own clients), not
+// to the platform operator. Summing them "just" as an aggregate still
+// discloses financial data about what users are doing on the platform that
+// an admin has no legitimate need to see. estimatedMrr is the one dollar
+// figure here, and it's the platform's own subscription revenue (plan
+// price x subscriber count) — nothing derived from any user's invoices.
+//
 // Not cached, unlike user-facing reads — admin pages read straight from the
 // DB like the rest of the admin panel (adminGetAllUsers, etc.), and this is
 // low-traffic enough that the extra query cost doesn't matter.
@@ -337,15 +342,13 @@ export async function adminGetPlatformInsights(): Promise<PlatformInsights> {
   const now = new Date();
   const twelveMonthsAgo = startOfMonth(subMonths(now, 11));
 
-  const [totalUsers, activeUsers, totalClients, planCounts, invoices, recentUsers, planConfigs] =
+  const [totalUsers, activeUsers, totalClients, totalInvoices, planCounts, recentUsers, planConfigs] =
     await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { isActive: true } }),
       prisma.client.count(),
+      prisma.invoice.count(),
       prisma.user.groupBy({ by: ["plan"], _count: { _all: true } }),
-      prisma.invoice.findMany({
-        select: { total: true, status: true, createdAt: true },
-      }),
       prisma.user.findMany({
         where: { createdAt: { gte: twelveMonthsAgo } },
         select: { createdAt: true },
@@ -353,24 +356,9 @@ export async function adminGetPlatformInsights(): Promise<PlatformInsights> {
       getPlanConfigs(),
     ]);
 
-  const totalRevenue = invoices
-    .filter((i) => i.status === "PAID")
-    .reduce((sum, i) => sum + Number(i.total), 0);
-  const pendingRevenue = invoices
-    .filter((i) => i.status === "PENDING")
-    .reduce((sum, i) => sum + Number(i.total), 0);
-
-  const monthlyRevenueMap: Record<string, number> = {};
   const monthlySignupsMap: Record<string, number> = {};
   for (let i = 11; i >= 0; i--) {
-    const key = format(subMonths(now, i), "MMM yy");
-    monthlyRevenueMap[key] = 0;
-    monthlySignupsMap[key] = 0;
-  }
-  for (const inv of invoices) {
-    if (inv.status !== "PAID") continue;
-    const key = format(new Date(inv.createdAt), "MMM yy");
-    if (key in monthlyRevenueMap) monthlyRevenueMap[key] += Number(inv.total);
+    monthlySignupsMap[format(subMonths(now, i), "MMM yy")] = 0;
   }
   for (const user of recentUsers) {
     const key = format(new Date(user.createdAt), "MMM yy");
@@ -396,12 +384,9 @@ export async function adminGetPlatformInsights(): Promise<PlatformInsights> {
     totalUsers,
     activeUsers,
     totalClients,
-    totalInvoices: invoices.length,
-    totalRevenue,
-    pendingRevenue,
+    totalInvoices,
     estimatedMrr,
     planDistribution,
-    monthlyRevenue: Object.entries(monthlyRevenueMap).map(([month, total]) => ({ month, total })),
     monthlySignups: Object.entries(monthlySignupsMap).map(([month, count]) => ({ month, count })),
   };
 }

@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
 import type { ComponentType } from "react";
-import { Users, FileText, Users2, DollarSign, TrendingUp, Clock } from "lucide-react";
+import { Users, FileText, Users2, TrendingUp } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminGetPlatformInsights } from "@/app/actions/admin";
-import { RevenueSummaryCard } from "@/components/reports/RevenueSummaryCard";
-import { StatusBreakdownCard } from "@/components/reports/StatusBreakdownCard";
 import { SignupsChart } from "./SignupsChart";
 import { PlanDistributionCard } from "./PlanDistributionCard";
 
 export const metadata: Metadata = {
   title: "Admin – Insights",
-  description: "Platform-wide usage, revenue, and growth statistics.",
+  description: "Platform-wide usage and growth statistics.",
   robots: { index: false, follow: false },
 };
 
@@ -48,38 +46,18 @@ export default async function AdminInsightsPage() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Insights</h1>
         <p className="text-muted-foreground text-sm sm:text-base">
-          Platform-wide activity, revenue, and growth across all users.
+          Platform-wide activity and growth. This deliberately excludes any
+          figure derived from what users bill their own clients — invoice
+          amounts are those users&apos; business data, not the platform&apos;s.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
         <StatTile label="Total Users" value={String(insights.totalUsers)} icon={Users} />
         <StatTile label="Active Users" value={String(insights.activeUsers)} icon={Users} />
         <StatTile label="Total Clients" value={String(insights.totalClients)} icon={Users2} />
         <StatTile label="Total Invoices" value={String(insights.totalInvoices)} icon={FileText} />
-        <StatTile label="Total Revenue" value={fmt(insights.totalRevenue)} icon={DollarSign} />
-        <StatTile
-          label="Est. MRR"
-          value={fmt(insights.estimatedMrr)}
-          icon={TrendingUp}
-        />
-      </div>
-
-      {insights.pendingRevenue > 0 && (
-        <Card className="border-yellow-500/50 bg-yellow-500/5">
-          <CardContent className="pt-4 flex items-center gap-3">
-            <Clock className="size-5 text-yellow-600 shrink-0" />
-            <p className="text-sm">
-              <span className="font-medium">{fmt(insights.pendingRevenue)}</span> in pending
-              (unpaid) invoices across the platform.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <RevenueSummaryCard data={insights.monthlyRevenue} ytdTotal={insights.totalRevenue} />
-        <StatusBreakdownCard paid={insights.totalRevenue} pending={insights.pendingRevenue} />
+        <StatTile label="Est. MRR" value={fmt(insights.estimatedMrr)} icon={TrendingUp} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -88,10 +66,10 @@ export default async function AdminInsightsPage() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Revenue figures assume a single currency (USD) across all users for
-        simplicity — invoices issued in other currencies are summed at face
-        value rather than converted. Estimated MRR excludes any user on a
-        custom-priced plan.
+        Estimated MRR is the platform&apos;s own subscription revenue (each
+        plan&apos;s price × its subscriber count) — it excludes any user on a
+        custom-priced plan, and is not derived from anything users invoice
+        their own clients for.
       </p>
     </div>
   );
