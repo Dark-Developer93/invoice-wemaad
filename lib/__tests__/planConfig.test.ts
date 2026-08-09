@@ -27,11 +27,12 @@ const ROW_FREE = {
   price: 0,
   invoiceLimit: 5,
   emailLimit: 20,
+  clientLimit: 3,
   recurringInvoices: false,
-  analytics: false,
-  customBranding: false,
+  analyticsLevel: "NONE",
+  brandingLevel: "SHOWN",
   teamCollaboration: false,
-  apiAccess: false,
+  apiAccessLevel: "NONE",
   multiUser: false,
   description: "Perfect for freelancers",
   extraFeatures: ["Client management"],
@@ -43,14 +44,15 @@ const ROW_STARTER = {
   price: 15, // deliberately different from DEFAULT_PLAN_CONFIG to prove the DB value wins
   invoiceLimit: 25,
   emailLimit: 50,
+  clientLimit: 15,
   recurringInvoices: true,
-  analytics: true,
-  customBranding: false,
+  analyticsLevel: "BASIC",
+  brandingLevel: "SHOWN",
   teamCollaboration: false,
-  apiAccess: false,
+  apiAccessLevel: "NONE",
   multiUser: false,
   description: "Great for growing businesses",
-  extraFeatures: ["Everything in Free", "Priority email support"],
+  extraFeatures: ["Priority email support"],
   popular: false,
 };
 
@@ -81,7 +83,7 @@ describe("getPlanConfigs", () => {
     const configs = await getPlanConfigs();
 
     expect(configs.STARTER.description).toBe("Great for growing businesses");
-    expect(configs.STARTER.extraFeatures).toEqual(["Everything in Free", "Priority email support"]);
+    expect(configs.STARTER.extraFeatures).toEqual(["Priority email support"]);
     expect(configs.STARTER.popular).toBe(false);
   });
 });

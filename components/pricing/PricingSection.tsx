@@ -30,7 +30,7 @@ export interface MarketingPlanData {
   analyticsLevel: "NONE" | "BASIC" | "ADVANCED";
   brandingLevel: "SHOWN" | "MINIMAL" | "HIDDEN";
   teamCollaboration: boolean;
-  apiAccess: boolean;
+  apiAccessLevel: "NONE" | "BASIC" | "ADVANCED";
   multiUser: boolean;
 }
 
@@ -46,17 +46,24 @@ const BRANDING_LABEL: Record<MarketingPlanData["brandingLevel"], string> = {
   HIDDEN: "Removed",
 };
 
+const API_ACCESS_LABEL: Record<MarketingPlanData["apiAccessLevel"], string> = {
+  NONE: "—",
+  BASIC: "Basic",
+  ADVANCED: "Advanced",
+};
+
 // Ascending order for diffing a plan's tier against the one below it —
 // each array's index doubles as its "how much better" rank.
 const ANALYTICS_ORDER: MarketingPlanData["analyticsLevel"][] = ["NONE", "BASIC", "ADVANCED"];
 const BRANDING_ORDER: MarketingPlanData["brandingLevel"][] = ["SHOWN", "MINIMAL", "HIDDEN"];
+const API_ACCESS_ORDER: MarketingPlanData["apiAccessLevel"][] = ["NONE", "BASIC", "ADVANCED"];
 
 // Only the features a plan adds on top of the one directly below it in
-// PLAN_ORDER — each card already says "Everything in [lower plan]" via
-// extraFeatures, so repeating every flag a lower tier already has just
-// makes the list longer without adding information. The lowest plan (no
-// `previous`) gets nothing here, since it has nothing to diff against and
-// no "Everything in..." line to build on.
+// PLAN_ORDER, in short/scannable form — the full explanation (e.g. what
+// "Minimal branding" means) lives in the Compare Plans table below, not
+// repeated on every card. The lowest plan (no `previous`) gets nothing
+// here, since it has nothing to diff against and no "Everything in..."
+// line to lead with.
 function getDynamicFeatures(
   plan: MarketingPlanData,
   previous: MarketingPlanData | undefined
@@ -64,25 +71,31 @@ function getDynamicFeatures(
   const features: string[] = [];
 
   if (plan.recurringInvoices && !previous?.recurringInvoices) {
-    features.push("Recurring invoices automation");
+    features.push("Recurring invoices");
   }
 
   const analyticsRank = ANALYTICS_ORDER.indexOf(plan.analyticsLevel);
   const prevAnalyticsRank = previous ? ANALYTICS_ORDER.indexOf(previous.analyticsLevel) : -1;
   if (analyticsRank > prevAnalyticsRank) {
-    if (plan.analyticsLevel === "BASIC") features.push("Basic reports (revenue & status totals)");
-    if (plan.analyticsLevel === "ADVANCED") features.push("Advanced analytics (trend charts & CSV export)");
+    if (plan.analyticsLevel === "BASIC") features.push("Basic reports");
+    if (plan.analyticsLevel === "ADVANCED") features.push("Advanced analytics");
   }
 
   const brandingRank = BRANDING_ORDER.indexOf(plan.brandingLevel);
   const prevBrandingRank = previous ? BRANDING_ORDER.indexOf(previous.brandingLevel) : -1;
   if (brandingRank > prevBrandingRank) {
-    if (plan.brandingLevel === "MINIMAL") features.push("Minimal branding (small credit, no link)");
-    if (plan.brandingLevel === "HIDDEN") features.push("No branding — fully white-labeled");
+    if (plan.brandingLevel === "MINIMAL") features.push("Minimal branding");
+    if (plan.brandingLevel === "HIDDEN") features.push("No branding");
+  }
+
+  const apiRank = API_ACCESS_ORDER.indexOf(plan.apiAccessLevel);
+  const prevApiRank = previous ? API_ACCESS_ORDER.indexOf(previous.apiAccessLevel) : -1;
+  if (apiRank > prevApiRank) {
+    if (plan.apiAccessLevel === "BASIC") features.push("Basic API access");
+    if (plan.apiAccessLevel === "ADVANCED") features.push("Advanced API access");
   }
 
   if (plan.teamCollaboration && !previous?.teamCollaboration) features.push("Team collaboration");
-  if (plan.apiAccess && !previous?.apiAccess) features.push("API access");
   if (plan.multiUser && !previous?.multiUser) features.push("Multi-user access");
 
   return features;
@@ -110,7 +123,7 @@ const COMPARE_ROWS: CompareRow[] = [
   { label: "Reports & analytics", value: (p) => ANALYTICS_LABEL[p.analyticsLevel] },
   { label: "Our branding on your invoices", value: (p) => BRANDING_LABEL[p.brandingLevel] },
   { label: "Team collaboration", value: (p) => p.teamCollaboration },
-  { label: "API access", value: (p) => p.apiAccess },
+  { label: "API access", value: (p) => API_ACCESS_LABEL[p.apiAccessLevel] },
   { label: "Multi-user access", value: (p) => p.multiUser },
 ];
 
@@ -176,6 +189,11 @@ const PricingSection = ({
           const yearlyPrice = plan.price !== null ? plan.price * 10 : null;
           const savings =
             plan.price !== null && plan.price > 0 ? plan.price * 12 - (yearlyPrice ?? 0) : 0;
+          const previousPlan = plans[index - 1];
+          // Computed, not typed into extraFeatures — always accurate and
+          // always leads the list, so the card reads "Everything in X,
+          // plus: [what's new]" instead of burying that line at the end.
+          const everythingInLine = previousPlan ? `Everything in ${previousPlan.title}` : null;
           // Derived straight from the same live PlanConfig fields the
           // Compare Plans table reads — not from extraFeatures — so a
           // toggle in /admin/plans can never update one surface without
@@ -183,12 +201,12 @@ const PricingSection = ({
           // copy that has no boolean/enum behind it (e.g. "Priority
           // support", "SLA guarantee"). Only what's new versus the plan
           // below — see getDynamicFeatures.
-          const dynamicFeatures = getDynamicFeatures(plan, plans[index - 1]);
+          const dynamicFeatures = getDynamicFeatures(plan, previousPlan);
 
           const cardFeatures = [
-            `${plan.invoiceLimit ?? "Unlimited"} invoices per month`,
-            `${plan.emailLimit ?? "Unlimited"} emails per month`,
+            `${plan.invoiceLimit ?? "Unlimited"} invoices & ${plan.emailLimit ?? "unlimited"} emails / month`,
             `${plan.clientLimit ?? "Unlimited"} clients`,
+            ...(everythingInLine ? [everythingInLine] : []),
             ...dynamicFeatures,
             ...plan.extraFeatures,
           ];

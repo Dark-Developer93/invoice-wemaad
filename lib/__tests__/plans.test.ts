@@ -39,7 +39,7 @@ describe("DEFAULT_PLAN_CONFIG features", () => {
       expect(["NONE", "BASIC", "ADVANCED"]).toContain(f.analyticsLevel);
       expect(["SHOWN", "MINIMAL", "HIDDEN"]).toContain(f.brandingLevel);
       expect(typeof f.teamCollaboration).toBe("boolean");
-      expect(typeof f.apiAccess).toBe("boolean");
+      expect(["NONE", "BASIC", "ADVANCED"]).toContain(f.apiAccessLevel);
       expect(typeof f.multiUser).toBe("boolean");
     }
   });
@@ -49,7 +49,7 @@ describe("DEFAULT_PLAN_CONFIG features", () => {
     expect(f.analyticsLevel).toBe("NONE");
     expect(f.brandingLevel).toBe("SHOWN");
     expect(f.teamCollaboration).toBe(false);
-    expect(f.apiAccess).toBe(false);
+    expect(f.apiAccessLevel).toBe("NONE");
     expect(f.multiUser).toBe(false);
   });
 
@@ -80,8 +80,15 @@ describe("DEFAULT_PLAN_CONFIG features", () => {
     expect(f.analyticsLevel).toBe("ADVANCED");
     expect(f.brandingLevel).toBe("HIDDEN");
     expect(f.teamCollaboration).toBe(true);
-    expect(f.apiAccess).toBe(true);
+    expect(f.apiAccessLevel).toBe("ADVANCED");
     expect(f.multiUser).toBe(true);
+  });
+
+  it("API access unlocks at PRO (Basic) and reaches Advanced at BUSINESS", () => {
+    expect(DEFAULT_PLAN_CONFIG.FREE.apiAccessLevel).toBe("NONE");
+    expect(DEFAULT_PLAN_CONFIG.STARTER.apiAccessLevel).toBe("NONE");
+    expect(DEFAULT_PLAN_CONFIG.PRO.apiAccessLevel).toBe("BASIC");
+    expect(DEFAULT_PLAN_CONFIG.BUSINESS.apiAccessLevel).toBe("ADVANCED");
   });
 
   it("client limits increase with tier, unlimited on BUSINESS", () => {

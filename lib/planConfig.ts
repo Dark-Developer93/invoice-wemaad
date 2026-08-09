@@ -24,7 +24,7 @@ async function fetchPlanConfigs(): Promise<Record<PlanType, PlanConfigData>> {
           analyticsLevel: row.analyticsLevel,
           brandingLevel: row.brandingLevel,
           teamCollaboration: row.teamCollaboration,
-          apiAccess: row.apiAccess,
+          apiAccessLevel: row.apiAccessLevel,
           multiUser: row.multiUser,
           description: row.description,
           extraFeatures: row.extraFeatures,

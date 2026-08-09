@@ -22,7 +22,6 @@ import type { PlanConfigData, PlanType } from "@/lib/plans";
 const FEATURE_FIELDS: Array<{ key: keyof PlanConfigInput & string; label: string }> = [
   { key: "recurringInvoices", label: "Recurring invoices" },
   { key: "teamCollaboration", label: "Team collaboration" },
-  { key: "apiAccess", label: "API access" },
   { key: "multiUser", label: "Multi-user access" },
 ];
 
@@ -38,6 +37,12 @@ const BRANDING_LEVEL_OPTIONS: Array<{ value: PlanConfigInput["brandingLevel"]; l
   { value: "HIDDEN", label: "Hidden — fully white-labeled" },
 ];
 
+const API_ACCESS_LEVEL_OPTIONS: Array<{ value: PlanConfigInput["apiAccessLevel"]; label: string }> = [
+  { value: "NONE", label: "No access" },
+  { value: "BASIC", label: "Basic" },
+  { value: "ADVANCED", label: "Advanced" },
+];
+
 function toFormState(config: PlanConfigData) {
   return {
     price: config.price === null ? "" : String(config.price),
@@ -48,7 +53,7 @@ function toFormState(config: PlanConfigData) {
     analyticsLevel: config.analyticsLevel,
     brandingLevel: config.brandingLevel,
     teamCollaboration: config.teamCollaboration,
-    apiAccess: config.apiAccess,
+    apiAccessLevel: config.apiAccessLevel,
     multiUser: config.multiUser,
     description: config.description,
     extraFeatures: config.extraFeatures.join("\n"),
@@ -106,7 +111,7 @@ export function AdminPlanConfigForm({
           analyticsLevel: form.analyticsLevel,
           brandingLevel: form.brandingLevel,
           teamCollaboration: form.teamCollaboration,
-          apiAccess: form.apiAccess,
+          apiAccessLevel: form.apiAccessLevel,
           multiUser: form.multiUser,
           description: form.description,
           extraFeatures,
@@ -174,7 +179,7 @@ export function AdminPlanConfigForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor={`${plan}-analytics`}>Reports & analytics</Label>
             <Select
@@ -208,6 +213,26 @@ export function AdminPlanConfigForm({
               </SelectTrigger>
               <SelectContent>
                 {BRANDING_LEVEL_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`${plan}-api`}>API access</Label>
+            <Select
+              value={form.apiAccessLevel}
+              onValueChange={(value) =>
+                setForm((f) => ({ ...f, apiAccessLevel: value as typeof f.apiAccessLevel }))
+              }
+            >
+              <SelectTrigger id={`${plan}-api`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {API_ACCESS_LEVEL_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>

@@ -87,7 +87,8 @@ async function BillingContent({ userId }: { userId: string }) {
   if (currentFeatures.analyticsLevel === "BASIC") lockedFeatures.push("Advanced analytics (charts + export)");
   if (currentFeatures.brandingLevel !== "HIDDEN") lockedFeatures.push("Fully white-labeled invoices");
   if (!currentFeatures.teamCollaboration) lockedFeatures.push("Team collaboration");
-  if (!currentFeatures.apiAccess) lockedFeatures.push("API access");
+  if (currentFeatures.apiAccessLevel === "NONE") lockedFeatures.push("API access");
+  if (currentFeatures.apiAccessLevel === "BASIC") lockedFeatures.push("Advanced API access");
   if (!currentFeatures.multiUser) lockedFeatures.push("Multi-user access");
 
   return (

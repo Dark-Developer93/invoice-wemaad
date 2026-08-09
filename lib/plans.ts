@@ -11,6 +11,7 @@ export const PLAN_NAMES: Record<PlanType, string> = {
 
 export type AnalyticsLevel = "NONE" | "BASIC" | "ADVANCED";
 export type BrandingLevel = "SHOWN" | "MINIMAL" | "HIDDEN";
+export type ApiAccessLevel = "NONE" | "BASIC" | "ADVANCED";
 
 export interface PlanConfigData {
   price: number | null;
@@ -21,7 +22,7 @@ export interface PlanConfigData {
   analyticsLevel: AnalyticsLevel;
   brandingLevel: BrandingLevel;
   teamCollaboration: boolean;
-  apiAccess: boolean;
+  apiAccessLevel: ApiAccessLevel;
   multiUser: boolean;
   // Public marketing copy — see the PlanConfig model comment in
   // schema.prisma for why these are separate from the fields above.
@@ -44,7 +45,7 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     analyticsLevel: "NONE",
     brandingLevel: "SHOWN",
     teamCollaboration: false,
-    apiAccess: false,
+    apiAccessLevel: "NONE",
     multiUser: false,
     description: "Perfect for freelancers just starting out",
     extraFeatures: [
@@ -64,10 +65,10 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     analyticsLevel: "BASIC",
     brandingLevel: "SHOWN",
     teamCollaboration: false,
-    apiAccess: false,
+    apiAccessLevel: "NONE",
     multiUser: false,
     description: "Great for growing businesses",
-    extraFeatures: ["Everything in Free", "Priority email support"],
+    extraFeatures: ["Priority email support"],
     popular: false,
   },
   PRO: {
@@ -79,10 +80,10 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     analyticsLevel: "ADVANCED",
     brandingLevel: "MINIMAL",
     teamCollaboration: true,
-    apiAccess: true,
+    apiAccessLevel: "BASIC",
     multiUser: false,
     description: "For established businesses",
-    extraFeatures: ["Everything in Starter", "Priority support"],
+    extraFeatures: ["Priority support"],
     popular: true,
   },
   BUSINESS: {
@@ -94,10 +95,10 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     analyticsLevel: "ADVANCED",
     brandingLevel: "HIDDEN",
     teamCollaboration: true,
-    apiAccess: true,
+    apiAccessLevel: "ADVANCED",
     multiUser: true,
     description: "For large organizations",
-    extraFeatures: ["Everything in Pro", "Custom integrations", "Dedicated support", "SLA guarantee"],
+    extraFeatures: ["Custom integrations", "Dedicated support", "SLA guarantee"],
     popular: false,
   },
 };

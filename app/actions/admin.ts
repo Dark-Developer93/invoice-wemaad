@@ -291,7 +291,7 @@ const planConfigSchema = z.object({
   analyticsLevel: z.enum(["NONE", "BASIC", "ADVANCED"]),
   brandingLevel: z.enum(["SHOWN", "MINIMAL", "HIDDEN"]),
   teamCollaboration: z.boolean(),
-  apiAccess: z.boolean(),
+  apiAccessLevel: z.enum(["NONE", "BASIC", "ADVANCED"]),
   multiUser: z.boolean(),
   description: z.string().max(MAX_DESCRIPTION_LENGTH),
   extraFeatures: z.array(z.string().min(1).max(MAX_FEATURE_LENGTH)).max(MAX_FEATURES_COUNT),

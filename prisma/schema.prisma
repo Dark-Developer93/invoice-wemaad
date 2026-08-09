@@ -317,6 +317,12 @@ enum BrandingLevel {
   HIDDEN // fully white-labeled, no branding at all
 }
 
+enum ApiAccessLevel {
+  NONE
+  BASIC
+  ADVANCED
+}
+
 // Admin-editable pricing/limits/features per plan tier. Seeded with the
 // values that used to be hardcoded in lib/plans.ts so editing this in the
 // admin panel is the only way values change going forward.
@@ -331,7 +337,7 @@ model PlanConfig {
   analyticsLevel    AnalyticsLevel @default(NONE)
   brandingLevel     BrandingLevel  @default(SHOWN)
   teamCollaboration Boolean        @default(false)
-  apiAccess         Boolean        @default(false)
+  apiAccessLevel    ApiAccessLevel @default(NONE)
   multiUser         Boolean        @default(false)
 
   // Public marketing copy (homepage pricing section) — the invoice/email
