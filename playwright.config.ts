@@ -1,7 +1,21 @@
+import { existsSync } from "fs";
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = process.env.E2E_PORT ?? "3100";
 const baseURL = `http://localhost:${PORT}`;
+
+// Only some sandboxed dev environments pre-install a bare "chromium" binary
+// at this fixed path (and need it explicitly pointed to, since their
+// Playwright version otherwise resolves to a "headless shell" variant that
+// isn't present there). CI and normal local setups install their own
+// matching browser via `playwright install` and must use Playwright's
+// default resolution instead — hardcoding this path unconditionally broke
+// exactly that (see CI run failure: "executable doesn't exist at
+// /opt/pw-browsers/chromium"). Detect rather than assume.
+const SANDBOX_CHROMIUM_PATH = "/opt/pw-browsers/chromium";
+const chromiumLaunchOptions = existsSync(SANDBOX_CHROMIUM_PATH)
+  ? { executablePath: SANDBOX_CHROMIUM_PATH }
+  : undefined;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -26,7 +40,7 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        launchOptions: { executablePath: "/opt/pw-browsers/chromium" },
+        ...(chromiumLaunchOptions ? { launchOptions: chromiumLaunchOptions } : {}),
       },
     },
   ],
