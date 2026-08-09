@@ -1,10 +1,14 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("auth guard", () => {
-  test("unauthenticated visit to /dashboard redirects to /login", async ({ page }) => {
-    await page.goto("/dashboard");
-    await expect(page).toHaveURL(/\/login/);
-  });
+  test(
+    "unauthenticated visit to /dashboard redirects to /login",
+    { tag: "@smoke" },
+    async ({ page }) => {
+      await page.goto("/dashboard");
+      await expect(page).toHaveURL(/\/login/);
+    }
+  );
 
   test("unauthenticated visit to /admin redirects to /login", async ({ page }) => {
     await page.goto("/admin");
@@ -29,7 +33,7 @@ test.describe("authenticated user", () => {
 test.describe("authenticated admin", () => {
   test.use({ storageState: "e2e/.auth/admin.json" });
 
-  test("can reach the admin panel", async ({ page }) => {
+  test("can reach the admin panel", { tag: "@smoke" }, async ({ page }) => {
     await page.goto("/admin/users");
     await expect(page.getByRole("heading", { name: "User Management" })).toBeVisible();
   });

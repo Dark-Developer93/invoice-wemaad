@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+
+env:
+  PNPM_VERSION: "10"
+  NODE_VERSION: "22"
+
+jobs:
+  typecheck-and-lint:
+    name: Typecheck & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: npx tsc --noEmit
+
+      - run: pnpm run lint
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Fast enough (77 tests, ~3s) that there's no need to trim this down
+      # for cost — the full suite already runs at "smoke test" speed.
+      - run: pnpm run test
+
+  e2e-smoke:
+    name: E2E smoke tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: e2e
+          POSTGRES_PASSWORD: e2e
+          POSTGRES_DB: invoice_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U e2e"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # Disposable test database + dummy values only — never real secrets.
+      DATABASE_URL: postgresql://e2e:e2e@localhost:5432/invoice_e2e
+      AUTH_SECRET: ci-only-secret-not-for-production-use-000000
+      NEXT_PUBLIC_APP_URL: http://localhost:3100
+      EMAIL_SERVER_HOST: localhost
+      EMAIL_SERVER_PORT: "2525"
+      EMAIL_SERVER_USER: test
+      EMAIL_SERVER_PASSWORD: test
+      EMAIL_FROM: hello@example.test
+      CRON_SECRET: ci-only-cron-secret-00000000
+      AUTH_TRUST_HOST: "true"
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: npx prisma migrate deploy
+
+      - name: Install Playwright's Chromium only
+        run: npx playwright install --with-deps chromium
+
+      - run: pnpm run build
+
+      # Only the @smoke-tagged subset — the full suite (12 tests) is meant
+      # for local runs before opening a PR; this is a fast, cheap sanity
+      # check on every push, not a full regression pass.
+      - run: npx playwright test --grep @smoke
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

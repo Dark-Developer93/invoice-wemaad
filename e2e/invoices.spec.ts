@@ -31,7 +31,7 @@ test.afterAll(async () => {
   }
 });
 
-test("create, edit, mark as paid, and delete an invoice", async ({ page }) => {
+test("create, edit, mark as paid, and delete an invoice", { tag: "@smoke" }, async ({ page }) => {
   const invoiceName = `E2E Invoice ${Date.now()}`;
 
   await page.goto("/dashboard/invoices");
