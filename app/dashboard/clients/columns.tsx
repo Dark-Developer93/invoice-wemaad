@@ -108,7 +108,7 @@ export function ActionCell({ client, allClients }: ActionCellProps) {
           <DropdownMenuItem onSelect={() => openAfterMenuCloses(setCreateInvoiceOpen)}>
             <span className="w-full">Create Invoice</span>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild className="text-destructive focus:text-destructive focus:bg-destructive/10">
             <Link href={`/dashboard/clients/${client.id}/delete`}>
               <Trash className="size-4 mr-2" /> Delete Client
             </Link>

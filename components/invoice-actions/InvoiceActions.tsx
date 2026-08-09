@@ -99,7 +99,7 @@ export function InvoiceActions({ invoice }: iAppProps) {
           <DropdownMenuItem onClick={handleDownload} disabled={isLoading}>
             <DownloadCloudIcon className="size-4 mr-2" /> Download Invoice
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild className="text-destructive focus:text-destructive focus:bg-destructive/10">
             <Link href={`/dashboard/invoices/${invoice.id}/delete`}>
               <Trash className="size-4 mr-2" /> Delete Invoice
             </Link>

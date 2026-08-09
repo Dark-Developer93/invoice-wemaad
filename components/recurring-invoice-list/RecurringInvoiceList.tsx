@@ -65,7 +65,7 @@ function ItemActions({ item, isPending, onToggle, onDelete }: ItemActionsProps) 
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => onDelete(item.id)}
-          className="text-destructive"
+          className="text-destructive focus:text-destructive focus:bg-destructive/10"
         >
           <Trash2 className="size-4 mr-2" /> Delete
         </DropdownMenuItem>

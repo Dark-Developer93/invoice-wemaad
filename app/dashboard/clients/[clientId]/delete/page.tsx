@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { redirect } from "next/navigation";
+import { AlertTriangle } from "lucide-react";
 
 import {
   Card,
@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import WarningGif from "@/public/warning-gif.gif";
 import { buttonVariants } from "@/components/ui/button";
 import SubmitButton from "@/components/submit-button/SubmitButton";
 import { deleteClient } from "@/app/actions/clients";
@@ -55,7 +54,12 @@ export default async function DeleteClientRoute({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Image src={WarningGif} alt="Warning Gif" className="rounded-lg" />
+          <div className="flex items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+            <AlertTriangle className="size-5 text-destructive shrink-0" />
+            <p className="text-sm font-medium text-destructive">
+              This action cannot be undone.
+            </p>
+          </div>
         </CardContent>
         <CardFooter className="flex items-center justify-between">
           <Link
