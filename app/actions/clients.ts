@@ -1,13 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { parseWithZod } from "@conform-to/zod";
 import { SubmissionResult } from "@conform-to/react";
 
 import { requireUser } from "@/lib/session";
 import { clientFormSchema } from "@/lib/zodSchemas";
 import prisma from "@/lib/db";
+import { cacheTags } from "@/lib/cache";
 
 export async function createClient(
   _prevState: SubmissionResult<string[]> | null | undefined,
@@ -54,6 +55,7 @@ export async function createClient(
     });
 
     revalidatePath("/dashboard/clients");
+    revalidateTag(cacheTags.clients(session.user.id));
     return { status: "success", error: {} };
   } catch (error) {
     console.error(error);
@@ -158,6 +160,7 @@ export async function editClient(
 
     revalidatePath("/dashboard/clients");
     revalidatePath(`/dashboard/clients/${clientId}`);
+    revalidateTag(cacheTags.clients(session.user.id));
     return { status: "success", error: {} };
   } catch (error) {
     console.error("Database error:", error);
@@ -184,6 +187,7 @@ export async function deleteClient(clientId: string) {
     });
 
     revalidatePath("/dashboard/clients");
+    revalidateTag(cacheTags.clients(session.user.id));
     return redirect("/dashboard/clients");
   } catch (error) {
     console.error(error);

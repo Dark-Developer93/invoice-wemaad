@@ -36,6 +36,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
 }));
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────

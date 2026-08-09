@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import { PlusIcon, RefreshCw } from "lucide-react";
 import { redirect } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
+import { cacheTags } from "@/lib/cache";
 
 import {
   Card,
@@ -17,7 +19,7 @@ import { RecurringInvoiceDialog } from "@/components/recurring-invoice-dialog/Re
 import { RecurringInvoiceList } from "@/components/recurring-invoice-list/RecurringInvoiceList";
 import { UpgradePrompt } from "@/components/upgrade-prompt/UpgradePrompt";
 import { getUserUsage } from "@/lib/usage";
-import { PLAN_FEATURES } from "@/lib/plans";
+import { getPlanConfig } from "@/lib/planConfig";
 
 export const metadata = {
   title: "Recurring Invoices",
@@ -25,12 +27,24 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
+// Cached until invalidated by revalidateTag(cacheTags.recurringInvoices(userId))
+// in every recurring-invoice-mutating action (including the daily cron) — no
+// time-based staleness.
+function getRecurringInvoices(userId: string) {
+  return unstable_cache(
+    () =>
+      prisma.recurringInvoice.findMany({
+        where: { userId },
+        include: { client: true },
+        orderBy: { createdAt: "desc" },
+      }),
+    ["recurring-invoices-list", userId],
+    { tags: [cacheTags.recurringInvoices(userId)] }
+  )();
+}
+
 async function RecurringInvoiceListContent({ userId }: { userId: string }) {
-  const recurringInvoices = await prisma.recurringInvoice.findMany({
-    where: { userId },
-    include: { client: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const recurringInvoices = await getRecurringInvoices(userId);
 
   return <RecurringInvoiceList items={recurringInvoices} />;
 }
@@ -87,10 +101,15 @@ export default async function RecurringInvoicesPage() {
 
   const [usage, clients] = await Promise.all([
     getUserUsage(session.user.id),
-    prisma.client.findMany({ where: { userId: session.user.id } }),
+    unstable_cache(
+      () => prisma.client.findMany({ where: { userId: session.user!.id } }),
+      ["clients-for-recurring-picker", session.user.id],
+      { tags: [cacheTags.clients(session.user.id)] }
+    )(),
   ]);
 
-  if (!PLAN_FEATURES[usage.plan].recurringInvoices) {
+  const planConfig = await getPlanConfig(usage.plan);
+  if (!planConfig.recurringInvoices) {
     return (
       <UpgradePrompt
         title="Recurring Invoices"

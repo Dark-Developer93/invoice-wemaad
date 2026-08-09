@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useState } from "react";
+import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
@@ -16,104 +16,59 @@ import {
 import ColoredButton from "../ui/ColoredButton";
 import { cn } from "@/lib/utils";
 
-const plans = [
-  {
-    title: "Free",
-    monthlyPrice: 0,
-    yearlyPrice: 0,
-    description: "Perfect for freelancers just starting out",
-    features: [
-      "5 invoices per month",
-      "20 emails per month",
-      "Client management",
-      "PDF generation & secure sharing",
-      "Automated invoice emails",
-      "Basic invoice templates",
-    ],
-  },
-  {
-    title: "Starter",
-    monthlyPrice: 9,
-    yearlyPrice: 90,
-    description: "Great for growing businesses",
-    features: [
-      "25 invoices per month",
-      "50 emails per month",
-      "Everything in Free",
-      "Recurring invoices automation",
-      "Financial reports & analytics",
-      "Priority email support",
-    ],
-  },
-  {
-    title: "Pro",
-    monthlyPrice: 29,
-    yearlyPrice: 290,
-    description: "For established businesses",
-    features: [
-      "100 invoices per month",
-      "500 emails per month",
-      "Everything in Starter",
-      "Advanced analytics",
-      "Custom branding",
-      "Team collaboration",
-      "Basic API access",
-      "Priority support",
-    ],
-    popular: true,
-  },
-  {
-    title: "Business",
-    description: "For large organizations",
-    features: [
-      "Unlimited invoices",
-      "Unlimited emails",
-      "Everything in Pro",
-      "Multi-user access",
-      "Advanced API access",
-      "Full custom branding",
-      "Custom integrations",
-      "Dedicated support",
-      "SLA guarantee",
-    ],
-    exclusive: true,
-  },
+export interface MarketingPlanData {
+  plan: string;
+  title: string;
+  price: number | null; // monthly; null = custom pricing
+  description: string;
+  extraFeatures: string[];
+  popular: boolean;
+  invoiceLimit: number | null;
+  emailLimit: number | null;
+  recurringInvoices: boolean;
+  analytics: boolean;
+  customBranding: boolean;
+  teamCollaboration: boolean;
+  apiAccess: boolean;
+  multiUser: boolean;
+}
+
+// Rows that don't vary by plan — included with every tier, so they don't
+// need a PlanConfig field of their own.
+const BASELINE_FEATURES = [
+  "Client management",
+  "PDF generation & secure sharing",
+  "Automated invoice emails",
 ];
 
-const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
+interface CompareRow {
+  label: string;
+  value: (plan: MarketingPlanData) => string | boolean;
+}
+
+const COMPARE_ROWS: CompareRow[] = [
+  { label: "Monthly invoices", value: (p) => p.invoiceLimit?.toString() ?? "Unlimited" },
+  { label: "Monthly emails", value: (p) => p.emailLimit?.toString() ?? "Unlimited" },
+  ...BASELINE_FEATURES.map((label): CompareRow => ({ label, value: () => true })),
+  { label: "Recurring invoices", value: (p) => p.recurringInvoices },
+  { label: "Analytics & reports", value: (p) => p.analytics },
+  { label: "Custom branding", value: (p) => p.customBranding },
+  { label: "Team collaboration", value: (p) => p.teamCollaboration },
+  { label: "API access", value: (p) => p.apiAccess },
+  { label: "Multi-user access", value: (p) => p.multiUser },
+];
+
+const PricingSection = ({
+  plans,
+  isAuthenticated,
+}: {
+  plans: MarketingPlanData[];
+  isAuthenticated: boolean;
+}) => {
   const [isYearly, setIsYearly] = useState(false);
 
-  const check = <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />;
-  const dash = "—";
-  const tier = (plan: (typeof plans)[0]) =>
-    ["Free", "Starter", "Pro", "Business"].indexOf(plan.title);
-
-  // Use plan tier rather than keyword scanning — higher plans inherit all lower features
-  const getFeatureValue = (plan: (typeof plans)[0], feature: string): string | JSX.Element => {
-    const t = tier(plan);
-    switch (feature) {
-      case "Monthly invoices":
-        return ["5", "25", "100", "Unlimited"][t];
-      case "Monthly emails":
-        return ["20", "50", "500", "Unlimited"][t];
-      case "Client management":    return check;
-      case "PDF generation":       return check;
-      case "Automated emails":     return check;
-      case "Invoice templates":    return check;
-      case "Recurring invoices":   return t >= 1 ? check : dash;
-      case "Analytics & reports":  return t >= 1 ? check : dash;
-      case "Custom branding":      return t >= 2 ? check : dash;
-      case "API access":           return t >= 2 ? check : dash;
-      case "Team collaboration":   return t >= 2 ? check : dash;
-      case "Multi-user access":    return t >= 3 ? check : dash;
-      case "Custom integrations":  return t >= 3 ? check : dash;
-      case "SLA guarantee":        return t >= 3 ? check : dash;
-      default:                     return dash;
-    }
-  };
-
-  const getButtonConfig = (plan: (typeof plans)[0]) => {
-    if (plan.exclusive) {
+  const getButtonConfig = (plan: MarketingPlanData) => {
+    if (plan.price === null) {
       return {
         text: "Contact Sales",
         href: "mailto:sales@invoicewemaad.com",
@@ -159,76 +114,78 @@ const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
       </Tabs>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mt-8 w-full max-w-7xl mx-auto">
-        {plans.map((plan) => (
-          <Card
-            key={plan.title}
-            className={cn(
-              "relative flex flex-col justify-between transition-all hover:scale-105 w-full max-w-sm mx-auto",
-              {
-                "border-primary/50 shadow-xl shadow-primary/10": plan.popular,
-                "rounded-lg border text-card-foreground shadow-sm py-1 border-primary/20 dark:border-zinc-700 animate-background-shine bg-white dark:bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%]":
-                  plan.exclusive,
-              }
-            )}
-          >
-            <div>
-              <CardHeader className="pb-8 pt-4">
-                {isYearly && plan.yearlyPrice && plan.monthlyPrice ? (
-                  <div className="flex justify-between">
-                    <CardTitle className="text-lg">{plan.title}</CardTitle>
-                    <div
-                      className={cn(
-                        "px-2.5 rounded-xl h-fit text-sm py-1 bg-muted",
-                        {
+        {plans.map((plan) => {
+          const isExclusive = plan.price === null;
+          // 2 months free on the annual plan (10x monthly instead of 12x).
+          const yearlyPrice = plan.price !== null ? plan.price * 10 : null;
+          const savings =
+            plan.price !== null && plan.price > 0 ? plan.price * 12 - (yearlyPrice ?? 0) : 0;
+          const cardFeatures = [
+            `${plan.invoiceLimit ?? "Unlimited"} invoices per month`,
+            `${plan.emailLimit ?? "Unlimited"} emails per month`,
+            ...plan.extraFeatures,
+          ];
+
+          return (
+            <Card
+              key={plan.plan}
+              className={cn(
+                "relative flex flex-col justify-between transition-all hover:scale-105 w-full max-w-sm mx-auto",
+                {
+                  "border-primary/50 shadow-xl shadow-primary/10": plan.popular,
+                  "rounded-lg border text-card-foreground shadow-sm py-1 border-primary/20 dark:border-zinc-700 animate-background-shine bg-white dark:bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%]":
+                    isExclusive,
+                }
+              )}
+            >
+              <div>
+                <CardHeader className="pb-8 pt-4">
+                  {isYearly && savings > 0 ? (
+                    <div className="flex justify-between">
+                      <CardTitle className="text-lg">{plan.title}</CardTitle>
+                      <div
+                        className={cn("px-2.5 rounded-xl h-fit text-sm py-1 bg-muted", {
                           "bg-gradient-to-r from-orange-400 to-rose-400 text-primary-foreground":
                             plan.popular,
-                        }
-                      )}
-                    >
-                      Save ${plan.monthlyPrice * 12 - plan.yearlyPrice}
+                        })}
+                      >
+                        Save ${savings}
+                      </div>
                     </div>
+                  ) : (
+                    <CardTitle className="text-lg">{plan.title}</CardTitle>
+                  )}
+                  <div className="flex gap-0.5 mt-4">
+                    <h3 className="text-4xl font-bold">
+                      {plan.price !== null ? `$${isYearly ? yearlyPrice : plan.price}` : "Custom"}
+                    </h3>
+                    <span className="flex flex-col justify-end text-sm mb-1">
+                      {plan.price !== null && `/${isYearly ? "year" : "month"}`}
+                    </span>
                   </div>
-                ) : (
-                  <CardTitle className="text-lg">{plan.title}</CardTitle>
-                )}
-                <div className="flex gap-0.5 mt-4">
-                  <h3 className="text-4xl font-bold">
-                    {plan.monthlyPrice !== undefined
-                      ? `$${isYearly ? plan.yearlyPrice : plan.monthlyPrice}`
-                      : "Custom"}
-                  </h3>
-                  <span className="flex flex-col justify-end text-sm mb-1">
-                    {plan.monthlyPrice !== undefined &&
-                      `/${isYearly ? "year" : "month"}`}
-                  </span>
-                </div>
-                <CardDescription className="pt-1.5 h-12">
-                  {plan.description}
-                </CardDescription>
-              </CardHeader>
+                  <CardDescription className="pt-1.5 h-12">{plan.description}</CardDescription>
+                </CardHeader>
 
-              <CardContent className="flex flex-col gap-3">
-                {plan.features.map((feature) => (
-                  <div key={feature} className="flex gap-2">
-                    <CheckCircle2
-                      size={18}
-                      className="shrink-0 text-emerald-500"
-                    />
-                    <p className="text-sm text-muted-foreground">{feature}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </div>
+                <CardContent className="flex flex-col gap-3">
+                  {cardFeatures.map((feature) => (
+                    <div key={feature} className="flex gap-2">
+                      <CheckCircle2 size={18} className="shrink-0 text-emerald-500" />
+                      <p className="text-sm text-muted-foreground">{feature}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </div>
 
-            <CardFooter className="mt-2">
-              <Link href={getButtonConfig(plan).href} className="w-full">
-                <ColoredButton className="relative inline-flex w-full items-center justify-center rounded-md bg-primary text-primary-foreground px-6 font-medium transition-colors">
-                  {getButtonConfig(plan).text}
-                </ColoredButton>
-              </Link>
-            </CardFooter>
-          </Card>
-        ))}
+              <CardFooter className="mt-2">
+                <Link href={getButtonConfig(plan).href} className="w-full">
+                  <ColoredButton className="relative inline-flex w-full items-center justify-center rounded-md bg-primary text-primary-foreground px-6 font-medium transition-colors">
+                    {getButtonConfig(plan).text}
+                  </ColoredButton>
+                </Link>
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
 
       <div className="mt-16 md:mt-24 w-full max-w-6xl mx-auto">
@@ -244,53 +201,40 @@ const PricingSection = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
             <table className="w-full min-w-[600px] table-fixed">
               <colgroup>
                 <col className="w-[220px]" />
-                <col />
-                <col />
-                <col />
-                <col />
+                {plans.map((plan) => (
+                  <col key={plan.plan} />
+                ))}
               </colgroup>
               <thead>
                 <tr className="border-b">
                   <th className="pb-3 text-left" />
                   {plans.map((plan) => (
-                    <th
-                      key={plan.title}
-                      className="pb-3 text-center text-sm font-semibold"
-                    >
+                    <th key={plan.plan} className="pb-3 text-center text-sm font-semibold">
                       {plan.title}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {[
-                  "Monthly invoices",
-                  "Monthly emails",
-                  "Client management",
-                  "PDF generation",
-                  "Automated emails",
-                  "Invoice templates",
-                  "Recurring invoices",
-                  "Analytics & reports",
-                  "Custom branding",
-                  "API access",
-                  "Team collaboration",
-                  "Multi-user access",
-                  "Custom integrations",
-                  "SLA guarantee",
-                ].map((feature) => (
-                  <tr key={feature}>
-                    <td className="py-4 text-sm font-medium">{feature}</td>
-                    {plans.map((plan) => (
-                      <td
-                        key={`${plan.title}-${feature}`}
-                        className="py-4 text-center"
-                      >
-                        <span className="text-sm">
-                          {getFeatureValue(plan, feature)}
-                        </span>
-                      </td>
-                    ))}
+                {COMPARE_ROWS.map((row) => (
+                  <tr key={row.label}>
+                    <td className="py-4 text-sm font-medium">{row.label}</td>
+                    {plans.map((plan) => {
+                      const value = row.value(plan);
+                      return (
+                        <td key={`${plan.plan}-${row.label}`} className="py-4 text-center">
+                          {typeof value === "boolean" ? (
+                            value ? (
+                              <CheckCircle2 size={18} className="text-emerald-500 mx-auto" />
+                            ) : (
+                              <span className="text-sm text-muted-foreground">—</span>
+                            )
+                          ) : (
+                            <span className="text-sm">{value}</span>
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>

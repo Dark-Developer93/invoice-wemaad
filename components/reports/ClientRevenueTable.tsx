@@ -28,7 +28,7 @@ interface ClientRevenueTableProps {
 
 export function ClientRevenueTable({ data, currency = "USD" }: ClientRevenueTableProps) {
   const fmt = (v: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency }).format(v / 100);
+    new Intl.NumberFormat("en-US", { style: "currency", currency }).format(v);
 
   return (
     <Card>

@@ -34,6 +34,11 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+}));
+
 // ── Imports ───────────────────────────────────────────────────────────────────
 
 import prisma from "@/lib/db";
@@ -115,50 +120,63 @@ beforeEach(() => {
   mockGetRequiredUserId.mockResolvedValue("user-1");
 });
 
+// Builds a fake tx client and wires db.$transaction to run the callback
+// against it — mirrors the per-invoice locked transaction processRecurringInvoices
+// now opens (advisory lock + fresh usage check + fresh invoiceNumber lookup).
+function mockTransactionOnce({
+  lastInvoiceNumber = 0,
+  createdInvoice = { id: "inv-new", invoiceNumber: lastInvoiceNumber + 1 },
+}: {
+  lastInvoiceNumber?: number;
+  createdInvoice?: { id: string; invoiceNumber?: number };
+} = {}) {
+  const tx = {
+    $executeRaw: vi.fn().mockResolvedValue(undefined),
+    invoice: {
+      findFirst: vi.fn().mockResolvedValue(
+        lastInvoiceNumber > 0 ? { invoiceNumber: lastInvoiceNumber } : null
+      ),
+      create: vi.fn().mockResolvedValue(createdInvoice),
+    },
+    recurringInvoice: { update: vi.fn().mockResolvedValue({}) },
+  };
+  db.$transaction.mockImplementationOnce(async (fn: (tx: unknown) => Promise<unknown>) => fn(tx));
+  return tx;
+}
+
 describe("processRecurringInvoices", () => {
   it("does nothing when no due invoices exist", async () => {
     db.recurringInvoice.findMany.mockResolvedValue([]);
 
-    await processRecurringInvoices();
+    const result = await processRecurringInvoices();
 
     expect(db.$transaction).not.toHaveBeenCalled();
+    expect(result).toEqual({ processed: 0, skippedAtLimit: 0, failed: 0, errors: [] });
   });
 
-  it("skips invoice when user is at monthly limit", async () => {
+  it("skips invoice when user is at monthly limit (checked fresh inside the lock)", async () => {
     db.recurringInvoice.findMany.mockResolvedValue([makeRecurringInvoice()]);
     mockGetUserUsage.mockResolvedValue(AT_LIMIT_USAGE);
-    db.invoice.findFirst.mockResolvedValue({ invoiceNumber: 10 });
+    const tx = mockTransactionOnce();
 
-    await processRecurringInvoices();
+    const result = await processRecurringInvoices();
 
-    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+    expect(tx.$executeRaw).toHaveBeenCalled();
+    expect(tx.invoice.create).not.toHaveBeenCalled();
+    expect(result.skippedAtLimit).toBe(1);
+    expect(result.processed).toBe(0);
   });
 
   it("creates invoice and advances nextRunAt", async () => {
     const rec = makeRecurringInvoice();
     db.recurringInvoice.findMany.mockResolvedValue([rec]);
     mockGetUserUsage.mockResolvedValue(UNLIMITED_USAGE);
-    db.invoice.findFirst.mockResolvedValue({ invoiceNumber: 4 });
+    const tx = mockTransactionOnce({ lastInvoiceNumber: 4 });
 
-    const createdInvoice = { id: "inv-new", invoiceNumber: 5 };
-    db.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        invoice: { create: vi.fn().mockResolvedValue(createdInvoice) },
-        recurringInvoice: { update: vi.fn().mockResolvedValue({}) },
-      };
-      return fn(tx);
-    });
-
-    await processRecurringInvoices();
+    const result = await processRecurringInvoices();
 
     expect(db.$transaction).toHaveBeenCalledTimes(1);
-    const txFnCall = db.$transaction.mock.calls[0][0];
-    // Verify the transaction function creates an invoice with incremented number
-    const tx = {
-      invoice: { create: vi.fn().mockResolvedValue(createdInvoice) },
-      recurringInvoice: { update: vi.fn().mockResolvedValue({}) },
-    };
-    await txFnCall(tx);
     expect(tx.invoice.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -168,6 +186,7 @@ describe("processRecurringInvoices", () => {
         }),
       })
     );
+    expect(result.processed).toBe(1);
   });
 
   it("marks recurring invoice inactive when endDate is passed", async () => {
@@ -175,26 +194,10 @@ describe("processRecurringInvoices", () => {
     const rec = makeRecurringInvoice({ endDate: pastEndDate });
     db.recurringInvoice.findMany.mockResolvedValue([rec]);
     mockGetUserUsage.mockResolvedValue(UNLIMITED_USAGE);
-    db.invoice.findFirst.mockResolvedValue({ invoiceNumber: 1 });
-
-    const createdInvoice = { id: "inv-new" };
-    db.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        invoice: { create: vi.fn().mockResolvedValue(createdInvoice) },
-        recurringInvoice: { update: vi.fn().mockResolvedValue({}) },
-      };
-      return fn(tx);
-    });
+    const tx = mockTransactionOnce({ lastInvoiceNumber: 1 });
 
     await processRecurringInvoices();
 
-    // The transaction update should set isActive: false when next run > endDate
-    const txFnCall = db.$transaction.mock.calls[0][0];
-    const tx = {
-      invoice: { create: vi.fn().mockResolvedValue(createdInvoice) },
-      recurringInvoice: { update: vi.fn().mockResolvedValue({}) },
-    };
-    await txFnCall(tx);
     expect(tx.recurringInvoice.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ isActive: false }),
@@ -206,16 +209,7 @@ describe("processRecurringInvoices", () => {
     const rec = makeRecurringInvoice();
     db.recurringInvoice.findMany.mockResolvedValue([rec]);
     mockGetUserUsage.mockResolvedValue(UNLIMITED_USAGE);
-    db.invoice.findFirst.mockResolvedValue({ invoiceNumber: 1 });
-
-    const createdInvoice = { id: "inv-new" };
-    db.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        invoice: { create: vi.fn().mockResolvedValue(createdInvoice) },
-        recurringInvoice: { update: vi.fn().mockResolvedValue({}) },
-      };
-      return fn(tx);
-    });
+    mockTransactionOnce({ lastInvoiceNumber: 1 });
     mockSendEmail.mockResolvedValue(undefined);
 
     await processRecurringInvoices();
@@ -234,34 +228,25 @@ describe("processRecurringInvoices", () => {
     const rec2 = makeRecurringInvoice({ id: "rec-2" });
     db.recurringInvoice.findMany.mockResolvedValue([rec1, rec2]);
     mockGetUserUsage.mockResolvedValue(UNLIMITED_USAGE);
-    db.invoice.findFirst.mockResolvedValue({ invoiceNumber: 1 });
 
-    let callCount = 0;
-    db.$transaction.mockImplementation(async () => {
-      callCount++;
-      if (callCount === 1) throw new Error("DB timeout");
-      return { id: "inv-new" };
+    db.$transaction.mockImplementationOnce(async () => {
+      throw new Error("DB timeout");
     });
+    mockTransactionOnce({ lastInvoiceNumber: 1 });
 
     // Should not throw even when one invoice fails
-    await expect(processRecurringInvoices()).resolves.toBeUndefined();
+    const result = await processRecurringInvoices();
     expect(db.$transaction).toHaveBeenCalledTimes(2);
+    expect(result.processed).toBe(1);
+    expect(result.failed).toBe(1);
+    expect(result.errors[0]).toContain("rec-1");
   });
 
   it("creates failure notification when email fails", async () => {
     const rec = makeRecurringInvoice();
     db.recurringInvoice.findMany.mockResolvedValue([rec]);
     mockGetUserUsage.mockResolvedValue(UNLIMITED_USAGE);
-    db.invoice.findFirst.mockResolvedValue({ invoiceNumber: 1 });
-
-    const createdInvoice = { id: "inv-new" };
-    db.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
-      const tx = {
-        invoice: { create: vi.fn().mockResolvedValue(createdInvoice) },
-        recurringInvoice: { update: vi.fn().mockResolvedValue({}) },
-      };
-      return fn(tx);
-    });
+    mockTransactionOnce({ lastInvoiceNumber: 1 });
     mockSendEmail.mockRejectedValue(new Error("SMTP timeout"));
 
     await processRecurringInvoices();

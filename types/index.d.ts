@@ -14,3 +14,9 @@ export interface ContactFormEmailProps {
   email: string;
   message: string;
 }
+
+export interface SystemAlertEmailProps {
+  title: string;
+  message: string;
+  href?: string;
+}

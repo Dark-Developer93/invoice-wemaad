@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { parseWithZod } from "@conform-to/zod";
 import { SubmissionResult } from "@conform-to/react";
 import { addDays } from "date-fns";
@@ -12,6 +12,7 @@ import { calculateInvoiceTotal } from "@/lib/invoiceItems";
 import prisma from "@/lib/db";
 import { getUserUsage, isEmailLimitOk, type UserUsage } from "@/lib/usage";
 import { dispatchInvoiceEmail } from "@/lib/email/invoice";
+import { cacheTags } from "@/lib/cache";
 
 class InvoiceLimitReachedError extends Error {
   constructor(public usage: UserUsage) {
@@ -94,6 +95,7 @@ export async function createInvoice(
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/invoices");
+  revalidateTag(cacheTags.invoices(userId));
   return { status: "success", error: {} };
 }
 
@@ -151,6 +153,7 @@ export async function editInvoice(
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/invoices");
+    revalidateTag(cacheTags.invoices(userId));
     return { status: "success", error: {} };
   } catch (error) {
     console.error("Failed to update invoice:", error);
@@ -169,6 +172,7 @@ export async function deleteInvoice(invoiceId: string) {
   }
 
   revalidatePath("/dashboard");
+  revalidateTag(cacheTags.invoices(userId));
   return redirect("/dashboard/invoices");
 }
 
@@ -226,6 +230,7 @@ export async function markAsPaid(invoiceId: string) {
   }
 
   revalidatePath("/dashboard");
+  revalidateTag(cacheTags.invoices(userId));
 
   return redirect("/dashboard/invoices");
 }

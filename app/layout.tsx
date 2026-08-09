@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import NextTopLoader from "nextjs-toploader";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { getBaseUrl } from "@/lib/urls";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -27,7 +28,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://invoice-wemaad.vercel.app"),
+  metadataBase: new URL(getBaseUrl()),
   title: {
     default: "WeMaAd Invoice – Professional Invoicing & Billing Software",
     template: "%s | WeMaAd Invoice",
@@ -62,7 +63,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://invoice-wemaad.vercel.app",
+    url: getBaseUrl(),
     siteName: "WeMaAd Invoice",
     title: "WeMaAd Invoice – Professional Invoicing & Billing Software",
     description:
@@ -92,7 +93,8 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.webmanifest",
   other: {
-    "llms-txt": "https://invoice-wemaad.vercel.app/llms.txt",
+    "llms-txt": `${getBaseUrl()}/llms.txt`,
+    "llms-full-txt": `${getBaseUrl()}/llms-full.txt`,
   },
 };
 

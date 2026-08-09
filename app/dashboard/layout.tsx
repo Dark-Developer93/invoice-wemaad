@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { User2 } from "lucide-react";
+import { LogOut, User2, UserCircle } from "lucide-react";
 
 import Logo from "@/public/logo.png";
 import { Button } from "@/components/ui/button";
@@ -97,7 +97,9 @@ export default async function DashboardLayout({
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/profile">Profile</Link>
+                    <Link href="/dashboard/profile">
+                      <UserCircle className="size-4 mr-2" /> Profile
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -108,7 +110,9 @@ export default async function DashboardLayout({
                         await signOut();
                       }}
                     >
-                      <button className="w-full text-left">Log out</button>
+                      <button className="w-full text-left flex items-center">
+                        <LogOut className="size-4 mr-2" /> Log out
+                      </button>
                     </form>
                   </DropdownMenuItem>
                 </DropdownMenuContent>

@@ -22,7 +22,20 @@ export async function submitContactForm(
   formData: FormData
 ): Promise<{ success?: boolean; error?: string }> {
   const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  // x-real-ip is set by Vercel's edge and not client-controllable. Fall back to
+  // the LAST entry of x-forwarded-for (the address the outermost trusted proxy
+  // saw), not the first — every entry before the last is client-supplied and
+  // trivially spoofable, which would let an attacker mint a fresh rate-limit
+  // bucket on every request just by sending a different fake first entry.
+  const forwardedFor = headersList.get("x-forwarded-for");
+  const ip =
+    headersList.get("x-real-ip") ??
+    forwardedFor
+      ?.split(",")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .pop() ??
+    "unknown";
   if (!checkRateLimit(`contact:${ip}`, 5, 60 * 60 * 1000)) {
     return { error: "Too many messages sent. Please try again later." };
   }

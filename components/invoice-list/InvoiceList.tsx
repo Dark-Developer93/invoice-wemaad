@@ -16,28 +16,46 @@ import { EmptyState } from "@/components/empty-state/EmptyState";
 import { Currency } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReactNode } from "react";
+import { unstable_cache } from "next/cache";
+import { cacheTags } from "@/lib/cache";
 
+// Cached until invalidated by revalidateTag(cacheTags.invoices(userId)) in
+// every invoice-mutating action — no time-based staleness.
 async function getData(userId: string) {
-  const data = await prisma.invoice.findMany({
-    where: {
-      userId: userId,
-    },
-    include: {
-      client: {
-        select: {
-          name: true,
-          email: true,
-          addresses: true,
-          contactPersons: true,
+  const data = await unstable_cache(
+    () =>
+      prisma.invoice.findMany({
+        where: {
+          userId: userId,
         },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+        include: {
+          client: {
+            select: {
+              name: true,
+              email: true,
+              addresses: true,
+              contactPersons: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+    ["invoice-list", userId],
+    { tags: [cacheTags.invoices(userId)] }
+  )();
 
-  return data;
+  // unstable_cache serializes its return value, so Date fields come back as
+  // ISO strings on a cache hit — normalize back to Date so callers always
+  // get the same shape regardless of cache hit/miss (new Date() is a no-op
+  // on an already-real Date).
+  return data.map((invoice) => ({
+    ...invoice,
+    date: new Date(invoice.date),
+    createdAt: new Date(invoice.createdAt),
+    updatedAt: new Date(invoice.updatedAt),
+  }));
 }
 
 function InvoiceListSkeleton() {

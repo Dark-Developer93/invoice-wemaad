@@ -192,7 +192,7 @@ export function AdminUserActions({ user, currentUserId }: Props) {
               </Button>
 
               <Button
-                variant="outline"
+                variant="destructive"
                 className="w-full"
                 onClick={() =>
                   setConfirmConfig({

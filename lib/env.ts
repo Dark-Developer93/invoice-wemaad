@@ -10,7 +10,6 @@ const envSchema = z.object({
   EMAIL_SERVER_PASSWORD: z.string().min(1),
   EMAIL_FROM: z.string().email(),
   CRON_SECRET: z.string().min(8),
-  MAILTRAP_TOKEN: z.string().optional(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 

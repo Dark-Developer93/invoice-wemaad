@@ -12,7 +12,8 @@ import { format } from "date-fns";
 
 import { requireUser } from "@/lib/session";
 import { getUserUsage } from "@/lib/usage";
-import { PLAN_FEATURES, PLAN_LIMITS, PLAN_PRICE, PlanType, PLAN_ORDER } from "@/lib/plans";
+import { PLAN_NAMES, PlanType, PLAN_ORDER } from "@/lib/plans";
+import { getPlanConfigs } from "@/lib/planConfig";
 import { requestPlanUpgrade, getUserPendingUpgradeRequest } from "@/app/actions/billing";
 import {
   Card,
@@ -63,27 +64,21 @@ function UsageBar({
   );
 }
 
-const PLAN_NAMES: Record<PlanType, string> = {
-  FREE: "Free",
-  STARTER: "Starter",
-  PRO: "Pro",
-  BUSINESS: "Business",
-};
-
 async function BillingContent({ userId }: { userId: string }) {
-  const [usage, userData, pendingRequest] = await Promise.all([
+  const [usage, userData, pendingRequest, planConfigs] = await Promise.all([
     getUserUsage(userId),
     prisma.user.findUnique({
       where: { id: userId },
       select: { plan: true, planUpdatedAt: true },
     }),
     getUserPendingUpgradeRequest(),
+    getPlanConfigs(),
   ]);
 
   if (!userData) notFound();
 
   const currentPlan = userData.plan as PlanType;
-  const currentFeatures = PLAN_FEATURES[currentPlan];
+  const currentFeatures = planConfigs[currentPlan];
 
   const lockedFeatures: string[] = [];
   if (!currentFeatures.recurringInvoices) lockedFeatures.push("Recurring invoices");
@@ -121,10 +116,10 @@ async function BillingContent({ userId }: { userId: string }) {
             <Badge variant="secondary">{PLAN_NAMES[currentPlan]}</Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            {PLAN_PRICE[currentPlan] !== null
-              ? PLAN_PRICE[currentPlan] === 0
+            {currentFeatures.price !== null
+              ? currentFeatures.price === 0
                 ? "Free forever"
-                : `$${PLAN_PRICE[currentPlan]}/month`
+                : `$${currentFeatures.price}/month`
               : "Custom pricing"}{" "}
             · Active since {format(new Date(userData.planUpdatedAt), "MMM d, yyyy")}
           </p>
@@ -149,8 +144,8 @@ async function BillingContent({ userId }: { userId: string }) {
           {PLAN_ORDER.map((plan) => {
             const isCurrentPlan = plan === currentPlan;
             const isPendingPlan = pendingRequest?.requestedPlan === plan;
-            const limits = PLAN_LIMITS[plan];
-            const price = PLAN_PRICE[plan];
+            const planConfig = planConfigs[plan];
+            const price = planConfig.price;
             const isExclusive = plan === "BUSINESS";
             const isUpgrade = PLAN_ORDER.indexOf(plan) > PLAN_ORDER.indexOf(currentPlan);
 
@@ -180,10 +175,10 @@ async function BillingContent({ userId }: { userId: string }) {
                   </p>
                 </CardHeader>
                 <CardContent className="flex-1 text-sm text-muted-foreground space-y-1.5">
-                  <p>{limits.invoices ?? "Unlimited"} invoices/mo</p>
-                  <p>{limits.emails ?? "Unlimited"} emails/mo</p>
+                  <p>{planConfig.invoiceLimit ?? "Unlimited"} invoices/mo</p>
+                  <p>{planConfig.emailLimit ?? "Unlimited"} emails/mo</p>
                   <p className="flex items-center gap-1">
-                    {PLAN_FEATURES[plan].recurringInvoices ? (
+                    {planConfig.recurringInvoices ? (
                       <CheckCircle2 className="size-3.5 text-emerald-500" />
                     ) : (
                       <XCircle className="size-3.5 text-muted-foreground/50" />
@@ -191,7 +186,7 @@ async function BillingContent({ userId }: { userId: string }) {
                     Recurring invoices
                   </p>
                   <p className="flex items-center gap-1">
-                    {PLAN_FEATURES[plan].analytics ? (
+                    {planConfig.analytics ? (
                       <CheckCircle2 className="size-3.5 text-emerald-500" />
                     ) : (
                       <XCircle className="size-3.5 text-muted-foreground/50" />
@@ -199,7 +194,7 @@ async function BillingContent({ userId }: { userId: string }) {
                     Analytics & reports
                   </p>
                   <p className="flex items-center gap-1">
-                    {PLAN_FEATURES[plan].customBranding ? (
+                    {planConfig.customBranding ? (
                       <CheckCircle2 className="size-3.5 text-emerald-500" />
                     ) : (
                       <XCircle className="size-3.5 text-muted-foreground/50" />
@@ -207,7 +202,7 @@ async function BillingContent({ userId }: { userId: string }) {
                     Custom branding
                   </p>
                   <p className="flex items-center gap-1">
-                    {PLAN_FEATURES[plan].teamCollaboration ? (
+                    {planConfig.teamCollaboration ? (
                       <CheckCircle2 className="size-3.5 text-emerald-500" />
                     ) : (
                       <XCircle className="size-3.5 text-muted-foreground/50" />

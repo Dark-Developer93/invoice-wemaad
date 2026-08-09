@@ -10,28 +10,30 @@ import RecentInvoices, {
 import { Card } from "@/components/ui/card";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { PLAN_FEATURES, PlanType } from "@/lib/plans";
+import { PlanType } from "@/lib/plans";
+import { getPlanConfig } from "@/lib/planConfig";
+import { cacheTags } from "@/lib/cache";
 
-// Cache the invoice check for 1 minute
-const getHasInvoices = unstable_cache(
-  async (userId: string) => {
-    const count = await prisma.invoice.count({
-      where: { userId },
-    });
-    return count > 0;
-  },
-  ["has-invoices"],
-  { revalidate: 60 }
-);
+// Cached until invalidated by revalidateTag(cacheTags.invoices(userId)) in
+// every invoice-mutating action — no time-based staleness.
+function getHasInvoices(userId: string): Promise<boolean> {
+  return unstable_cache(
+    async () => {
+      const count = await prisma.invoice.count({
+        where: { userId },
+      });
+      return count > 0;
+    },
+    ["has-invoices", userId],
+    { tags: [cacheTags.invoices(userId)] }
+  )();
+}
 
 export const metadata = {
   title: "Dashboard",
   description: "Overview of your invoices, revenue, and recent activity.",
   robots: { index: false, follow: false },
 };
-
-// Change to ISR with 1 minute revalidation
-export const revalidate = 60;
 
 export default async function DashboardRoute() {
   const session = await requireUser();
@@ -46,7 +48,7 @@ export default async function DashboardRoute() {
     prisma.user.findUniqueOrThrow({ where: { id: session.user.id }, select: { plan: true } }),
   ]);
 
-  const planFeatures = PLAN_FEATURES[user.plan as PlanType];
+  const planFeatures = await getPlanConfig(user.plan as PlanType);
 
   return (
     <main className="p-4 flex flex-col gap-5">

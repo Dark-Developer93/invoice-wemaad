@@ -2,7 +2,8 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import type { Prisma } from "@prisma/client";
 
 import prisma from "@/lib/db";
-import { PLAN_LIMITS, PlanType } from "@/lib/plans";
+import { PlanType } from "@/lib/plans";
+import { getPlanConfig } from "@/lib/planConfig";
 
 export interface UserUsage {
   plan: PlanType;
@@ -26,12 +27,13 @@ export async function getUserUsage(userId: string, db: Db = prisma): Promise<Use
   ]);
 
   const plan = user.plan as PlanType;
+  const planConfig = await getPlanConfig(plan);
   return {
     plan,
     invoicesThisMonth: invoices,
     emailsThisMonth: emails,
-    invoiceLimit: PLAN_LIMITS[plan].invoices,
-    emailLimit: PLAN_LIMITS[plan].emails,
+    invoiceLimit: planConfig.invoiceLimit,
+    emailLimit: planConfig.emailLimit,
   };
 }
 

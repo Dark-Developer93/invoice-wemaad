@@ -6,7 +6,13 @@ vi.mock("@/lib/db", () => ({
     user: { findUniqueOrThrow: vi.fn() },
     invoice: { count: vi.fn() },
     emailLog: { count: vi.fn(), create: vi.fn() },
+    planConfig: { findMany: vi.fn() },
   },
+}));
+
+// Bypass caching so each call reflects the current mock data.
+vi.mock("next/cache", () => ({
+  unstable_cache: (fn: () => unknown) => fn,
 }));
 
 import prisma from "@/lib/db";
@@ -16,10 +22,14 @@ const db = prisma as unknown as {
   user: { findUniqueOrThrow: ReturnType<typeof vi.fn> };
   invoice: { count: ReturnType<typeof vi.fn> };
   emailLog: { count: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn> };
+  planConfig: { findMany: ReturnType<typeof vi.fn> };
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // No PlanConfig rows in this mock — getPlanConfig() falls back to
+  // DEFAULT_PLAN_CONFIG, which is what all the expected limits below match.
+  db.planConfig.findMany.mockResolvedValue([]);
 });
 
 describe("getUserUsage", () => {

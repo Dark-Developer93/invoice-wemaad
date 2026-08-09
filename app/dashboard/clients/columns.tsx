@@ -1,8 +1,9 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
+import { Eye, FilePlus, Maximize2, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -95,17 +96,22 @@ export function ActionCell({ client, allClients }: ActionCellProps) {
               router.push(`/dashboard/clients/${client.id}`);
             }}
           >
-            <span className="w-full">Full View</span>
+            <Maximize2 className="size-4 mr-2" /> Full View
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => openAfterMenuCloses(setQuickViewOpen)}>
-            <span className="w-full">Quick View</span>
+            <Eye className="size-4 mr-2" /> Quick View
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => openAfterMenuCloses(setEditClientOpen)}>
-            <span className="w-full">Edit Client</span>
+            <Pencil className="size-4 mr-2" /> Edit Client
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => openAfterMenuCloses(setCreateInvoiceOpen)}>
-            <span className="w-full">Create Invoice</span>
+            <FilePlus className="size-4 mr-2" /> Create Invoice
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="text-destructive focus:text-destructive focus:bg-destructive/10">
+            <Link href={`/dashboard/clients/${client.id}/delete`}>
+              <Trash className="size-4 mr-2" /> Delete Client
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
