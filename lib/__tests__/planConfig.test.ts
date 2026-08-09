@@ -27,14 +27,17 @@ const ROW_FREE = {
   price: 0,
   invoiceLimit: 5,
   emailLimit: 20,
+  clientLimit: 3,
   recurringInvoices: false,
-  analytics: false,
-  customBranding: false,
+  analyticsLevel: "NONE",
+  brandingLevel: "SHOWN",
   teamCollaboration: false,
-  apiAccess: false,
+  apiAccessLevel: "NONE",
   multiUser: false,
+  customIntegrations: false,
+  supportLevel: "STANDARD",
+  slaGuarantee: false,
   description: "Perfect for freelancers",
-  extraFeatures: ["Client management"],
   popular: false,
 };
 
@@ -43,14 +46,17 @@ const ROW_STARTER = {
   price: 15, // deliberately different from DEFAULT_PLAN_CONFIG to prove the DB value wins
   invoiceLimit: 25,
   emailLimit: 50,
+  clientLimit: 15,
   recurringInvoices: true,
-  analytics: true,
-  customBranding: false,
+  analyticsLevel: "BASIC",
+  brandingLevel: "SHOWN",
   teamCollaboration: false,
-  apiAccess: false,
+  apiAccessLevel: "NONE",
   multiUser: false,
+  customIntegrations: false,
+  supportLevel: "PRIORITY",
+  slaGuarantee: false,
   description: "Great for growing businesses",
-  extraFeatures: ["Everything in Free", "Priority email support"],
   popular: false,
 };
 
@@ -72,16 +78,16 @@ describe("getPlanConfigs", () => {
     // BUSINESS has no row in this mock, but every plan is still present.
     expect(configs.BUSINESS).toBeDefined();
     expect(configs.BUSINESS.invoiceLimit).toBeNull();
-    expect(configs.BUSINESS.extraFeatures.length).toBeGreaterThan(0);
+    expect(configs.BUSINESS.supportLevel).toBe("DEDICATED");
   });
 
-  it("maps marketing copy fields (description, extraFeatures, popular)", async () => {
+  it("maps marketing copy fields (description, supportLevel, popular)", async () => {
     db.planConfig.findMany.mockResolvedValue([ROW_STARTER]);
 
     const configs = await getPlanConfigs();
 
     expect(configs.STARTER.description).toBe("Great for growing businesses");
-    expect(configs.STARTER.extraFeatures).toEqual(["Everything in Free", "Priority email support"]);
+    expect(configs.STARTER.supportLevel).toBe("PRIORITY");
     expect(configs.STARTER.popular).toBe(false);
   });
 });

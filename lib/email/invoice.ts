@@ -4,12 +4,15 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { formatDate } from "@/lib/formatDate";
 import { logEmailSent } from "@/lib/usage";
 import { getInvoiceUrl } from "@/lib/urls";
+import { getPlanConfig } from "@/lib/planConfig";
+import { PlanType } from "@/lib/plans";
 import { Currency } from "@/types";
 import prisma from "@/lib/db";
 import { cacheTags } from "@/lib/cache";
 
 export async function dispatchInvoiceEmail({
   userId,
+  plan,
   clientName,
   contactEmail,
   templateName,
@@ -22,6 +25,7 @@ export async function dispatchInvoiceEmail({
   notificationHref = "/dashboard/invoices",
 }: {
   userId: string;
+  plan: PlanType;
   clientName: string;
   contactEmail: string;
   templateName: "newInvoice" | "updatedInvoice" | "reminderInvoice";
@@ -34,6 +38,8 @@ export async function dispatchInvoiceEmail({
   notificationHref?: string;
 }) {
   try {
+    const planConfig = await getPlanConfig(plan);
+
     await sendEmail({
       to: contactEmail,
       templateName,
@@ -43,6 +49,7 @@ export async function dispatchInvoiceEmail({
         invoiceDueDate: formatDate.long(invoiceDueDate),
         invoiceAmount: formatCurrency({ amount: total, currency: currency as Currency }),
         invoiceLink: getInvoiceUrl(invoiceId),
+        brandingLevel: planConfig.brandingLevel,
       },
     });
     await logEmailSent(userId, logType ?? templateName, invoiceId);

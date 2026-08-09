@@ -10,7 +10,7 @@ import {
 } from "@react-email/components";
 
 import { ContactFormEmailProps } from "@/types";
-import { EmailFooter } from "../components/EmailFooter";
+import { PlainEmailFooter } from "../components/EmailFooter";
 import { EmailHeader } from "../components/EmailHeader";
 import {
   container,
@@ -71,7 +71,7 @@ export default function ContactFormEmail({
               </Text>
             </div>
 
-            <EmailFooter />
+            <PlainEmailFooter />
           </div>
         </Container>
       </Body>

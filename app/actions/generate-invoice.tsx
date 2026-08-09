@@ -5,6 +5,8 @@ import { pdf } from "@react-pdf/renderer";
 import { InvoicePDF } from "@/components/pdf/InvoicePDF";
 import prisma from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { getPlanConfig } from "@/lib/planConfig";
+import { PlanType } from "@/lib/plans";
 
 export type InvoiceWithRelations = Prisma.InvoiceGetPayload<{
   include: {
@@ -16,6 +18,7 @@ export type InvoiceWithRelations = Prisma.InvoiceGetPayload<{
     };
     User: {
       select: {
+        plan: true;
         companyName: true;
         companyEmail: true;
         companyAddress: true;
@@ -72,6 +75,7 @@ export async function generateInvoicePDF(
         },
         User: {
           select: {
+            plan: true,
             companyName: true,
             companyEmail: true,
             companyAddress: true,
@@ -93,7 +97,9 @@ export async function generateInvoicePDF(
       throw new Error("Invoice not found");
     }
 
-    const pdfDoc = await pdf(<InvoicePDF invoice={data} />);
+    const planConfig = await getPlanConfig((data.User?.plan as PlanType) ?? "FREE");
+
+    const pdfDoc = await pdf(<InvoicePDF invoice={data} brandingLevel={planConfig.brandingLevel} />);
     const blob = await pdfDoc.toBlob();
     const arrayBuffer = await blob.arrayBuffer();
     return arrayBuffer;

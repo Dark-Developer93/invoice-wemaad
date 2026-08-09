@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RevenueSummaryCard } from "@/components/reports/RevenueSummaryCard";
+import { RevenueTotalsCard } from "@/components/reports/RevenueTotalsCard";
 import { StatusBreakdownCard } from "@/components/reports/StatusBreakdownCard";
 import { ClientRevenueTable } from "@/components/reports/ClientRevenueTable";
 import { OutstandingInvoicesCard } from "@/components/reports/OutstandingInvoicesCard";
 import { UpgradePrompt } from "@/components/upgrade-prompt/UpgradePrompt";
 import { getUserUsage } from "@/lib/usage";
 import { getPlanConfig } from "@/lib/planConfig";
+import { AnalyticsLevel } from "@/lib/plans";
 import { cacheTags } from "@/lib/cache";
 
 export const metadata = {
@@ -55,7 +57,13 @@ async function getReportInvoices(userId: string) {
   }));
 }
 
-async function ReportsContent({ userId }: { userId: string }) {
+async function ReportsContent({
+  userId,
+  analyticsLevel,
+}: {
+  userId: string;
+  analyticsLevel: AnalyticsLevel;
+}) {
   const now = new Date();
 
   const allInvoices = await getReportInvoices(userId);
@@ -113,6 +121,20 @@ async function ReportsContent({ userId }: { userId: string }) {
     }));
 
   const defaultCurrency = allInvoices[0]?.currency ?? "USD";
+
+  if (analyticsLevel === "BASIC") {
+    return (
+      <div className="grid grid-cols-1 gap-6">
+        <RevenueTotalsCard
+          ytdTotal={ytdTotal}
+          paid={paidTotal}
+          pending={pendingTotal}
+          currency={defaultCurrency}
+        />
+        <OutstandingInvoicesCard invoices={outstanding} />
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -183,7 +205,7 @@ export default async function ReportsPage() {
   const usage = await getUserUsage(session.user!.id!);
   const planConfig = await getPlanConfig(usage.plan);
 
-  if (!planConfig.analytics) {
+  if (planConfig.analyticsLevel === "NONE") {
     return (
       <UpgradePrompt
         title="Reports"
@@ -203,16 +225,22 @@ export default async function ReportsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Reports</h1>
-          <p className="text-muted-foreground">Financial insights and analytics</p>
+          <p className="text-muted-foreground">
+            {planConfig.analyticsLevel === "BASIC"
+              ? "Revenue totals — upgrade to Pro for trend charts, top clients, and CSV export"
+              : "Financial insights and analytics"}
+          </p>
         </div>
-        <Button variant="outline" asChild className="w-full sm:w-auto">
-          <a href="/api/reports/export?format=csv" download="invoices.csv">
-            Export CSV
-          </a>
-        </Button>
+        {planConfig.analyticsLevel === "ADVANCED" && (
+          <Button variant="outline" asChild className="w-full sm:w-auto">
+            <a href="/api/reports/export?format=csv" download="invoices.csv">
+              Export CSV
+            </a>
+          </Button>
+        )}
       </div>
       <Suspense fallback={<ReportsContentSkeleton />}>
-        <ReportsContent userId={session.user!.id!} />
+        <ReportsContent userId={session.user!.id!} analyticsLevel={planConfig.analyticsLevel} />
       </Suspense>
     </div>
   );

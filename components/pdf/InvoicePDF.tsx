@@ -5,16 +5,21 @@ import {
   View,
   StyleSheet,
   Image,
+  Link,
 } from "@react-pdf/renderer";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 import { InvoiceWithRelations } from "@/app/actions/generate-invoice";
 import { calculateInvoiceTotal, parseInvoiceItems } from "@/lib/invoiceItems";
+import { getBaseUrl } from "@/lib/urls";
+import { BrandingLevel } from "@/lib/plans";
 
 // Create styles
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    paddingTop: 30,
+    paddingBottom: 90,
+    paddingHorizontal: 30,
     fontFamily: "Helvetica",
   },
   topBorder: {
@@ -34,8 +39,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   logo: {
-    width: 500,
-    height: 100,
+    width: 180,
+    height: 50,
     marginRight: 10,
     objectFit: "contain",
     objectPosition: "left",
@@ -169,21 +174,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#111827",
   },
-  bankDetails: {
-    marginTop: 20,
-    marginBottom: 60,
-    width: "60%",
-  },
   paymentContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginTop: 20,
-    marginBottom: 60,
   },
   stampSection: {
-    width: 150,
-    height: 150,
+    width: 110,
+    height: 110,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
@@ -222,9 +221,19 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 8,
   },
+  footerLink: {
+    color: "#2563EB",
+    textDecoration: "none",
+  },
 });
 
-export function InvoicePDF({ invoice }: { invoice: InvoiceWithRelations }) {
+export function InvoicePDF({
+  invoice,
+  brandingLevel,
+}: {
+  invoice: InvoiceWithRelations;
+  brandingLevel: BrandingLevel;
+}) {
   const invoiceDate = new Intl.DateTimeFormat("en-US", {
     dateStyle: "long",
   }).format(new Date(invoice.date));
@@ -377,8 +386,11 @@ export function InvoicePDF({ invoice }: { invoice: InvoiceWithRelations }) {
           </View>
         </View>
 
-        {/* Payment Details and Stamp Container */}
-        <View style={styles.paymentContainer}>
+        {/* Payment Details and Stamp Container — wrap={false} so this
+            block moves to the next page as a whole when it doesn't fit,
+            instead of the bank-details box and stamp splitting mid-content
+            across two pages (react-pdf's default for a View this size). */}
+        <View style={styles.paymentContainer} wrap={false}>
           {/* Bank Details */}
           {invoice.User && (
             <View style={[styles.section, { flex: 1, marginRight: 20 }]}>
@@ -431,13 +443,37 @@ export function InvoicePDF({ invoice }: { invoice: InvoiceWithRelations }) {
           )}
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            © {new Date().getFullYear()} InvoiceWeMaAd. All rights reserved.
-          </Text>
-          <Text style={styles.footerText}>Making invoicing super easy!</Text>
-        </View>
+        {/* Footer — three tiers. SHOWN (Free/Starter): full growth-loop CTA,
+            every free invoice is a small ad shown to the recipient, the
+            actual target market. MINIMAL (Pro): a small unlinked credit,
+            no CTA/link. HIDDEN (Business): nothing, fully white-labeled.
+            `fixed` renders it identically on every page and — critically —
+            excludes it from the page's flow-height budget, so it no longer
+            competes with page.paddingBottom for the same reserved space
+            (see the pagination bug this fixed in components/pdf/InvoicePDF
+            history: without `fixed`, a non-fixed absolutely-positioned View
+            still counts toward how much content "fits" on a page, which
+            combined with a manual bottom margin double-reserved space and
+            pushed the payment/stamp block to page 2 even with room left). */}
+        {brandingLevel === "SHOWN" && (
+          <View style={styles.footer} fixed>
+            <Text style={styles.footerText}>
+              Sent with{" "}
+              <Link src={getBaseUrl()} style={styles.footerLink}>
+                InvoiceWeMaAd
+              </Link>{" "}
+              — create your own free invoices at{" "}
+              <Link src={getBaseUrl()} style={styles.footerLink}>
+                {getBaseUrl().replace(/^https?:\/\//, "")}
+              </Link>
+            </Text>
+          </View>
+        )}
+        {brandingLevel === "MINIMAL" && (
+          <View style={styles.footer} fixed>
+            <Text style={styles.footerText}>Powered by InvoiceWeMaAd</Text>
+          </View>
+        )}
       </Page>
     </Document>
   );

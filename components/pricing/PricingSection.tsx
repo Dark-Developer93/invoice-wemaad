@@ -15,48 +15,9 @@ import {
 } from "@/components/ui/card";
 import ColoredButton from "../ui/ColoredButton";
 import { cn } from "@/lib/utils";
+import { type MarketingPlanData, getCardFeatures, COMPARE_ROWS } from "./pricingFeatures";
 
-export interface MarketingPlanData {
-  plan: string;
-  title: string;
-  price: number | null; // monthly; null = custom pricing
-  description: string;
-  extraFeatures: string[];
-  popular: boolean;
-  invoiceLimit: number | null;
-  emailLimit: number | null;
-  recurringInvoices: boolean;
-  analytics: boolean;
-  customBranding: boolean;
-  teamCollaboration: boolean;
-  apiAccess: boolean;
-  multiUser: boolean;
-}
-
-// Rows that don't vary by plan — included with every tier, so they don't
-// need a PlanConfig field of their own.
-const BASELINE_FEATURES = [
-  "Client management",
-  "PDF generation & secure sharing",
-  "Automated invoice emails",
-];
-
-interface CompareRow {
-  label: string;
-  value: (plan: MarketingPlanData) => string | boolean;
-}
-
-const COMPARE_ROWS: CompareRow[] = [
-  { label: "Monthly invoices", value: (p) => p.invoiceLimit?.toString() ?? "Unlimited" },
-  { label: "Monthly emails", value: (p) => p.emailLimit?.toString() ?? "Unlimited" },
-  ...BASELINE_FEATURES.map((label): CompareRow => ({ label, value: () => true })),
-  { label: "Recurring invoices", value: (p) => p.recurringInvoices },
-  { label: "Analytics & reports", value: (p) => p.analytics },
-  { label: "Custom branding", value: (p) => p.customBranding },
-  { label: "Team collaboration", value: (p) => p.teamCollaboration },
-  { label: "API access", value: (p) => p.apiAccess },
-  { label: "Multi-user access", value: (p) => p.multiUser },
-];
+export type { MarketingPlanData };
 
 const PricingSection = ({
   plans,
@@ -114,17 +75,18 @@ const PricingSection = ({
       </Tabs>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mt-8 w-full max-w-7xl mx-auto">
-        {plans.map((plan) => {
+        {plans.map((plan, index) => {
           const isExclusive = plan.price === null;
           // 2 months free on the annual plan (10x monthly instead of 12x).
           const yearlyPrice = plan.price !== null ? plan.price * 10 : null;
           const savings =
             plan.price !== null && plan.price > 0 ? plan.price * 12 - (yearlyPrice ?? 0) : 0;
-          const cardFeatures = [
-            `${plan.invoiceLimit ?? "Unlimited"} invoices per month`,
-            `${plan.emailLimit ?? "Unlimited"} emails per month`,
-            ...plan.extraFeatures,
-          ];
+          const previousPlan = plans[index - 1];
+          // Same function pricingFeatures.test.ts asserts against — the
+          // card and the Compare Plans table below both read off
+          // pricingFeatures.ts, so a toggle in /admin/plans can never
+          // update one surface without the other.
+          const cardFeatures = getCardFeatures(plan, previousPlan);
 
           return (
             <Card

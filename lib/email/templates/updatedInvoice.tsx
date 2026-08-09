@@ -21,6 +21,7 @@ export default function UpdatedInvoiceEmail(props: InvoiceEmailProps) {
       invoiceDueDate={props.invoiceDueDate}
       invoiceAmount={props.invoiceAmount}
       invoiceLink={props.invoiceLink}
+      brandingLevel={props.brandingLevel}
     />
   );
 }

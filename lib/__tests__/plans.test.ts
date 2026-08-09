@@ -36,28 +36,35 @@ describe("DEFAULT_PLAN_CONFIG features", () => {
   it("defines features for every plan", () => {
     for (const plan of ALL_PLANS) {
       const f = DEFAULT_PLAN_CONFIG[plan];
-      expect(typeof f.analytics).toBe("boolean");
-      expect(typeof f.customBranding).toBe("boolean");
+      expect(["NONE", "BASIC", "ADVANCED"]).toContain(f.analyticsLevel);
+      expect(["SHOWN", "MINIMAL", "HIDDEN"]).toContain(f.brandingLevel);
       expect(typeof f.teamCollaboration).toBe("boolean");
-      expect(typeof f.apiAccess).toBe("boolean");
+      expect(["NONE", "BASIC", "ADVANCED"]).toContain(f.apiAccessLevel);
       expect(typeof f.multiUser).toBe("boolean");
     }
   });
 
   it("FREE plan has no premium features", () => {
     const f = DEFAULT_PLAN_CONFIG.FREE;
-    expect(f.analytics).toBe(false);
-    expect(f.customBranding).toBe(false);
+    expect(f.analyticsLevel).toBe("NONE");
+    expect(f.brandingLevel).toBe("SHOWN");
     expect(f.teamCollaboration).toBe(false);
-    expect(f.apiAccess).toBe(false);
+    expect(f.apiAccessLevel).toBe("NONE");
     expect(f.multiUser).toBe(false);
   });
 
-  it("analytics unlocks at STARTER and stays on for higher plans", () => {
-    expect(DEFAULT_PLAN_CONFIG.FREE.analytics).toBe(false);
-    expect(DEFAULT_PLAN_CONFIG.STARTER.analytics).toBe(true);
-    expect(DEFAULT_PLAN_CONFIG.PRO.analytics).toBe(true);
-    expect(DEFAULT_PLAN_CONFIG.BUSINESS.analytics).toBe(true);
+  it("analytics unlocks at STARTER and reaches ADVANCED at PRO", () => {
+    expect(DEFAULT_PLAN_CONFIG.FREE.analyticsLevel).toBe("NONE");
+    expect(DEFAULT_PLAN_CONFIG.STARTER.analyticsLevel).toBe("BASIC");
+    expect(DEFAULT_PLAN_CONFIG.PRO.analyticsLevel).toBe("ADVANCED");
+    expect(DEFAULT_PLAN_CONFIG.BUSINESS.analyticsLevel).toBe("ADVANCED");
+  });
+
+  it("branding is fully hidden only on BUSINESS", () => {
+    expect(DEFAULT_PLAN_CONFIG.FREE.brandingLevel).toBe("SHOWN");
+    expect(DEFAULT_PLAN_CONFIG.STARTER.brandingLevel).toBe("SHOWN");
+    expect(DEFAULT_PLAN_CONFIG.PRO.brandingLevel).toBe("MINIMAL");
+    expect(DEFAULT_PLAN_CONFIG.BUSINESS.brandingLevel).toBe("HIDDEN");
   });
 
   it("multiUser is exclusive to BUSINESS", () => {
@@ -67,14 +74,44 @@ describe("DEFAULT_PLAN_CONFIG features", () => {
     expect(DEFAULT_PLAN_CONFIG.BUSINESS.multiUser).toBe(true);
   });
 
-  it("BUSINESS plan has every boolean feature enabled", () => {
+  it("BUSINESS plan has every feature at its highest tier", () => {
     const f = DEFAULT_PLAN_CONFIG.BUSINESS;
     expect(f.recurringInvoices).toBe(true);
-    expect(f.analytics).toBe(true);
-    expect(f.customBranding).toBe(true);
+    expect(f.analyticsLevel).toBe("ADVANCED");
+    expect(f.brandingLevel).toBe("HIDDEN");
     expect(f.teamCollaboration).toBe(true);
-    expect(f.apiAccess).toBe(true);
+    expect(f.apiAccessLevel).toBe("ADVANCED");
     expect(f.multiUser).toBe(true);
+  });
+
+  it("API access unlocks at PRO (Basic) and reaches Advanced at BUSINESS", () => {
+    expect(DEFAULT_PLAN_CONFIG.FREE.apiAccessLevel).toBe("NONE");
+    expect(DEFAULT_PLAN_CONFIG.STARTER.apiAccessLevel).toBe("NONE");
+    expect(DEFAULT_PLAN_CONFIG.PRO.apiAccessLevel).toBe("BASIC");
+    expect(DEFAULT_PLAN_CONFIG.BUSINESS.apiAccessLevel).toBe("ADVANCED");
+  });
+
+  it("client limits increase with tier, unlimited on BUSINESS", () => {
+    expect(DEFAULT_PLAN_CONFIG.FREE.clientLimit).toBe(3);
+    expect(DEFAULT_PLAN_CONFIG.STARTER.clientLimit).toBeGreaterThan(DEFAULT_PLAN_CONFIG.FREE.clientLimit!);
+    expect(DEFAULT_PLAN_CONFIG.PRO.clientLimit).toBeGreaterThan(DEFAULT_PLAN_CONFIG.STARTER.clientLimit!);
+    expect(DEFAULT_PLAN_CONFIG.BUSINESS.clientLimit).toBeNull();
+  });
+
+  it("support unlocks at STARTER (Priority) and reaches Dedicated at BUSINESS", () => {
+    expect(DEFAULT_PLAN_CONFIG.FREE.supportLevel).toBe("STANDARD");
+    expect(DEFAULT_PLAN_CONFIG.STARTER.supportLevel).toBe("PRIORITY");
+    expect(DEFAULT_PLAN_CONFIG.PRO.supportLevel).toBe("PRIORITY");
+    expect(DEFAULT_PLAN_CONFIG.BUSINESS.supportLevel).toBe("DEDICATED");
+  });
+
+  it("customIntegrations and slaGuarantee are exclusive to BUSINESS", () => {
+    for (const plan of ["FREE", "STARTER", "PRO"] as PlanType[]) {
+      expect(DEFAULT_PLAN_CONFIG[plan].customIntegrations).toBe(false);
+      expect(DEFAULT_PLAN_CONFIG[plan].slaGuarantee).toBe(false);
+    }
+    expect(DEFAULT_PLAN_CONFIG.BUSINESS.customIntegrations).toBe(true);
+    expect(DEFAULT_PLAN_CONFIG.BUSINESS.slaGuarantee).toBe(true);
   });
 });
 

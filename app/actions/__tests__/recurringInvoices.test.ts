@@ -21,6 +21,10 @@ vi.mock("@/lib/email/index", () => ({
   sendEmail: vi.fn(),
 }));
 
+vi.mock("@/lib/planConfig", () => ({
+  getPlanConfig: vi.fn().mockResolvedValue({ customBranding: false }),
+}));
+
 vi.mock("@/lib/env", () => ({
   env: { AUTH_SECRET: "a".repeat(32), NEXT_PUBLIC_APP_URL: "https://example.com" },
 }));
