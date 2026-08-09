@@ -5,6 +5,8 @@ import { pdf } from "@react-pdf/renderer";
 import { InvoicePDF } from "@/components/pdf/InvoicePDF";
 import prisma from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { getPlanConfig } from "@/lib/planConfig";
+import { PlanType } from "@/lib/plans";
 
 export type InvoiceWithRelations = Prisma.InvoiceGetPayload<{
   include: {
@@ -16,6 +18,7 @@ export type InvoiceWithRelations = Prisma.InvoiceGetPayload<{
     };
     User: {
       select: {
+        plan: true;
         companyName: true;
         companyEmail: true;
         companyAddress: true;
@@ -72,6 +75,7 @@ export async function generateInvoicePDF(
         },
         User: {
           select: {
+            plan: true,
             companyName: true,
             companyEmail: true,
             companyAddress: true,
@@ -93,7 +97,14 @@ export async function generateInvoicePDF(
       throw new Error("Invoice not found");
     }
 
-    const pdfDoc = await pdf(<InvoicePDF invoice={data} />);
+    // Free/Starter plans (customBranding: false) show a "Sent via
+    // InvoiceWeMaAd" footer with a link back to the homepage — every free
+    // invoice doubles as a small ad shown to the actual target market
+    // (the invoice's recipient). Pro/Business get a fully white-labeled PDF.
+    const planConfig = await getPlanConfig((data.User?.plan as PlanType) ?? "FREE");
+    const showBranding = !planConfig.customBranding;
+
+    const pdfDoc = await pdf(<InvoicePDF invoice={data} showBranding={showBranding} />);
     const blob = await pdfDoc.toBlob();
     const arrayBuffer = await blob.arrayBuffer();
     return arrayBuffer;

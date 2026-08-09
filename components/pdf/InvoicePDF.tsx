@@ -5,11 +5,13 @@ import {
   View,
   StyleSheet,
   Image,
+  Link,
 } from "@react-pdf/renderer";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 import { InvoiceWithRelations } from "@/app/actions/generate-invoice";
 import { calculateInvoiceTotal, parseInvoiceItems } from "@/lib/invoiceItems";
+import { getBaseUrl } from "@/lib/urls";
 
 // Create styles
 const styles = StyleSheet.create({
@@ -222,9 +224,19 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 8,
   },
+  footerLink: {
+    color: "#2563EB",
+    textDecoration: "none",
+  },
 });
 
-export function InvoicePDF({ invoice }: { invoice: InvoiceWithRelations }) {
+export function InvoicePDF({
+  invoice,
+  showBranding,
+}: {
+  invoice: InvoiceWithRelations;
+  showBranding: boolean;
+}) {
   const invoiceDate = new Intl.DateTimeFormat("en-US", {
     dateStyle: "long",
   }).format(new Date(invoice.date));
@@ -431,13 +443,24 @@ export function InvoicePDF({ invoice }: { invoice: InvoiceWithRelations }) {
           )}
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            © {new Date().getFullYear()} InvoiceWeMaAd. All rights reserved.
-          </Text>
-          <Text style={styles.footerText}>Making invoicing super easy!</Text>
-        </View>
+        {/* Footer — Free/Starter plans (customBranding: false) keep this;
+            it's the growth loop, every free invoice is a small ad shown to
+            the recipient, the actual target market. Pro/Business
+            (customBranding: true) get a fully white-labeled PDF instead. */}
+        {showBranding && (
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              Sent with{" "}
+              <Link src={getBaseUrl()} style={styles.footerLink}>
+                InvoiceWeMaAd
+              </Link>{" "}
+              — create your own free invoices at{" "}
+              <Link src={getBaseUrl()} style={styles.footerLink}>
+                {getBaseUrl().replace(/^https?:\/\//, "")}
+              </Link>
+            </Text>
+          </View>
+        )}
       </Page>
     </Document>
   );

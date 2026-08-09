@@ -6,6 +6,10 @@ export interface InvoiceEmailProps {
   invoiceDueDate: string;
   invoiceAmount: string;
   invoiceLink: string;
+  // false on plans without customBranding (Free, Starter) — shows a "Sent
+  // via InvoiceWeMaAd" footer with a link back to the homepage. true on
+  // Pro/Business, which removes it for a fully white-labeled email.
+  showBranding: boolean;
 }
 
 export interface ContactFormEmailProps {

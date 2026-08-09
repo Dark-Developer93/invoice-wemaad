@@ -223,6 +223,7 @@ export async function processRecurringInvoices(): Promise<ProcessRecurringInvoic
           emailUsage.emailsThisMonth++;
           dispatchInvoiceEmail({
             userId,
+            plan: emailUsage.plan,
             clientName: recurring.client!.name,
             contactEmail: contact.email,
             templateName: "newInvoice",
