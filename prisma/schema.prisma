@@ -320,7 +320,16 @@ model PlanConfig {
   teamCollaboration Boolean  @default(false)
   apiAccess         Boolean  @default(false)
   multiUser         Boolean  @default(false)
-  updatedAt         DateTime @updatedAt
+
+  // Public marketing copy (homepage pricing section) — the invoice/email
+  // limit and boolean feature rows above are the single source of truth
+  // for anything the app actually enforces; these are for the rest of the
+  // marketing bullet list, which is pure copy with no code-level gating.
+  description   String   @default("")
+  extraFeatures String[] @default([])
+  popular       Boolean  @default(false) // "Most Popular" badge
+
+  updatedAt DateTime @updatedAt
 }
 
 enum RecurrenceInterval {

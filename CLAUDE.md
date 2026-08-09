@@ -190,10 +190,17 @@ keeps it validate-able and diffable), a cached reader with a sane
 fallback, and an admin action that revalidates the cache tag.
 
 Note: the public marketing pricing section on the homepage
-(`components/pricing/PricingSection.tsx`) is separate static content with
-richer copy (yearly pricing, bullet descriptions) — it's intentionally
-*not* wired to `PlanConfig`. Don't assume editing a plan in the admin
-panel changes what the homepage displays.
+(`components/pricing/PricingSection.tsx`) *is* wired to `PlanConfig` —
+`app/page.tsx` fetches `getPlanConfigs()` and passes it down. Anything the
+app actually enforces (invoice/email limits, the six boolean feature
+flags) is derived directly from those fields, so it can never drift out
+of sync with what's really gated. Pure marketing copy that isn't tied to
+real gating (e.g. "Client management", "SLA guarantee") lives in
+`PlanConfig.description`/`extraFeatures`, editable as free text on
+`/admin/plans` — those fields exist specifically so that copy doesn't
+need a code change to update. Yearly pricing is always computed as
+`monthly price × 10` (2 months free) rather than stored separately, to
+avoid a value that could silently contradict the monthly price.
 
 ## Testing
 

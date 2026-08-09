@@ -11,7 +11,12 @@ test.beforeEach(async () => {
   try {
     await prisma.planConfig.update({
       where: { plan: "STARTER" },
-      data: { price: 9, invoiceLimit: 25, emailLimit: 50 },
+      data: {
+        price: 9,
+        invoiceLimit: 25,
+        emailLimit: 50,
+        description: "Great for growing businesses",
+      },
     });
   } finally {
     await prisma.$disconnect();
@@ -44,4 +49,20 @@ test("admin can edit a plan's price and it takes effect on the billing page", as
   await userPage.goto("/dashboard/billing");
   await expect(userPage.getByText("$19", { exact: false }).first()).toBeVisible();
   await userCtx.close();
+});
+
+test("editing a plan's marketing tagline updates the public homepage", async ({ page }) => {
+  const tagline = `E2E tagline ${Date.now()}`;
+
+  await page.goto("/admin/plans");
+  await page.locator("#STARTER-description").fill(tagline);
+  await page.locator("#STARTER-save").click();
+  await expect(page.getByText("Starter plan updated.")).toBeVisible();
+
+  // The homepage is public — check it with a logged-out context.
+  const publicCtx = await page.context().browser()!.newContext();
+  const publicPage = await publicCtx.newPage();
+  await publicPage.goto("/");
+  await expect(publicPage.getByText(tagline)).toBeVisible();
+  await publicCtx.close();
 });

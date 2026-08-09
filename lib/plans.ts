@@ -19,6 +19,11 @@ export interface PlanConfigData {
   teamCollaboration: boolean;
   apiAccess: boolean;
   multiUser: boolean;
+  // Public marketing copy — see the PlanConfig model comment in
+  // schema.prisma for why these are separate from the fields above.
+  description: string;
+  extraFeatures: string[];
+  popular: boolean;
 }
 
 // Values a plan falls back to if its PlanConfig row is ever missing (should
@@ -36,6 +41,14 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     teamCollaboration: false,
     apiAccess: false,
     multiUser: false,
+    description: "Perfect for freelancers just starting out",
+    extraFeatures: [
+      "Client management",
+      "PDF generation & secure sharing",
+      "Automated invoice emails",
+      "Basic invoice templates",
+    ],
+    popular: false,
   },
   STARTER: {
     price: 9,
@@ -47,6 +60,14 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     teamCollaboration: false,
     apiAccess: false,
     multiUser: false,
+    description: "Great for growing businesses",
+    extraFeatures: [
+      "Everything in Free",
+      "Recurring invoices automation",
+      "Financial reports & analytics",
+      "Priority email support",
+    ],
+    popular: false,
   },
   PRO: {
     price: 29,
@@ -58,6 +79,16 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     teamCollaboration: true,
     apiAccess: true,
     multiUser: false,
+    description: "For established businesses",
+    extraFeatures: [
+      "Everything in Starter",
+      "Advanced analytics",
+      "Custom branding",
+      "Team collaboration",
+      "Basic API access",
+      "Priority support",
+    ],
+    popular: true,
   },
   BUSINESS: {
     price: null,
@@ -69,5 +100,16 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     teamCollaboration: true,
     apiAccess: true,
     multiUser: true,
+    description: "For large organizations",
+    extraFeatures: [
+      "Everything in Pro",
+      "Multi-user access",
+      "Advanced API access",
+      "Full custom branding",
+      "Custom integrations",
+      "Dedicated support",
+      "SLA guarantee",
+    ],
+    popular: false,
   },
 };

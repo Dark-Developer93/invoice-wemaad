@@ -7,6 +7,8 @@ import ContactSection from "@/components/contact/ContactSection";
 import Footer from "@/components/footer/Footer";
 import { auth } from "@/lib/auth";
 import { getBaseUrl } from "@/lib/urls";
+import { getPlanConfigs } from "@/lib/planConfig";
+import { PLAN_ORDER, PLAN_NAMES } from "@/lib/plans";
 
 const SITE_URL = getBaseUrl();
 
@@ -83,6 +85,13 @@ const Home = async () => {
   const session = await auth();
   const isAuthenticated = !!session;
 
+  const planConfigs = await getPlanConfigs();
+  const plans = PLAN_ORDER.map((plan) => ({
+    plan,
+    title: PLAN_NAMES[plan],
+    ...planConfigs[plan],
+  }));
+
   return (
     <div className="min-h-screen relative">
       <script
@@ -99,7 +108,7 @@ const Home = async () => {
         <div className="max-w-full overflow-x-hidden">
           <section id="hero"><Hero /></section>
           <section id="features"><Features /></section>
-          <section id="pricing"><PricingSection isAuthenticated={isAuthenticated} /></section>
+          <section id="pricing"><PricingSection plans={plans} isAuthenticated={isAuthenticated} /></section>
           <section id="contact"><ContactSection /></section>
         </div>
       </main>

@@ -33,6 +33,9 @@ const ROW_FREE = {
   teamCollaboration: false,
   apiAccess: false,
   multiUser: false,
+  description: "Perfect for freelancers",
+  extraFeatures: ["Client management"],
+  popular: false,
 };
 
 const ROW_STARTER = {
@@ -46,6 +49,9 @@ const ROW_STARTER = {
   teamCollaboration: false,
   apiAccess: false,
   multiUser: false,
+  description: "Great for growing businesses",
+  extraFeatures: ["Everything in Free", "Priority email support"],
+  popular: false,
 };
 
 describe("getPlanConfigs", () => {
@@ -66,6 +72,17 @@ describe("getPlanConfigs", () => {
     // BUSINESS has no row in this mock, but every plan is still present.
     expect(configs.BUSINESS).toBeDefined();
     expect(configs.BUSINESS.invoiceLimit).toBeNull();
+    expect(configs.BUSINESS.extraFeatures.length).toBeGreaterThan(0);
+  });
+
+  it("maps marketing copy fields (description, extraFeatures, popular)", async () => {
+    db.planConfig.findMany.mockResolvedValue([ROW_STARTER]);
+
+    const configs = await getPlanConfigs();
+
+    expect(configs.STARTER.description).toBe("Great for growing businesses");
+    expect(configs.STARTER.extraFeatures).toEqual(["Everything in Free", "Priority email support"]);
+    expect(configs.STARTER.popular).toBe(false);
   });
 });
 

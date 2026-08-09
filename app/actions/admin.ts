@@ -278,6 +278,9 @@ export async function adminGetPlanConfigs() {
 
 const MAX_LIMIT_VALUE = 1_000_000;
 const MAX_PRICE_VALUE = 100_000;
+const MAX_DESCRIPTION_LENGTH = 200;
+const MAX_FEATURE_LENGTH = 200;
+const MAX_FEATURES_COUNT = 20;
 
 const planConfigSchema = z.object({
   price: z.coerce.number().int().min(0).max(MAX_PRICE_VALUE).nullable(),
@@ -289,6 +292,9 @@ const planConfigSchema = z.object({
   teamCollaboration: z.boolean(),
   apiAccess: z.boolean(),
   multiUser: z.boolean(),
+  description: z.string().max(MAX_DESCRIPTION_LENGTH),
+  extraFeatures: z.array(z.string().min(1).max(MAX_FEATURE_LENGTH)).max(MAX_FEATURES_COUNT),
+  popular: z.boolean(),
 });
 
 export type PlanConfigInput = z.infer<typeof planConfigSchema>;
@@ -313,6 +319,7 @@ export async function adminUpdatePlanConfig(plan: string, input: PlanConfigInput
   revalidateTag(cacheTags.planConfig);
   revalidatePath("/admin/plans");
   revalidatePath("/dashboard/billing");
+  revalidatePath("/");
 }
 
 export interface PlatformInsights {

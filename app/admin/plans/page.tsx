@@ -19,9 +19,9 @@ export default async function AdminPlansPage() {
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Pricing Plans</h1>
         <p className="text-muted-foreground text-sm sm:text-base">
           Changes here take effect immediately — for every user&apos;s usage-limit
-          enforcement and for the billing page. The public marketing pricing
-          section on the homepage is separate static content and isn&apos;t
-          affected by this page.
+          enforcement, the billing page, and the public pricing section on
+          the homepage. Yearly pricing on the homepage is always 10× the
+          monthly price (2 months free) and isn&apos;t set separately.
         </p>
       </div>
 

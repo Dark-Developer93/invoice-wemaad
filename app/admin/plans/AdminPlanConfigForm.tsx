@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { adminUpdatePlanConfig, type PlanConfigInput } from "@/app/actions/admin";
 import type { PlanConfigData, PlanType } from "@/lib/plans";
@@ -31,6 +32,9 @@ function toFormState(config: PlanConfigData) {
     teamCollaboration: config.teamCollaboration,
     apiAccess: config.apiAccess,
     multiUser: config.multiUser,
+    description: config.description,
+    extraFeatures: config.extraFeatures.join("\n"),
+    popular: config.popular,
   };
 }
 
@@ -50,6 +54,10 @@ export function AdminPlanConfigForm({
     const price = form.price.trim() === "" ? null : Number(form.price);
     const invoiceLimit = form.invoiceLimit.trim() === "" ? null : Number(form.invoiceLimit);
     const emailLimit = form.emailLimit.trim() === "" ? null : Number(form.emailLimit);
+    const extraFeatures = form.extraFeatures
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
 
     if (price !== null && (Number.isNaN(price) || price < 0)) {
       toast.error("Price must be a non-negative number, or blank for custom pricing.");
@@ -76,6 +84,9 @@ export function AdminPlanConfigForm({
           teamCollaboration: form.teamCollaboration,
           apiAccess: form.apiAccess,
           multiUser: form.multiUser,
+          description: form.description,
+          extraFeatures,
+          popular: form.popular,
         });
         toast.success(`${name} plan updated.`);
       } catch (err: unknown) {
@@ -141,6 +152,48 @@ export function AdminPlanConfigForm({
               />
             </div>
           ))}
+        </div>
+
+        <div className="space-y-3 border-t pt-4">
+          <p className="text-xs font-medium text-muted-foreground">
+            Public marketing page (homepage pricing section)
+          </p>
+
+          <div className="space-y-1.5">
+            <Label htmlFor={`${plan}-description`}>Tagline</Label>
+            <Input
+              id={`${plan}-description`}
+              placeholder="Short description shown under the plan name"
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor={`${plan}-features`}>Additional features (one per line)</Label>
+            <Textarea
+              id={`${plan}-features`}
+              rows={5}
+              placeholder={"Client management\nPriority support\n..."}
+              value={form.extraFeatures}
+              onChange={(e) => setForm((f) => ({ ...f, extraFeatures: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Shown below the invoice/email limits and the toggles above,
+              which are always listed automatically.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor={`${plan}-popular`} className="font-normal cursor-pointer">
+              &quot;Most Popular&quot; badge
+            </Label>
+            <Switch
+              id={`${plan}-popular`}
+              checked={form.popular}
+              onCheckedChange={(checked) => setForm((f) => ({ ...f, popular: checked }))}
+            />
+          </div>
         </div>
 
         <Button
