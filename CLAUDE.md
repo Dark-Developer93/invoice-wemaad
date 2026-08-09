@@ -274,6 +274,40 @@ here so they're not rediscovered from scratch:
   user count — see the capacity discussion the team has separately for the
   reasoning and the plan for watching actual usage via Neon's dashboard
   once live.
+- **`PlanConfig.teamCollaboration`, `apiAccessLevel`, and `multiUser` are
+  sold but not built.** All three are real, admin-editable, correctly
+  differentiated per plan (see pattern 9 and `PricingSection.tsx`'s
+  Compare Plans table), but nothing in the app actually checks them —
+  there is no team-invite flow, no API key system or `/api/v1` surface,
+  and no multi-user-per-account model. A paying Pro/Business customer who
+  tries to use "Team collaboration" or "API access" today gets nothing,
+  because there's nothing to get. This needs to be either built or
+  removed from the pricing page before real paying customers land on
+  those tiers — don't let it ship silently past launch.
+  - **Team collaboration and multi-user are the same underlying feature**,
+    not two separate builds. Both mean "more than one person can access
+    this account's data." The natural implementation is one team-
+    membership mechanism (either a `TeamMembership` join table granting a
+    second `User` access to an owner's data, or a heavier `Organization`
+    model that `Invoice`/`Client` belong to instead of `User` directly)
+    gated by a **seat count** rather than by two separate booleans — e.g.
+    a `maxSeats: number | null` field on `PlanConfig` (Pro caps at a
+    handful of seats, Business unlimited). That collapses "Team
+    collaboration ✓/✗" and "Multi-user access ✓/✗" into one number, and
+    fixes a real gap in the current lineup: there's no self-serve tier
+    between $29 Pro and "Contact Sales" Business for a 2-3 person team.
+  - Building this touches every ownership check in `app/actions/*.ts`
+    (pattern 2's `where: { id, userId }` shape), since a second user
+    needs to pass that check too — budget for that, not just the
+    invite-flow UI.
+  - **API access is a separate, standalone build** — a public REST
+    surface (`/api/v1/...`) authenticated by API key instead of session
+    cookie, its own rate limiting, and ongoing docs/versioning
+    commitment. Don't bundle it into the team-seats work; it's a
+    different kind of feature (external system integration, not more
+    humans on one account) and a much larger standing maintenance cost
+    relative to how small this app's audience is. Build it only once a
+    real customer asks for it, not speculatively.
 
 ## Common pitfalls when extending this codebase
 
