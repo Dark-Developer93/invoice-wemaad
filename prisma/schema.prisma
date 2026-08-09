@@ -14,38 +14,38 @@ datasource db {
 }
 
 model User {
-  id                String          @id @default(cuid())
-  firstName         String?
-  lastName          String?
-  address           String?
-  email             String          @unique
-  emailVerified     DateTime?
-  image             String?
-  companyName       String?
-  companyEmail      String?
-  companyAddress    String?
-  companyTaxId      String?
-  companyLogoUrl    String?
-  stampsUrl         String?
-  bankName          String?
-  bankAccountName   String?
-  bankAccountNumber String?
-  bankSwiftCode     String?
-  bankIBAN          String?
-  bankAddress       String?
-  accounts          Account[]
-  sessions          Session[]
+  id                  String               @id @default(cuid())
+  firstName           String?
+  lastName            String?
+  address             String?
+  email               String               @unique
+  emailVerified       DateTime?
+  image               String?
+  companyName         String?
+  companyEmail        String?
+  companyAddress      String?
+  companyTaxId        String?
+  companyLogoUrl      String?
+  stampsUrl           String?
+  bankName            String?
+  bankAccountName     String?
+  bankAccountNumber   String?
+  bankSwiftCode       String?
+  bankIBAN            String?
+  bankAddress         String?
+  accounts            Account[]
+  sessions            Session[]
   // Optional for WebAuthn support
-  Authenticator     Authenticator[]
-  invoices          Invoice[]
-  clients           Client[]
-  emailLogs            EmailLog[]
-  recurringInvoices    RecurringInvoice[]
-  planUpgradeRequests  PlanUpgradeRequest[]
-  notifications        Notification[]
+  Authenticator       Authenticator[]
+  invoices            Invoice[]
+  clients             Client[]
+  emailLogs           EmailLog[]
+  recurringInvoices   RecurringInvoice[]
+  planUpgradeRequests PlanUpgradeRequest[]
+  notifications       Notification[]
 
-  plan          PlanType  @default(FREE)
-  planUpdatedAt DateTime  @default(now())
+  plan          PlanType @default(FREE)
+  planUpdatedAt DateTime @default(now())
 
   isAdmin  Boolean @default(false)
   isActive Boolean @default(true)
@@ -245,13 +245,13 @@ enum UpgradeRequestStatus {
 }
 
 model PlanUpgradeRequest {
-  id            String                @id @default(cuid())
+  id            String               @id @default(cuid())
   userId        String
   requestedPlan PlanType
-  status        UpgradeRequestStatus  @default(PENDING)
+  status        UpgradeRequestStatus @default(PENDING)
   adminNote     String?
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -323,30 +323,41 @@ enum ApiAccessLevel {
   ADVANCED
 }
 
+enum SupportLevel {
+  STANDARD
+  PRIORITY
+  DEDICATED
+}
+
 // Admin-editable pricing/limits/features per plan tier. Seeded with the
 // values that used to be hardcoded in lib/plans.ts so editing this in the
 // admin panel is the only way values change going forward.
 model PlanConfig {
-  id                String         @id @default(cuid())
-  plan              PlanType       @unique
-  price             Int? // whole dollars/month; null = custom pricing (e.g. Business)
-  invoiceLimit      Int? // per calendar month; null = unlimited
-  emailLimit        Int? // per calendar month; null = unlimited
-  clientLimit       Int? // total (not monthly); null = unlimited
-  recurringInvoices Boolean        @default(false)
-  analyticsLevel    AnalyticsLevel @default(NONE)
-  brandingLevel     BrandingLevel  @default(SHOWN)
-  teamCollaboration Boolean        @default(false)
-  apiAccessLevel    ApiAccessLevel @default(NONE)
-  multiUser         Boolean        @default(false)
+  id                 String         @id @default(cuid())
+  plan               PlanType       @unique
+  price              Int? // whole dollars/month; null = custom pricing (e.g. Business)
+  invoiceLimit       Int? // per calendar month; null = unlimited
+  emailLimit         Int? // per calendar month; null = unlimited
+  clientLimit        Int? // total (not monthly); null = unlimited
+  recurringInvoices  Boolean        @default(false)
+  analyticsLevel     AnalyticsLevel @default(NONE)
+  brandingLevel      BrandingLevel  @default(SHOWN)
+  teamCollaboration  Boolean        @default(false)
+  apiAccessLevel     ApiAccessLevel @default(NONE)
+  multiUser          Boolean        @default(false)
+  customIntegrations Boolean        @default(false)
+  supportLevel       SupportLevel   @default(STANDARD)
+  slaGuarantee       Boolean        @default(false)
 
-  // Public marketing copy (homepage pricing section) — the invoice/email
-  // limit and boolean feature rows above are the single source of truth
-  // for anything the app actually enforces; these are for the rest of the
-  // marketing bullet list, which is pure copy with no code-level gating.
-  description   String   @default("")
-  extraFeatures String[] @default([])
-  popular       Boolean  @default(false) // "Most Popular" badge
+  // Public marketing copy (homepage pricing section) — every row above is
+  // real, admin-editable, plan-gated data; this is the only remaining
+  // free-text field, for the tagline only. There is no free-text feature
+  // list anymore — every marketing bullet on the pricing page is derived
+  // from a real field above, so cards and the Compare Plans table can
+  // never drift apart the way they used to when features were typed in
+  // as copy independent of what was actually toggled.
+  description String  @default("")
+  popular     Boolean @default(false) // "Most Popular" badge
 
   updatedAt DateTime @updatedAt
 }
@@ -365,15 +376,15 @@ model RecurringInvoice {
   endDate   DateTime?
   nextRunAt DateTime
 
-  invoiceName            String
-  items                  Json
-  total                  Decimal @db.Decimal(12, 2)
-  currency               String
-  dueDate                Int
-  fromName               String
-  fromEmail              String
-  fromAddress            String
-  invoiceNote            String?
+  invoiceName String
+  items       Json
+  total       Decimal @db.Decimal(12, 2)
+  currency    String
+  dueDate     Int
+  fromName    String
+  fromEmail   String
+  fromAddress String
+  invoiceNote String?
 
   client   Client? @relation(fields: [clientId], references: [id])
   clientId String?

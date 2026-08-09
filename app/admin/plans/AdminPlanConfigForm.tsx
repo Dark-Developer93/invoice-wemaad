@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -23,6 +22,8 @@ const FEATURE_FIELDS: Array<{ key: keyof PlanConfigInput & string; label: string
   { key: "recurringInvoices", label: "Recurring invoices" },
   { key: "teamCollaboration", label: "Team collaboration" },
   { key: "multiUser", label: "Multi-user access" },
+  { key: "customIntegrations", label: "Custom integrations" },
+  { key: "slaGuarantee", label: "SLA guarantee" },
 ];
 
 const ANALYTICS_LEVEL_OPTIONS: Array<{ value: PlanConfigInput["analyticsLevel"]; label: string }> = [
@@ -43,6 +44,12 @@ const API_ACCESS_LEVEL_OPTIONS: Array<{ value: PlanConfigInput["apiAccessLevel"]
   { value: "ADVANCED", label: "Advanced" },
 ];
 
+const SUPPORT_LEVEL_OPTIONS: Array<{ value: PlanConfigInput["supportLevel"]; label: string }> = [
+  { value: "STANDARD", label: "Standard" },
+  { value: "PRIORITY", label: "Priority" },
+  { value: "DEDICATED", label: "Dedicated" },
+];
+
 function toFormState(config: PlanConfigData) {
   return {
     price: config.price === null ? "" : String(config.price),
@@ -55,8 +62,10 @@ function toFormState(config: PlanConfigData) {
     teamCollaboration: config.teamCollaboration,
     apiAccessLevel: config.apiAccessLevel,
     multiUser: config.multiUser,
+    customIntegrations: config.customIntegrations,
+    supportLevel: config.supportLevel,
+    slaGuarantee: config.slaGuarantee,
     description: config.description,
-    extraFeatures: config.extraFeatures.join("\n"),
     popular: config.popular,
   };
 }
@@ -78,10 +87,6 @@ export function AdminPlanConfigForm({
     const invoiceLimit = form.invoiceLimit.trim() === "" ? null : Number(form.invoiceLimit);
     const emailLimit = form.emailLimit.trim() === "" ? null : Number(form.emailLimit);
     const clientLimit = form.clientLimit.trim() === "" ? null : Number(form.clientLimit);
-    const extraFeatures = form.extraFeatures
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
 
     if (price !== null && (Number.isNaN(price) || price < 0)) {
       toast.error("Price must be a non-negative number, or blank for custom pricing.");
@@ -113,8 +118,10 @@ export function AdminPlanConfigForm({
           teamCollaboration: form.teamCollaboration,
           apiAccessLevel: form.apiAccessLevel,
           multiUser: form.multiUser,
+          customIntegrations: form.customIntegrations,
+          supportLevel: form.supportLevel,
+          slaGuarantee: form.slaGuarantee,
           description: form.description,
-          extraFeatures,
           popular: form.popular,
         });
         toast.success(`${name} plan updated.`);
@@ -179,7 +186,7 @@ export function AdminPlanConfigForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor={`${plan}-analytics`}>Reports & analytics</Label>
             <Select
@@ -240,6 +247,26 @@ export function AdminPlanConfigForm({
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`${plan}-support`}>Support</Label>
+            <Select
+              value={form.supportLevel}
+              onValueChange={(value) =>
+                setForm((f) => ({ ...f, supportLevel: value as typeof f.supportLevel }))
+              }
+            >
+              <SelectTrigger id={`${plan}-support`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORT_LEVEL_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="space-y-2.5">
@@ -270,21 +297,6 @@ export function AdminPlanConfigForm({
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor={`${plan}-features`}>Additional features (one per line)</Label>
-            <Textarea
-              id={`${plan}-features`}
-              rows={5}
-              placeholder={"Client management\nPriority support\n..."}
-              value={form.extraFeatures}
-              onChange={(e) => setForm((f) => ({ ...f, extraFeatures: e.target.value }))}
-            />
-            <p className="text-xs text-muted-foreground">
-              Shown below the invoice/email limits and the toggles above,
-              which are always listed automatically.
-            </p>
           </div>
 
           <div className="flex items-center justify-between">

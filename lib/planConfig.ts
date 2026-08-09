@@ -26,8 +26,10 @@ async function fetchPlanConfigs(): Promise<Record<PlanType, PlanConfigData>> {
           teamCollaboration: row.teamCollaboration,
           apiAccessLevel: row.apiAccessLevel,
           multiUser: row.multiUser,
+          customIntegrations: row.customIntegrations,
+          supportLevel: row.supportLevel,
+          slaGuarantee: row.slaGuarantee,
           description: row.description,
-          extraFeatures: row.extraFeatures,
           popular: row.popular,
         }
       : DEFAULT_PLAN_CONFIG[plan];

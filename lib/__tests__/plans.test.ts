@@ -97,6 +97,22 @@ describe("DEFAULT_PLAN_CONFIG features", () => {
     expect(DEFAULT_PLAN_CONFIG.PRO.clientLimit).toBeGreaterThan(DEFAULT_PLAN_CONFIG.STARTER.clientLimit!);
     expect(DEFAULT_PLAN_CONFIG.BUSINESS.clientLimit).toBeNull();
   });
+
+  it("support unlocks at STARTER (Priority) and reaches Dedicated at BUSINESS", () => {
+    expect(DEFAULT_PLAN_CONFIG.FREE.supportLevel).toBe("STANDARD");
+    expect(DEFAULT_PLAN_CONFIG.STARTER.supportLevel).toBe("PRIORITY");
+    expect(DEFAULT_PLAN_CONFIG.PRO.supportLevel).toBe("PRIORITY");
+    expect(DEFAULT_PLAN_CONFIG.BUSINESS.supportLevel).toBe("DEDICATED");
+  });
+
+  it("customIntegrations and slaGuarantee are exclusive to BUSINESS", () => {
+    for (const plan of ["FREE", "STARTER", "PRO"] as PlanType[]) {
+      expect(DEFAULT_PLAN_CONFIG[plan].customIntegrations).toBe(false);
+      expect(DEFAULT_PLAN_CONFIG[plan].slaGuarantee).toBe(false);
+    }
+    expect(DEFAULT_PLAN_CONFIG.BUSINESS.customIntegrations).toBe(true);
+    expect(DEFAULT_PLAN_CONFIG.BUSINESS.slaGuarantee).toBe(true);
+  });
 });
 
 describe("PLAN_ORDER", () => {

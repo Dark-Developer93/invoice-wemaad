@@ -12,6 +12,7 @@ export const PLAN_NAMES: Record<PlanType, string> = {
 export type AnalyticsLevel = "NONE" | "BASIC" | "ADVANCED";
 export type BrandingLevel = "SHOWN" | "MINIMAL" | "HIDDEN";
 export type ApiAccessLevel = "NONE" | "BASIC" | "ADVANCED";
+export type SupportLevel = "STANDARD" | "PRIORITY" | "DEDICATED";
 
 export interface PlanConfigData {
   price: number | null;
@@ -24,10 +25,12 @@ export interface PlanConfigData {
   teamCollaboration: boolean;
   apiAccessLevel: ApiAccessLevel;
   multiUser: boolean;
+  customIntegrations: boolean;
+  supportLevel: SupportLevel;
+  slaGuarantee: boolean;
   // Public marketing copy — see the PlanConfig model comment in
-  // schema.prisma for why these are separate from the fields above.
+  // schema.prisma for why this is separate from the fields above.
   description: string;
-  extraFeatures: string[];
   popular: boolean;
 }
 
@@ -47,13 +50,10 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     teamCollaboration: false,
     apiAccessLevel: "NONE",
     multiUser: false,
+    customIntegrations: false,
+    supportLevel: "STANDARD",
+    slaGuarantee: false,
     description: "Perfect for freelancers just starting out",
-    extraFeatures: [
-      "Client management",
-      "PDF generation & secure sharing",
-      "Automated invoice emails",
-      "Basic invoice templates",
-    ],
     popular: false,
   },
   STARTER: {
@@ -67,8 +67,10 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     teamCollaboration: false,
     apiAccessLevel: "NONE",
     multiUser: false,
+    customIntegrations: false,
+    supportLevel: "PRIORITY",
+    slaGuarantee: false,
     description: "Great for growing businesses",
-    extraFeatures: ["Priority email support"],
     popular: false,
   },
   PRO: {
@@ -82,8 +84,10 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     teamCollaboration: true,
     apiAccessLevel: "BASIC",
     multiUser: false,
+    customIntegrations: false,
+    supportLevel: "PRIORITY",
+    slaGuarantee: false,
     description: "For established businesses",
-    extraFeatures: ["Priority support"],
     popular: true,
   },
   BUSINESS: {
@@ -97,8 +101,10 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     teamCollaboration: true,
     apiAccessLevel: "ADVANCED",
     multiUser: true,
+    customIntegrations: true,
+    supportLevel: "DEDICATED",
+    slaGuarantee: true,
     description: "For large organizations",
-    extraFeatures: ["Custom integrations", "Dedicated support", "SLA guarantee"],
     popular: false,
   },
 };

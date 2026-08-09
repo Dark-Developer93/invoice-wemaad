@@ -90,6 +90,10 @@ async function BillingContent({ userId }: { userId: string }) {
   if (currentFeatures.apiAccessLevel === "NONE") lockedFeatures.push("API access");
   if (currentFeatures.apiAccessLevel === "BASIC") lockedFeatures.push("Advanced API access");
   if (!currentFeatures.multiUser) lockedFeatures.push("Multi-user access");
+  if (currentFeatures.supportLevel === "STANDARD") lockedFeatures.push("Priority support");
+  if (currentFeatures.supportLevel === "PRIORITY") lockedFeatures.push("Dedicated support");
+  if (!currentFeatures.customIntegrations) lockedFeatures.push("Custom integrations");
+  if (!currentFeatures.slaGuarantee) lockedFeatures.push("SLA guarantee");
 
   return (
     <>

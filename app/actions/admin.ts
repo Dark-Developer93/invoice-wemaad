@@ -279,8 +279,6 @@ export async function adminGetPlanConfigs() {
 const MAX_LIMIT_VALUE = 1_000_000;
 const MAX_PRICE_VALUE = 100_000;
 const MAX_DESCRIPTION_LENGTH = 200;
-const MAX_FEATURE_LENGTH = 200;
-const MAX_FEATURES_COUNT = 20;
 
 const planConfigSchema = z.object({
   price: z.coerce.number().int().min(0).max(MAX_PRICE_VALUE).nullable(),
@@ -293,8 +291,10 @@ const planConfigSchema = z.object({
   teamCollaboration: z.boolean(),
   apiAccessLevel: z.enum(["NONE", "BASIC", "ADVANCED"]),
   multiUser: z.boolean(),
+  customIntegrations: z.boolean(),
+  supportLevel: z.enum(["STANDARD", "PRIORITY", "DEDICATED"]),
+  slaGuarantee: z.boolean(),
   description: z.string().max(MAX_DESCRIPTION_LENGTH),
-  extraFeatures: z.array(z.string().min(1).max(MAX_FEATURE_LENGTH)).max(MAX_FEATURES_COUNT),
   popular: z.boolean(),
 });
 
