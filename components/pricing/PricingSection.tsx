@@ -46,6 +46,48 @@ const BRANDING_LABEL: Record<MarketingPlanData["brandingLevel"], string> = {
   HIDDEN: "Removed",
 };
 
+// Ascending order for diffing a plan's tier against the one below it —
+// each array's index doubles as its "how much better" rank.
+const ANALYTICS_ORDER: MarketingPlanData["analyticsLevel"][] = ["NONE", "BASIC", "ADVANCED"];
+const BRANDING_ORDER: MarketingPlanData["brandingLevel"][] = ["SHOWN", "MINIMAL", "HIDDEN"];
+
+// Only the features a plan adds on top of the one directly below it in
+// PLAN_ORDER — each card already says "Everything in [lower plan]" via
+// extraFeatures, so repeating every flag a lower tier already has just
+// makes the list longer without adding information. The lowest plan (no
+// `previous`) gets nothing here, since it has nothing to diff against and
+// no "Everything in..." line to build on.
+function getDynamicFeatures(
+  plan: MarketingPlanData,
+  previous: MarketingPlanData | undefined
+): string[] {
+  const features: string[] = [];
+
+  if (plan.recurringInvoices && !previous?.recurringInvoices) {
+    features.push("Recurring invoices automation");
+  }
+
+  const analyticsRank = ANALYTICS_ORDER.indexOf(plan.analyticsLevel);
+  const prevAnalyticsRank = previous ? ANALYTICS_ORDER.indexOf(previous.analyticsLevel) : -1;
+  if (analyticsRank > prevAnalyticsRank) {
+    if (plan.analyticsLevel === "BASIC") features.push("Basic reports (revenue & status totals)");
+    if (plan.analyticsLevel === "ADVANCED") features.push("Advanced analytics (trend charts & CSV export)");
+  }
+
+  const brandingRank = BRANDING_ORDER.indexOf(plan.brandingLevel);
+  const prevBrandingRank = previous ? BRANDING_ORDER.indexOf(previous.brandingLevel) : -1;
+  if (brandingRank > prevBrandingRank) {
+    if (plan.brandingLevel === "MINIMAL") features.push("Minimal branding (small credit, no link)");
+    if (plan.brandingLevel === "HIDDEN") features.push("No branding — fully white-labeled");
+  }
+
+  if (plan.teamCollaboration && !previous?.teamCollaboration) features.push("Team collaboration");
+  if (plan.apiAccess && !previous?.apiAccess) features.push("API access");
+  if (plan.multiUser && !previous?.multiUser) features.push("Multi-user access");
+
+  return features;
+}
+
 // Rows that don't vary by plan — included with every tier, so they don't
 // need a PlanConfig field of their own.
 const BASELINE_FEATURES = [
@@ -128,7 +170,7 @@ const PricingSection = ({
       </Tabs>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mt-8 w-full max-w-7xl mx-auto">
-        {plans.map((plan) => {
+        {plans.map((plan, index) => {
           const isExclusive = plan.price === null;
           // 2 months free on the annual plan (10x monthly instead of 12x).
           const yearlyPrice = plan.price !== null ? plan.price * 10 : null;
@@ -139,17 +181,9 @@ const PricingSection = ({
           // toggle in /admin/plans can never update one surface without
           // the other. extraFeatures stays reserved for pure marketing
           // copy that has no boolean/enum behind it (e.g. "Priority
-          // support", "SLA guarantee").
-          const dynamicFeatures = [
-            plan.recurringInvoices && "Recurring invoices automation",
-            plan.analyticsLevel === "BASIC" && "Basic reports (revenue & status totals)",
-            plan.analyticsLevel === "ADVANCED" && "Advanced analytics (trend charts & CSV export)",
-            plan.brandingLevel === "MINIMAL" && "Minimal branding (small credit, no link)",
-            plan.brandingLevel === "HIDDEN" && "No branding — fully white-labeled",
-            plan.teamCollaboration && "Team collaboration",
-            plan.apiAccess && "API access",
-            plan.multiUser && "Multi-user access",
-          ].filter((f): f is string => Boolean(f));
+          // support", "SLA guarantee"). Only what's new versus the plan
+          // below — see getDynamicFeatures.
+          const dynamicFeatures = getDynamicFeatures(plan, plans[index - 1]);
 
           const cardFeatures = [
             `${plan.invoiceLimit ?? "Unlimited"} invoices per month`,
