@@ -49,7 +49,7 @@ export async function dispatchInvoiceEmail({
         invoiceDueDate: formatDate.long(invoiceDueDate),
         invoiceAmount: formatCurrency({ amount: total, currency: currency as Currency }),
         invoiceLink: getInvoiceUrl(invoiceId),
-        showBranding: !planConfig.customBranding,
+        brandingLevel: planConfig.brandingLevel,
       },
     });
     await logEmailSent(userId, logType ?? templateName, invoiceId);

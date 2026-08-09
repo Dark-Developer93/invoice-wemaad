@@ -36,7 +36,7 @@ interface InvoiceEmailTemplateProps {
   invoiceDueDate: string;
   invoiceAmount: string;
   invoiceLink: string;
-  showBranding: boolean;
+  brandingLevel: "SHOWN" | "MINIMAL" | "HIDDEN";
 }
 
 export function InvoiceEmailTemplate({
@@ -53,7 +53,7 @@ export function InvoiceEmailTemplate({
   invoiceDueDate,
   invoiceAmount,
   invoiceLink,
-  showBranding,
+  brandingLevel,
 }: InvoiceEmailTemplateProps) {
 
   const noticeStyle = {
@@ -110,7 +110,7 @@ export function InvoiceEmailTemplate({
               </Link>
             </div>
 
-            <EmailFooter showBranding={showBranding} />
+            <EmailFooter brandingLevel={brandingLevel} />
           </div>
         </Container>
       </Body>

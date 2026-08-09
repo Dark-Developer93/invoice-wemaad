@@ -25,13 +25,26 @@ export interface MarketingPlanData {
   popular: boolean;
   invoiceLimit: number | null;
   emailLimit: number | null;
+  clientLimit: number | null;
   recurringInvoices: boolean;
-  analytics: boolean;
-  customBranding: boolean;
+  analyticsLevel: "NONE" | "BASIC" | "ADVANCED";
+  brandingLevel: "SHOWN" | "MINIMAL" | "HIDDEN";
   teamCollaboration: boolean;
   apiAccess: boolean;
   multiUser: boolean;
 }
+
+const ANALYTICS_LABEL: Record<MarketingPlanData["analyticsLevel"], string> = {
+  NONE: "—",
+  BASIC: "Basic (totals)",
+  ADVANCED: "Advanced (charts + export)",
+};
+
+const BRANDING_LABEL: Record<MarketingPlanData["brandingLevel"], string> = {
+  SHOWN: "Shown",
+  MINIMAL: "Minimal",
+  HIDDEN: "Removed",
+};
 
 // Rows that don't vary by plan — included with every tier, so they don't
 // need a PlanConfig field of their own.
@@ -49,10 +62,11 @@ interface CompareRow {
 const COMPARE_ROWS: CompareRow[] = [
   { label: "Monthly invoices", value: (p) => p.invoiceLimit?.toString() ?? "Unlimited" },
   { label: "Monthly emails", value: (p) => p.emailLimit?.toString() ?? "Unlimited" },
+  { label: "Clients", value: (p) => p.clientLimit?.toString() ?? "Unlimited" },
   ...BASELINE_FEATURES.map((label): CompareRow => ({ label, value: () => true })),
   { label: "Recurring invoices", value: (p) => p.recurringInvoices },
-  { label: "Analytics & reports", value: (p) => p.analytics },
-  { label: "Custom branding", value: (p) => p.customBranding },
+  { label: "Reports & analytics", value: (p) => ANALYTICS_LABEL[p.analyticsLevel] },
+  { label: "Our branding on your invoices", value: (p) => BRANDING_LABEL[p.brandingLevel] },
   { label: "Team collaboration", value: (p) => p.teamCollaboration },
   { label: "API access", value: (p) => p.apiAccess },
   { label: "Multi-user access", value: (p) => p.multiUser },
@@ -123,6 +137,7 @@ const PricingSection = ({
           const cardFeatures = [
             `${plan.invoiceLimit ?? "Unlimited"} invoices per month`,
             `${plan.emailLimit ?? "Unlimited"} emails per month`,
+            `${plan.clientLimit ?? "Unlimited"} clients`,
             ...plan.extraFeatures,
           ];
 

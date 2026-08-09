@@ -305,21 +305,34 @@ model CronRun {
   @@index([jobName, startedAt])
 }
 
+enum AnalyticsLevel {
+  NONE // no access to /dashboard/reports
+  BASIC // totals only: revenue/paid/pending numbers, no trend charts, no export
+  ADVANCED // full reports: trend charts, top-clients breakdown, CSV export
+}
+
+enum BrandingLevel {
+  SHOWN // full "Sent with InvoiceWeMaAd" CTA + link on invoices/emails
+  MINIMAL // small unlinked "Powered by InvoiceWeMaAd" text, no CTA/link
+  HIDDEN // fully white-labeled, no branding at all
+}
+
 // Admin-editable pricing/limits/features per plan tier. Seeded with the
 // values that used to be hardcoded in lib/plans.ts so editing this in the
 // admin panel is the only way values change going forward.
 model PlanConfig {
-  id                String   @id @default(cuid())
-  plan              PlanType @unique
+  id                String         @id @default(cuid())
+  plan              PlanType       @unique
   price             Int? // whole dollars/month; null = custom pricing (e.g. Business)
   invoiceLimit      Int? // per calendar month; null = unlimited
   emailLimit        Int? // per calendar month; null = unlimited
-  recurringInvoices Boolean  @default(false)
-  analytics         Boolean  @default(false)
-  customBranding    Boolean  @default(false)
-  teamCollaboration Boolean  @default(false)
-  apiAccess         Boolean  @default(false)
-  multiUser         Boolean  @default(false)
+  clientLimit       Int? // total (not monthly); null = unlimited
+  recurringInvoices Boolean        @default(false)
+  analyticsLevel    AnalyticsLevel @default(NONE)
+  brandingLevel     BrandingLevel  @default(SHOWN)
+  teamCollaboration Boolean        @default(false)
+  apiAccess         Boolean        @default(false)
+  multiUser         Boolean        @default(false)
 
   // Public marketing copy (homepage pricing section) — the invoice/email
   // limit and boolean feature rows above are the single source of truth

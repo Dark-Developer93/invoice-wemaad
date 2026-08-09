@@ -9,16 +9,33 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { adminUpdatePlanConfig, type PlanConfigInput } from "@/app/actions/admin";
 import type { PlanConfigData, PlanType } from "@/lib/plans";
 
 const FEATURE_FIELDS: Array<{ key: keyof PlanConfigInput & string; label: string }> = [
   { key: "recurringInvoices", label: "Recurring invoices" },
-  { key: "analytics", label: "Analytics & reports" },
-  { key: "customBranding", label: "Custom branding" },
   { key: "teamCollaboration", label: "Team collaboration" },
   { key: "apiAccess", label: "API access" },
   { key: "multiUser", label: "Multi-user access" },
+];
+
+const ANALYTICS_LEVEL_OPTIONS: Array<{ value: PlanConfigInput["analyticsLevel"]; label: string }> = [
+  { value: "NONE", label: "No access" },
+  { value: "BASIC", label: "Basic — totals only" },
+  { value: "ADVANCED", label: "Advanced — charts + export" },
+];
+
+const BRANDING_LEVEL_OPTIONS: Array<{ value: PlanConfigInput["brandingLevel"]; label: string }> = [
+  { value: "SHOWN", label: "Shown — full CTA + link" },
+  { value: "MINIMAL", label: "Minimal — small credit, no link" },
+  { value: "HIDDEN", label: "Hidden — fully white-labeled" },
 ];
 
 function toFormState(config: PlanConfigData) {
@@ -26,9 +43,10 @@ function toFormState(config: PlanConfigData) {
     price: config.price === null ? "" : String(config.price),
     invoiceLimit: config.invoiceLimit === null ? "" : String(config.invoiceLimit),
     emailLimit: config.emailLimit === null ? "" : String(config.emailLimit),
+    clientLimit: config.clientLimit === null ? "" : String(config.clientLimit),
     recurringInvoices: config.recurringInvoices,
-    analytics: config.analytics,
-    customBranding: config.customBranding,
+    analyticsLevel: config.analyticsLevel,
+    brandingLevel: config.brandingLevel,
     teamCollaboration: config.teamCollaboration,
     apiAccess: config.apiAccess,
     multiUser: config.multiUser,
@@ -54,6 +72,7 @@ export function AdminPlanConfigForm({
     const price = form.price.trim() === "" ? null : Number(form.price);
     const invoiceLimit = form.invoiceLimit.trim() === "" ? null : Number(form.invoiceLimit);
     const emailLimit = form.emailLimit.trim() === "" ? null : Number(form.emailLimit);
+    const clientLimit = form.clientLimit.trim() === "" ? null : Number(form.clientLimit);
     const extraFeatures = form.extraFeatures
       .split("\n")
       .map((line) => line.trim())
@@ -71,6 +90,10 @@ export function AdminPlanConfigForm({
       toast.error("Email limit must be a positive number, or blank for unlimited.");
       return;
     }
+    if (clientLimit !== null && (Number.isNaN(clientLimit) || clientLimit < 1)) {
+      toast.error("Client limit must be a positive number, or blank for unlimited.");
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -78,9 +101,10 @@ export function AdminPlanConfigForm({
           price,
           invoiceLimit,
           emailLimit,
+          clientLimit,
           recurringInvoices: form.recurringInvoices,
-          analytics: form.analytics,
-          customBranding: form.customBranding,
+          analyticsLevel: form.analyticsLevel,
+          brandingLevel: form.brandingLevel,
           teamCollaboration: form.teamCollaboration,
           apiAccess: form.apiAccess,
           multiUser: form.multiUser,
@@ -103,7 +127,7 @@ export function AdminPlanConfigForm({
         <CardDescription>Leave price/limits blank for custom pricing or unlimited.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor={`${plan}-price`}>Price ($/mo)</Label>
             <Input
@@ -136,6 +160,60 @@ export function AdminPlanConfigForm({
               value={form.emailLimit}
               onChange={(e) => setForm((f) => ({ ...f, emailLimit: e.target.value }))}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`${plan}-clients`}>Clients (total)</Label>
+            <Input
+              id={`${plan}-clients`}
+              type="number"
+              min={1}
+              placeholder="Unlimited"
+              value={form.clientLimit}
+              onChange={(e) => setForm((f) => ({ ...f, clientLimit: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor={`${plan}-analytics`}>Reports & analytics</Label>
+            <Select
+              value={form.analyticsLevel}
+              onValueChange={(value) =>
+                setForm((f) => ({ ...f, analyticsLevel: value as typeof f.analyticsLevel }))
+              }
+            >
+              <SelectTrigger id={`${plan}-analytics`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ANALYTICS_LEVEL_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`${plan}-branding`}>Invoice branding</Label>
+            <Select
+              value={form.brandingLevel}
+              onValueChange={(value) =>
+                setForm((f) => ({ ...f, brandingLevel: value as typeof f.brandingLevel }))
+              }
+            >
+              <SelectTrigger id={`${plan}-branding`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BRANDING_LEVEL_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

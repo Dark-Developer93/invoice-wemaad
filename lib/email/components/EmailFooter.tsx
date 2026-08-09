@@ -19,17 +19,29 @@ const footerLink = {
   textDecoration: "underline",
 };
 
-// Free/Starter plans (customBranding: false) keep this — it's the growth
-// loop: every invoice a free user sends is a small ad shown to their
-// client, who is the actual target market. Pro/Business (customBranding:
-// true) is a paid white-label feature, so it's removed entirely rather
-// than downgraded to a smaller mention.
+// Three tiers, from PlanConfig.brandingLevel. SHOWN (Free/Starter) is the
+// growth loop: every invoice a free user sends is a small ad shown to their
+// client, who is the actual target market. MINIMAL (Pro) keeps a small
+// unlinked credit — no CTA, no link out. HIDDEN (Business) is a paid
+// white-label feature, removed entirely.
 //
 // Only for client-facing invoice emails (new/updated/reminder) — the
 // recipient here is a prospective customer's client, which is exactly who
 // this CTA targets.
-export function EmailFooter({ showBranding }: { showBranding: boolean }) {
-  if (!showBranding) return null;
+export function EmailFooter({
+  brandingLevel,
+}: {
+  brandingLevel: "SHOWN" | "MINIMAL" | "HIDDEN";
+}) {
+  if (brandingLevel === "HIDDEN") return null;
+
+  if (brandingLevel === "MINIMAL") {
+    return (
+      <div style={footer}>
+        <Text style={footerText}>Powered by InvoiceWeMaAd</Text>
+      </div>
+    );
+  }
 
   return (
     <div style={footer}>

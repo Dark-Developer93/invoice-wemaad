@@ -12,6 +12,7 @@ import { Currency } from "@/types";
 import { InvoiceWithRelations } from "@/app/actions/generate-invoice";
 import { calculateInvoiceTotal, parseInvoiceItems } from "@/lib/invoiceItems";
 import { getBaseUrl } from "@/lib/urls";
+import { BrandingLevel } from "@/lib/plans";
 
 // Create styles
 const styles = StyleSheet.create({
@@ -232,10 +233,10 @@ const styles = StyleSheet.create({
 
 export function InvoicePDF({
   invoice,
-  showBranding,
+  brandingLevel,
 }: {
   invoice: InvoiceWithRelations;
-  showBranding: boolean;
+  brandingLevel: BrandingLevel;
 }) {
   const invoiceDate = new Intl.DateTimeFormat("en-US", {
     dateStyle: "long",
@@ -443,11 +444,11 @@ export function InvoicePDF({
           )}
         </View>
 
-        {/* Footer — Free/Starter plans (customBranding: false) keep this;
-            it's the growth loop, every free invoice is a small ad shown to
-            the recipient, the actual target market. Pro/Business
-            (customBranding: true) get a fully white-labeled PDF instead. */}
-        {showBranding && (
+        {/* Footer — three tiers. SHOWN (Free/Starter): full growth-loop CTA,
+            every free invoice is a small ad shown to the recipient, the
+            actual target market. MINIMAL (Pro): a small unlinked credit,
+            no CTA/link. HIDDEN (Business): nothing, fully white-labeled. */}
+        {brandingLevel === "SHOWN" && (
           <View style={styles.footer}>
             <Text style={styles.footerText}>
               Sent with{" "}
@@ -459,6 +460,11 @@ export function InvoicePDF({
                 {getBaseUrl().replace(/^https?:\/\//, "")}
               </Link>
             </Text>
+          </View>
+        )}
+        {brandingLevel === "MINIMAL" && (
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Powered by InvoiceWeMaAd</Text>
           </View>
         )}
       </Page>

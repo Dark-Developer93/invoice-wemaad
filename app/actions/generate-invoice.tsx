@@ -97,14 +97,9 @@ export async function generateInvoicePDF(
       throw new Error("Invoice not found");
     }
 
-    // Free/Starter plans (customBranding: false) show a "Sent via
-    // InvoiceWeMaAd" footer with a link back to the homepage — every free
-    // invoice doubles as a small ad shown to the actual target market
-    // (the invoice's recipient). Pro/Business get a fully white-labeled PDF.
     const planConfig = await getPlanConfig((data.User?.plan as PlanType) ?? "FREE");
-    const showBranding = !planConfig.customBranding;
 
-    const pdfDoc = await pdf(<InvoicePDF invoice={data} showBranding={showBranding} />);
+    const pdfDoc = await pdf(<InvoicePDF invoice={data} brandingLevel={planConfig.brandingLevel} />);
     const blob = await pdfDoc.toBlob();
     const arrayBuffer = await blob.arrayBuffer();
     return arrayBuffer;

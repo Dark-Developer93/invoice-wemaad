@@ -9,13 +9,17 @@ export const PLAN_NAMES: Record<PlanType, string> = {
   BUSINESS: "Business",
 };
 
+export type AnalyticsLevel = "NONE" | "BASIC" | "ADVANCED";
+export type BrandingLevel = "SHOWN" | "MINIMAL" | "HIDDEN";
+
 export interface PlanConfigData {
   price: number | null;
   invoiceLimit: number | null;
   emailLimit: number | null;
+  clientLimit: number | null;
   recurringInvoices: boolean;
-  analytics: boolean;
-  customBranding: boolean;
+  analyticsLevel: AnalyticsLevel;
+  brandingLevel: BrandingLevel;
   teamCollaboration: boolean;
   apiAccess: boolean;
   multiUser: boolean;
@@ -35,9 +39,10 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     price: 0,
     invoiceLimit: 5,
     emailLimit: 20,
+    clientLimit: 3,
     recurringInvoices: false,
-    analytics: false,
-    customBranding: false,
+    analyticsLevel: "NONE",
+    brandingLevel: "SHOWN",
     teamCollaboration: false,
     apiAccess: false,
     multiUser: false,
@@ -54,9 +59,10 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     price: 9,
     invoiceLimit: 25,
     emailLimit: 50,
+    clientLimit: 15,
     recurringInvoices: true,
-    analytics: true,
-    customBranding: false,
+    analyticsLevel: "BASIC",
+    brandingLevel: "SHOWN",
     teamCollaboration: false,
     apiAccess: false,
     multiUser: false,
@@ -64,7 +70,7 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     extraFeatures: [
       "Everything in Free",
       "Recurring invoices automation",
-      "Financial reports & analytics",
+      "Basic reports (revenue & status totals)",
       "Priority email support",
     ],
     popular: false,
@@ -73,17 +79,18 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     price: 29,
     invoiceLimit: 100,
     emailLimit: 500,
+    clientLimit: 50,
     recurringInvoices: true,
-    analytics: true,
-    customBranding: true,
+    analyticsLevel: "ADVANCED",
+    brandingLevel: "MINIMAL",
     teamCollaboration: true,
     apiAccess: true,
     multiUser: false,
     description: "For established businesses",
     extraFeatures: [
       "Everything in Starter",
-      "Advanced analytics",
-      "Custom branding",
+      "Advanced analytics (trend charts & CSV export)",
+      "Minimal branding (small credit, no link)",
       "Team collaboration",
       "Basic API access",
       "Priority support",
@@ -94,9 +101,10 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     price: null,
     invoiceLimit: null,
     emailLimit: null,
+    clientLimit: null,
     recurringInvoices: true,
-    analytics: true,
-    customBranding: true,
+    analyticsLevel: "ADVANCED",
+    brandingLevel: "HIDDEN",
     teamCollaboration: true,
     apiAccess: true,
     multiUser: true,
@@ -105,7 +113,7 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
       "Everything in Pro",
       "Multi-user access",
       "Advanced API access",
-      "Full custom branding",
+      "No branding — fully white-labeled",
       "Custom integrations",
       "Dedicated support",
       "SLA guarantee",
