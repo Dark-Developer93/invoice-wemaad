@@ -134,10 +134,28 @@ const PricingSection = ({
           const yearlyPrice = plan.price !== null ? plan.price * 10 : null;
           const savings =
             plan.price !== null && plan.price > 0 ? plan.price * 12 - (yearlyPrice ?? 0) : 0;
+          // Derived straight from the same live PlanConfig fields the
+          // Compare Plans table reads — not from extraFeatures — so a
+          // toggle in /admin/plans can never update one surface without
+          // the other. extraFeatures stays reserved for pure marketing
+          // copy that has no boolean/enum behind it (e.g. "Priority
+          // support", "SLA guarantee").
+          const dynamicFeatures = [
+            plan.recurringInvoices && "Recurring invoices automation",
+            plan.analyticsLevel === "BASIC" && "Basic reports (revenue & status totals)",
+            plan.analyticsLevel === "ADVANCED" && "Advanced analytics (trend charts & CSV export)",
+            plan.brandingLevel === "MINIMAL" && "Minimal branding (small credit, no link)",
+            plan.brandingLevel === "HIDDEN" && "No branding — fully white-labeled",
+            plan.teamCollaboration && "Team collaboration",
+            plan.apiAccess && "API access",
+            plan.multiUser && "Multi-user access",
+          ].filter((f): f is string => Boolean(f));
+
           const cardFeatures = [
             `${plan.invoiceLimit ?? "Unlimited"} invoices per month`,
             `${plan.emailLimit ?? "Unlimited"} emails per month`,
             `${plan.clientLimit ?? "Unlimited"} clients`,
+            ...dynamicFeatures,
             ...plan.extraFeatures,
           ];
 

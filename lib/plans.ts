@@ -67,12 +67,7 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     apiAccess: false,
     multiUser: false,
     description: "Great for growing businesses",
-    extraFeatures: [
-      "Everything in Free",
-      "Recurring invoices automation",
-      "Basic reports (revenue & status totals)",
-      "Priority email support",
-    ],
+    extraFeatures: ["Everything in Free", "Priority email support"],
     popular: false,
   },
   PRO: {
@@ -87,14 +82,7 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     apiAccess: true,
     multiUser: false,
     description: "For established businesses",
-    extraFeatures: [
-      "Everything in Starter",
-      "Advanced analytics (trend charts & CSV export)",
-      "Minimal branding (small credit, no link)",
-      "Team collaboration",
-      "Basic API access",
-      "Priority support",
-    ],
+    extraFeatures: ["Everything in Starter", "Priority support"],
     popular: true,
   },
   BUSINESS: {
@@ -109,15 +97,7 @@ export const DEFAULT_PLAN_CONFIG: Record<PlanType, PlanConfigData> = {
     apiAccess: true,
     multiUser: true,
     description: "For large organizations",
-    extraFeatures: [
-      "Everything in Pro",
-      "Multi-user access",
-      "Advanced API access",
-      "No branding — fully white-labeled",
-      "Custom integrations",
-      "Dedicated support",
-      "SLA guarantee",
-    ],
+    extraFeatures: ["Everything in Pro", "Custom integrations", "Dedicated support", "SLA guarantee"],
     popular: false,
   },
 };
