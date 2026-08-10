@@ -1,0 +1,43 @@
+---
+description: Coding patterns — Server Actions, forms, DB, email, auth
+alwaysApply: true
+---
+
+# Patterns
+
+## Server Actions
+- File: `app/actions/<domain>.ts` · directive: `"use server"` · return: `SubmissionResult<string[]>`
+- First line: auth guard — `getRequiredUserId()` / `requireUser()` / `requireAdmin()` (except `generate-invoice.tsx` — see `app/actions/AGENTS.md`)
+- Parse: `parseWithZod(formData, { schema })` from `@conform-to/zod`
+- Always include `userId` in DB `where` clauses
+- Delete/redirect actions: return `redirect("/path")` — no `SubmissionResult`
+- Admin mutations: call `revalidatePath()` after DB write
+- Full template → see `@add-server-action` skill
+
+## Form → Action flow
+- `useForm` + `zodResolver` → `toFormData(data)` → call action → `toast` + `router.refresh()`
+- Error toast: `toast.error(Object.values(result.error ?? {}).flat()[0] ?? "Something went wrong")`
+- Full template → see `@add-component` skill
+
+## Prisma
+- Scope all queries: `where: { id, userId }` — ownership check in one query
+- Prefer `select` over `include` when only a subset of fields needed
+- Multi-step mutations: `prisma.$transaction(async (tx) => { ... })`
+- Use `findUniqueOrThrow` when record must exist
+
+## Plan guards
+- Feature gate: `if (!PLAN_FEATURES[usage.plan].feature) return <UpgradePrompt />`
+- Invoice limit: `if (usage.invoiceLimit !== null && usage.invoicesThisMonth >= usage.invoiceLimit)`
+- Always call `getUserUsage(userId)` first — never query `EmailLog` or `Invoice` counts directly
+
+## Email
+- Use `dispatchInvoiceEmail()` — handles logging + failure notification
+- Check `isEmailLimitOk(usage)` before calling
+- In actions: fire-and-forget `.catch(() => {})` · only `await` for explicit reminder sends
+
+## REST route handlers (`app/api/`)
+- Use `auth()` from `@/lib/auth` — NOT `requireUser()` (no redirect in route handlers)
+- Return `NextResponse.json({ error }, { status })` on failure
+
+## Arrays via FormData
+- Client: `JSON.stringify(arr)` · Schema: `z.preprocess((v) => JSON.parse(v as string), z.array(...))`
