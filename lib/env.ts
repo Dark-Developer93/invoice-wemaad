@@ -16,6 +16,7 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 function parseEnv(): Env {
+  if (process.env.SKIP_ENV_VALIDATION) return {} as Env;
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
     const missing = result.error.issues
