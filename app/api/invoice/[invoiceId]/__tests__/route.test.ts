@@ -10,28 +10,20 @@ vi.mock("@/lib/env", () => ({
   env: { AUTH_SECRET: "a".repeat(32) },
 }));
 
-vi.mock("@/lib/db", () => ({
-  default: {
-    invoice: { findUnique: vi.fn() },
-  },
-}));
-
-vi.mock("@/app/actions/generate-invoice", () => ({
-  generateInvoicePDF: vi.fn(),
+vi.mock("@/lib/invoicePdf", () => ({
+  loadInvoiceForPdf: vi.fn(),
+  renderInvoicePDF: vi.fn(),
 }));
 
 // ── Imports (after mocks) ─────────────────────────────────────────────────────
 
-import prisma from "@/lib/db";
-import { generateInvoicePDF } from "@/app/actions/generate-invoice";
+import { loadInvoiceForPdf, renderInvoicePDF } from "@/lib/invoicePdf";
 import { GET } from "../route";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const db = prisma as unknown as {
-  invoice: { findUnique: ReturnType<typeof vi.fn> };
-};
-const mockGeneratePDF = vi.mocked(generateInvoicePDF);
+const mockLoadInvoice = vi.mocked(loadInvoiceForPdf);
+const mockRenderPDF = vi.mocked(renderInvoicePDF);
 
 // Must match the literal used in the vi.mock("@/lib/env") factory above.
 const AUTH_SECRET = "a".repeat(32);
@@ -65,8 +57,8 @@ describe("GET /api/invoice/[invoiceId]", () => {
     const res = await callRoute("inv-1");
 
     expect(res.status).toBe(401);
-    expect(db.invoice.findUnique).not.toHaveBeenCalled();
-    expect(mockGeneratePDF).not.toHaveBeenCalled();
+    expect(mockLoadInvoice).not.toHaveBeenCalled();
+    expect(mockRenderPDF).not.toHaveBeenCalled();
   });
 
   it("rejects a tampered token", async () => {
@@ -74,7 +66,7 @@ describe("GET /api/invoice/[invoiceId]", () => {
     const res = await callRoute("inv-1", tampered);
 
     expect(res.status).toBe(401);
-    expect(db.invoice.findUnique).not.toHaveBeenCalled();
+    expect(mockLoadInvoice).not.toHaveBeenCalled();
   });
 
   it("rejects a valid token generated for a different invoice", async () => {
@@ -82,33 +74,36 @@ describe("GET /api/invoice/[invoiceId]", () => {
     const res = await callRoute("inv-1", tokenForOtherInvoice);
 
     expect(res.status).toBe(401);
-    expect(db.invoice.findUnique).not.toHaveBeenCalled();
+    expect(mockLoadInvoice).not.toHaveBeenCalled();
   });
 
   it("returns 404 when the token is valid but the invoice no longer exists", async () => {
-    db.invoice.findUnique.mockResolvedValue(null);
+    mockLoadInvoice.mockResolvedValue(null);
 
     const res = await callRoute("inv-1", tokenFor("inv-1"));
 
     expect(res.status).toBe(404);
-    expect(mockGeneratePDF).not.toHaveBeenCalled();
+    expect(mockRenderPDF).not.toHaveBeenCalled();
   });
 
   it("returns the PDF when the token is valid and the invoice exists", async () => {
-    db.invoice.findUnique.mockResolvedValue({ id: "inv-1", invoiceName: "Invoice-1" });
-    mockGeneratePDF.mockResolvedValue(new ArrayBuffer(8));
+    const invoice = { id: "inv-1", invoiceName: "Invoice-1" } as Awaited<ReturnType<typeof loadInvoiceForPdf>>;
+    mockLoadInvoice.mockResolvedValue(invoice);
+    mockRenderPDF.mockResolvedValue(new ArrayBuffer(8));
 
     const res = await callRoute("inv-1", tokenFor("inv-1"));
 
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("application/pdf");
-    // skipAuthCheck=true: this route is the intentional no-login public share
-    // link, gated on the HMAC token instead of a session.
-    expect(mockGeneratePDF).toHaveBeenCalledWith("inv-1", true);
+    // Not owner-scoped: this route is the intentional no-login public share
+    // link, gated on the HMAC token instead of a session. The row it loaded
+    // is rendered directly (no second lookup).
+    expect(mockLoadInvoice).toHaveBeenCalledWith("inv-1");
+    expect(mockRenderPDF).toHaveBeenCalledWith(invoice);
   });
 
   it("returns 500 and does not leak internals when the DB lookup throws", async () => {
-    db.invoice.findUnique.mockRejectedValue(new Error("connection reset"));
+    mockLoadInvoice.mockRejectedValue(new Error("connection reset"));
 
     const res = await callRoute("inv-1", tokenFor("inv-1"));
     const body = await res.json();

@@ -96,14 +96,15 @@ const {
   callbacks: {
     session: async ({ session, user }) => {
       if (session?.user) {
+        // `user` is the full, fresh User row: the Prisma adapter loads it in
+        // the same query as the session (`include: { user: true }`), on every
+        // request. Re-querying it here only added a second sequential DB
+        // round trip to every authenticated request.
+        const dbUser = user as typeof user & { isAdmin?: boolean; isActive?: boolean };
         session.user.id = user.id;
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { isAdmin: true, isActive: true },
-        });
-        session.user.isAdmin = dbUser?.isAdmin ?? false;
-        // Treat missing user (deleted but session not yet expired) as inactive
-        session.user.isActive = dbUser?.isActive ?? false;
+        session.user.isAdmin = dbUser.isAdmin ?? false;
+        // Defensive: treat anything without an explicit active flag as inactive.
+        session.user.isActive = dbUser.isActive ?? false;
       }
       return session;
     },

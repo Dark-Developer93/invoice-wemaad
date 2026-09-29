@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import ColoredButton from "../ui/ColoredButton";
 import { cn } from "@/lib/utils";
+import { useIsAuthenticated } from "@/lib/hooks/useIsAuthenticated";
 
 export interface MarketingPlanData {
   plan: string;
@@ -58,14 +59,9 @@ const COMPARE_ROWS: CompareRow[] = [
   { label: "Multi-user access", value: (p) => p.multiUser },
 ];
 
-const PricingSection = ({
-  plans,
-  isAuthenticated,
-}: {
-  plans: MarketingPlanData[];
-  isAuthenticated: boolean;
-}) => {
+const PricingSection = ({ plans }: { plans: MarketingPlanData[] }) => {
   const [isYearly, setIsYearly] = useState(false);
+  const isAuthenticated = useIsAuthenticated();
 
   const getButtonConfig = (plan: MarketingPlanData) => {
     if (plan.price === null) {

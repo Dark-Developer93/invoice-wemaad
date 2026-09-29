@@ -15,6 +15,7 @@ import {
   YAxis,
 } from "recharts";
 import { format } from "date-fns";
+import { getCurrencyFormatter } from "@/lib/formatCurrency";
 
 export type ChartType = "line" | "bar" | "pie";
 
@@ -59,7 +60,7 @@ function AmountTooltip({
         <div className="flex flex-col">
           <span className="text-[0.70rem] uppercase text-muted-foreground">Amount</span>
           <span className="font-bold">
-            {new Intl.NumberFormat("en-US", { style: "currency", currency }).format(
+            {getCurrencyFormatter(currency).format(
               payload[0].value
             )}
           </span>
@@ -97,10 +98,7 @@ export function Graph({ data, chartType = "line", currency = "USD" }: GraphProps
                   <div className="rounded-lg border bg-background p-2 shadow-sm text-sm">
                     <p className="font-medium">{payload[0].name}</p>
                     <p>
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency,
-                      }).format(payload[0].value as number)}
+                      {getCurrencyFormatter(currency).format(payload[0].value as number)}
                     </p>
                   </div>
                 );

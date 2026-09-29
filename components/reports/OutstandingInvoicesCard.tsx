@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getCurrencyFormatter } from "@/lib/formatCurrency";
 
 interface OutstandingInvoice {
   id: string;
@@ -51,10 +52,7 @@ export function OutstandingInvoicesCard({ invoices }: OutstandingInvoicesCardPro
             const due = new Date(inv.date);
             due.setDate(due.getDate() + inv.dueDate);
             const isOverdue = due < new Date();
-            const fmt = new Intl.NumberFormat("en-US", {
-              style: "currency",
-              currency: inv.currency,
-            }).format(inv.total);
+            const fmt = getCurrencyFormatter(inv.currency).format(inv.total);
 
             return (
               <li key={inv.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-3">

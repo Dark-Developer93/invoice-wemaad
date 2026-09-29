@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ReactNode } from "react";
 import { unstable_cache } from "next/cache";
 import { cacheTags } from "@/lib/cache";
+import { formatDate } from "@/lib/formatDate";
 
 // Cached until invalidated by revalidateTag(cacheTags.invoices(userId)) in
 // every invoice-mutating action — no time-based staleness.
@@ -29,12 +30,15 @@ async function getData(userId: string) {
           userId: userId,
         },
         include: {
+          // Each row ships this to the client (InvoiceActions props), so only
+          // send what its view/edit dialogs actually show — the default
+          // address and primary contact, not every one the client has.
           client: {
             select: {
               name: true,
               email: true,
-              addresses: true,
-              contactPersons: true,
+              addresses: { orderBy: { isDefault: "desc" }, take: 1 },
+              contactPersons: { where: { isPrimary: true }, take: 1 },
             },
           },
         },
@@ -146,9 +150,7 @@ export async function InvoiceList({ emptyButton }: { emptyButton?: ReactNode }) 
                     })}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {new Intl.DateTimeFormat("en-US", {
-                      dateStyle: "medium",
-                    }).format(invoice.createdAt)}
+                    {formatDate.short(invoice.createdAt)}
                   </span>
                 </div>
                 <div className="flex justify-end pt-1">
@@ -186,9 +188,7 @@ export async function InvoiceList({ emptyButton }: { emptyButton?: ReactNode }) 
                       <Badge>{invoice.status}</Badge>
                     </TableCell>
                     <TableCell>
-                      {new Intl.DateTimeFormat("en-US", {
-                        dateStyle: "medium",
-                      }).format(invoice.createdAt)}
+                      {formatDate.short(invoice.createdAt)}
                     </TableCell>
                     <TableCell className="text-right">
                       <InvoiceActions invoice={invoice} />

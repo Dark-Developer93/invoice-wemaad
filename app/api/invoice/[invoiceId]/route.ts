@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/db";
-
-import { generateInvoicePDF } from "@/app/actions/generate-invoice";
+import { loadInvoiceForPdf, renderInvoicePDF } from "@/lib/invoicePdf";
 import { verifyInvoiceToken } from "@/lib/urls";
 
 export async function GET(
@@ -20,52 +18,15 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const invoice = await prisma.invoice.findUnique({
-      where: {
-        id: invoiceId,
-      },
-      include: {
-        client: {
-          include: {
-            addresses: {
-              where: {
-                isDefault: true,
-              },
-              take: 1,
-            },
-            contactPersons: {
-              where: {
-                isPrimary: true,
-              },
-              take: 1,
-            },
-          },
-        },
-        User: {
-          select: {
-            companyName: true,
-            companyEmail: true,
-            companyAddress: true,
-            companyTaxId: true,
-            companyLogoUrl: true,
-            stampsUrl: true,
-            bankName: true,
-            bankAccountName: true,
-            bankAccountNumber: true,
-            bankSwiftCode: true,
-            bankIBAN: true,
-            bankAddress: true,
-          },
-        },
-      },
-    });
+    // Token-authorized (not session): the signed link is how clients open
+    // an invoice from the email. One query — the render reuses this row.
+    const invoice = await loadInvoiceForPdf(invoiceId);
 
     if (!invoice) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Generate PDF
-    const pdfBuffer = await generateInvoicePDF(invoiceId, true);
+    const pdfBuffer = await renderInvoicePDF(invoice);
 
     // Return the PDF with appropriate headers
     return new NextResponse(pdfBuffer, {

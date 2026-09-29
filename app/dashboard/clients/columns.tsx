@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { InvoiceDialog } from "@/components/invoice-dialog/InvoiceDialog";
 import { ViewClientDialog } from "@/components/client-dialog/ViewClientDialog";
 import { openAfterMenuCloses } from "@/lib/openAfterMenuCloses";
+import { useMountOnFirstOpen } from "@/lib/hooks/useMountOnFirstOpen";
 
 export type Client = {
   id: string;
@@ -73,6 +74,11 @@ export function ActionCell({ client, allClients }: ActionCellProps) {
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [editClientOpen, setEditClientOpen] = useState(false);
   const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false);
+  // One ActionCell per table row — don't build three closed dialogs per row
+  // (the create-invoice one maps over every client, so N rows made it O(N²)).
+  const quickViewMounted = useMountOnFirstOpen(quickViewOpen);
+  const editClientMounted = useMountOnFirstOpen(editClientOpen);
+  const createInvoiceMounted = useMountOnFirstOpen(createInvoiceOpen);
 
   const clientWithRequiredFields = {
     ...client,
@@ -116,31 +122,37 @@ export function ActionCell({ client, allClients }: ActionCellProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <ViewClientDialog
-        client={client}
-        open={quickViewOpen}
-        onOpenChange={setQuickViewOpen}
-      />
-      <ClientDialog
-        client={clientWithRequiredFields}
-        open={editClientOpen}
-        onOpenChange={setEditClientOpen}
-        onSuccess={() => router.refresh()}
-      />
-      <InvoiceDialog
-        open={createInvoiceOpen}
-        onOpenChange={setCreateInvoiceOpen}
-        clients={allClients.map((c) => ({
-          ...c,
-          addresses: c.addresses
-            .filter((addr) => addr.id)
-            .map((addr) => ({ ...addr, id: addr.id! })),
-          contactPersons: c.contactPersons
-            .filter((contact) => contact.id)
-            .map((contact) => ({ ...contact, id: contact.id! })),
-        }))}
-        defaultClientId={client.id}
-      />
+      {quickViewMounted && (
+        <ViewClientDialog
+          client={client}
+          open={quickViewOpen}
+          onOpenChange={setQuickViewOpen}
+        />
+      )}
+      {editClientMounted && (
+        <ClientDialog
+          client={clientWithRequiredFields}
+          open={editClientOpen}
+          onOpenChange={setEditClientOpen}
+          onSuccess={() => router.refresh()}
+        />
+      )}
+      {createInvoiceMounted && (
+        <InvoiceDialog
+          open={createInvoiceOpen}
+          onOpenChange={setCreateInvoiceOpen}
+          clients={allClients.map((c) => ({
+            ...c,
+            addresses: c.addresses
+              .filter((addr) => addr.id)
+              .map((addr) => ({ ...addr, id: addr.id! })),
+            contactPersons: c.contactPersons
+              .filter((contact) => contact.id)
+              .map((contact) => ({ ...contact, id: contact.id! })),
+          }))}
+          defaultClientId={client.id}
+        />
+      )}
     </>
   );
 }

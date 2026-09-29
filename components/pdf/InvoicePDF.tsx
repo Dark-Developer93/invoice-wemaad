@@ -8,8 +8,9 @@ import {
 } from "@react-pdf/renderer";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
-import { InvoiceWithRelations } from "@/app/actions/generate-invoice";
+import type { InvoiceWithRelations } from "@/lib/invoicePdf";
 import { calculateInvoiceTotal, parseInvoiceItems } from "@/lib/invoiceItems";
+import { formatDate } from "@/lib/formatDate";
 
 // Create styles
 const styles = StyleSheet.create({
@@ -225,15 +226,11 @@ const styles = StyleSheet.create({
 });
 
 export function InvoicePDF({ invoice }: { invoice: InvoiceWithRelations }) {
-  const invoiceDate = new Intl.DateTimeFormat("en-US", {
-    dateStyle: "long",
-  }).format(new Date(invoice.date));
+  const invoiceDate = formatDate.long(new Date(invoice.date));
 
   const dueDate = new Date(invoice.date);
   dueDate.setDate(dueDate.getDate() + (invoice.dueDate || 30));
-  const formattedDueDate = new Intl.DateTimeFormat("en-US", {
-    dateStyle: "long",
-  }).format(dueDate);
+  const formattedDueDate = formatDate.long(dueDate);
 
   return (
     <Document>

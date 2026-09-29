@@ -40,6 +40,8 @@ lib/
   planConfig.ts        Cached DB-backed reader for admin-editable plan config
   monitoring.ts       recordCronRun / alertAdmins
   retention.ts        Data-retention pruning (see pattern 9)
+  invoicePdf.tsx      Invoice PDF load + render — deliberately not a server
+                      action (see pattern 10)
   rateLimit.ts         In-memory best-effort rate limiter
   env.ts              Zod-validated env access
   email/              Transport + templates
@@ -202,9 +204,29 @@ need a code change to update. Yearly pricing is always computed as
 `monthly price × 10` (2 months free) rather than stored separately, to
 avoid a value that could silently contradict the monthly price.
 
+### 10. Hot-path rendering rules (found by load testing)
+
+- **Never construct `Intl.NumberFormat` / `Intl.DateTimeFormat` per call.**
+  Construction is expensive; use `formatCurrency()` / `getCurrencyFormatter()`
+  (`lib/formatCurrency.ts`, cached per currency) and `formatDate`
+  (`lib/formatDate.ts`). A per-call `new Intl.NumberFormat` was the single
+  hottest function in the server CPU profile under load.
+- **Per-row dialogs mount on first open** (`useMountOnFirstOpen` in
+  `lib/hooks/`). Rendering N closed dialogs per table meant building a
+  full dialog tree per row on every server render and hydration.
+- **Public marketing pages stay static.** Don't call `auth()` in `/`,
+  `/privacy`, `/terms` or anything they render — it makes the page dynamic
+  (a Node render + DB session lookup per visit instead of CDN-served HTML).
+  Use `useIsAuthenticated()` on the client for logged-in-only links.
+- **Server-action arguments are attacker-controlled.** Never give an
+  exported `"use server"` function a parameter that weakens its own auth
+  check (the old `generateInvoicePDF(id, skipAuthCheck)` let any logged-in
+  user download anyone's invoice PDF). Put shared internals in `lib/` and
+  let each caller authorize — see `lib/invoicePdf.tsx`.
+
 ## Testing
 
-- `npm run test` — Vitest, currently 65 tests, all in `__tests__` folders
+- `npm run test` — Vitest, currently 81 tests, all in `__tests__` folders
   next to the code they cover.
 - When mocking `next/cache` in a test, mock **both** `revalidatePath` and
   `revalidateTag` — an action that calls the one you didn't mock will
@@ -214,6 +236,16 @@ avoid a value that could silently contradict the monthly price.
 - `npm run test:e2e` (`npx playwright test`) runs the committed E2E suite
   against a real browser, a real Postgres database, and a real `next
   start` server — see "E2E tests" below.
+
+### Load tests (`loadtest/`)
+
+A k6 scenario simulating realistic users (dashboard → invoice list →
+occasional PDF / markAsPaid / createInvoice, with think time), judged on
+p95 < 500 ms, p99 < 1 s, < 1% errors. It seeds its own users and sessions
+(same session-token bypass as E2E) and must only ever run against a
+throwaway database. `loadtest/README.md` covers running, profiling, and the
+last recorded results — re-run it after changing hot pages (dashboard,
+invoice list, PDF).
 
 ### E2E tests (`e2e/`, `playwright.config.ts`)
 

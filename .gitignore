@@ -45,3 +45,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# load test (loadtest/seed.mjs output: session tokens for seeded users)
+/loadtest/users.json
