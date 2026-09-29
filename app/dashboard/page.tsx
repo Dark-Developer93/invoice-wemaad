@@ -9,7 +9,7 @@ import RecentInvoices, {
 } from "@/components/recent-invoices/RecentInvoices";
 import { Card } from "@/components/ui/card";
 import prisma from "@/lib/db";
-import { requireUser } from "@/lib/session";
+import { getCurrentUser, requireUser } from "@/lib/session";
 import { PlanType } from "@/lib/plans";
 import { getPlanConfig } from "@/lib/planConfig";
 import { cacheTags } from "@/lib/cache";
@@ -45,7 +45,7 @@ export default async function DashboardRoute() {
   const [hasInvoices, recentInvoices, user] = await Promise.all([
     getHasInvoices(session.user.id),
     getRecentInvoices(session.user.id),
-    prisma.user.findUniqueOrThrow({ where: { id: session.user.id }, select: { plan: true } }),
+    getCurrentUser(), // already loaded by the layout in this request
   ]);
 
   const planFeatures = await getPlanConfig(user.plan as PlanType);

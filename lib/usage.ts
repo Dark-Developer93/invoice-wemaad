@@ -15,18 +15,29 @@ export interface UserUsage {
 
 type Db = typeof prisma | Prisma.TransactionClient;
 
-export async function getUserUsage(userId: string, db: Db = prisma): Promise<UserUsage> {
+// `knownPlan`: pass it when the caller already loaded the user's plan in this
+// request (e.g. getCurrentUser()) to skip re-selecting it. Limit checks that
+// gate a write inside a transaction should NOT pass it — they must read the
+// plan under the same lock as the write (pattern 3).
+export async function getUserUsage(
+  userId: string,
+  db: Db = prisma,
+  knownPlan?: PlanType
+): Promise<UserUsage> {
   const now = new Date();
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
 
-  const [user, invoices, emails] = await Promise.all([
-    db.user.findUniqueOrThrow({ where: { id: userId }, select: { plan: true } }),
+  const [planValue, invoices, emails] = await Promise.all([
+    knownPlan ??
+      db.user
+        .findUniqueOrThrow({ where: { id: userId }, select: { plan: true } })
+        .then((user) => user.plan),
     db.invoice.count({ where: { userId, createdAt: { gte: monthStart, lte: monthEnd } } }),
     db.emailLog.count({ where: { userId, sentAt: { gte: monthStart, lte: monthEnd } } }),
   ]);
 
-  const plan = user.plan as PlanType;
+  const plan = planValue as PlanType;
   const planConfig = await getPlanConfig(plan);
   return {
     plan,

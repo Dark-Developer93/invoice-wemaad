@@ -26,6 +26,7 @@ async function getData(userId: string) {
   const data = await unstable_cache(
     () =>
       prisma.invoice.findMany({
+        relationLoadStrategy: "query", // nested to-many lists: see prisma/schema.prisma
         where: {
           userId: userId,
         },

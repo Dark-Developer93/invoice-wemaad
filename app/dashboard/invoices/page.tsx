@@ -26,6 +26,7 @@ function getClientsForPicker(userId: string) {
   return unstable_cache(
     () =>
       prisma.client.findMany({
+        relationLoadStrategy: "query", // nested to-many lists: see prisma/schema.prisma
         where: { userId },
         include: {
           addresses: {

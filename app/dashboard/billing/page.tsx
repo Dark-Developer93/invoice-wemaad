@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -10,7 +9,7 @@ export const metadata: Metadata = {
 };
 import { format } from "date-fns";
 
-import { requireUser } from "@/lib/session";
+import { getCurrentUser, requireUser } from "@/lib/session";
 import { getUserUsage } from "@/lib/usage";
 import { PLAN_NAMES, PlanType, PLAN_ORDER } from "@/lib/plans";
 import { getPlanConfigs } from "@/lib/planConfig";
@@ -26,7 +25,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import prisma from "@/lib/db";
 
 function UsageBar({
   label,
@@ -65,17 +63,13 @@ function UsageBar({
 }
 
 async function BillingContent({ userId }: { userId: string }) {
-  const [usage, userData, pendingRequest, planConfigs] = await Promise.all([
-    getUserUsage(userId),
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { plan: true, planUpdatedAt: true },
-    }),
+  // Already loaded by the dashboard layout in this request.
+  const userData = await getCurrentUser();
+  const [usage, pendingRequest, planConfigs] = await Promise.all([
+    getUserUsage(userId, undefined, userData.plan as PlanType),
     getUserPendingUpgradeRequest(),
     getPlanConfigs(),
   ]);
-
-  if (!userData) notFound();
 
   const currentPlan = userData.plan as PlanType;
   const currentFeatures = planConfigs[currentPlan];

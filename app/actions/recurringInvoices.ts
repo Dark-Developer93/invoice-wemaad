@@ -129,6 +129,7 @@ export async function processRecurringInvoices(): Promise<ProcessRecurringInvoic
   };
 
   const due = await prisma.recurringInvoice.findMany({
+    relationLoadStrategy: "query", // nested to-many lists: see prisma/schema.prisma
     where: { isActive: true, nextRunAt: { lte: now }, User: { isActive: true } },
     include: { client: { include: { contactPersons: { where: { isPrimary: true }, take: 1 } } } },
   });

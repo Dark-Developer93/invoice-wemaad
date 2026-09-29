@@ -224,9 +224,30 @@ avoid a value that could silently contradict the monthly price.
   user download anyone's invoice PDF). Put shared internals in `lib/` and
   let each caller authorize — see `lib/invoicePdf.tsx`.
 
+### 11. Database round trips
+
+Every query is a network round trip to Neon, so count them.
+
+- **The signed-in user's row: `getCurrentUser()`** (`lib/session.ts`,
+  `React.cache`, one query per request). Don't `prisma.user.findUnique` the
+  current user again in a page or layout, and don't call `getUserUsage()`
+  just to learn the plan. Pass `knownPlan` to `getUserUsage()` when you
+  already have it, except inside a limit-check transaction (pattern 3),
+  which must read the plan under its lock.
+- **`relationJoins` is enabled**, so `include` loads relations in the same
+  statement. Exception: list queries whose rows each include a *to-many*
+  relation (invoice → client → addresses) are much slower as one JOIN.
+  Give those `relationLoadStrategy: "query"`, and benchmark if unsure (see
+  `loadtest/README.md`).
+- **Invoice-email links are opened by customers with no account.** The
+  public PDF route is authorized only by its HMAC token and must never sit
+  behind a session. `e2e/invoice-share-link.spec.ts` (@smoke) guards that.
+  `getBaseUrl()` uses the stable production domain on Vercel, never the
+  per-deployment URL, because emailed links must keep working.
+
 ## Testing
 
-- `npm run test` — Vitest, currently 81 tests, all in `__tests__` folders
+- `npm run test` — Vitest, currently 84 tests, all in `__tests__` folders
   next to the code they cover.
 - When mocking `next/cache` in a test, mock **both** `revalidatePath` and
   `revalidateTag` — an action that calls the one you didn't mock will

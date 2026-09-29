@@ -6,6 +6,17 @@
 
 generator client {
   provider = "prisma-client-js"
+  // Without this, every `include` runs one extra query per relation — the
+  // session check on every request was 2 sequential round trips (Session,
+  // then User) and the public invoice-PDF link was 5. With it, Prisma loads
+  // relations in the same statement (LATERAL JOIN), so each of those is one.
+  // Matters most on Neon, where every round trip crosses the network.
+  //
+  // Exception: list queries whose rows each include a to-many relation
+  // (invoice -> client -> addresses) are much slower as one JOIN (the
+  // invoice list was ~6x slower). Those opt out per query with
+  // `relationLoadStrategy: "query"`. Benchmark before adding a new one.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {

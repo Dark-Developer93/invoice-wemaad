@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { subMonths, format } from "date-fns";
 import { unstable_cache } from "next/cache";
-import { requireUser } from "@/lib/session";
+import { getCurrentUser, requireUser } from "@/lib/session";
 import prisma from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -11,8 +11,8 @@ import { StatusBreakdownCard } from "@/components/reports/StatusBreakdownCard";
 import { ClientRevenueTable } from "@/components/reports/ClientRevenueTable";
 import { OutstandingInvoicesCard } from "@/components/reports/OutstandingInvoicesCard";
 import { UpgradePrompt } from "@/components/upgrade-prompt/UpgradePrompt";
-import { getUserUsage } from "@/lib/usage";
 import { getPlanConfig } from "@/lib/planConfig";
+import { PlanType } from "@/lib/plans";
 import { cacheTags } from "@/lib/cache";
 
 export const metadata = {
@@ -180,8 +180,10 @@ function ReportsContentSkeleton() {
 
 export default async function ReportsPage() {
   const session = await requireUser();
-  const usage = await getUserUsage(session.user!.id!);
-  const planConfig = await getPlanConfig(usage.plan);
+  // Only the plan is needed here — this used to run getUserUsage(), i.e. two
+  // monthly COUNT queries plus a plan lookup, before rendering anything.
+  const user = await getCurrentUser();
+  const planConfig = await getPlanConfig(user.plan as PlanType);
 
   if (!planConfig.analytics) {
     return (
