@@ -150,7 +150,15 @@ export default function () {
   const user = users[(__VU - 1) % users.length];
 
   if (MODE === "raw") {
-    ok(http.get(`${BASE_URL}/dashboard`, params(user, "page:/dashboard")), "dashboard");
+    // One endpoint, no think time: its max throughput / CPU cost per request.
+    // ENDPOINT=pdf hits a random invoice's public signed link.
+    const endpoint = __ENV.ENDPOINT || "/dashboard";
+    if (endpoint === "pdf") {
+      const invoice = pick(user.invoices);
+      ok(http.get(`${BASE_URL}/api/invoice/${invoice.id}?token=${invoice.pdfToken}`, params(user, "api:invoice-pdf")), "pdf");
+    } else {
+      ok(http.get(`${BASE_URL}${endpoint}`, params(user, `page:${endpoint}`)), endpoint);
+    }
     return;
   }
 

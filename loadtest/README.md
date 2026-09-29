@@ -55,14 +55,14 @@ k6 run -e BASE_URL=http://localhost:3200 -e VUS=100 -e DURATION=2m loadtest/scen
 # ...repeat the passing level 2-3x before trusting it
 
 # Raw max throughput of one endpoint (no think time):
-k6 run -e MODE=raw -e VUS=50 loadtest/scenario.js
+k6 run -e MODE=raw -e ENDPOINT=/dashboard/invoices -e VUS=20 loadtest/scenario.js   # ENDPOINT=pdf for the public PDF link
 
 # 5. Clean up
 node loadtest/cleanup.mjs
 ```
 
 Options (`-e NAME=value`): `BASE_URL`, `VUS`, `DURATION` (hold time),
-`RAMP` (ramp-up time), `MODE` (`realistic` | `raw`).
+`RAMP` (ramp-up time), `MODE` (`realistic` | `raw`), `ENDPOINT` (raw mode only).
 
 Against an **https** deployment the scenario automatically uses the
 `__Secure-authjs.session-token` cookie name. Only run it against a
