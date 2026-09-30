@@ -36,9 +36,11 @@ const VISIT_LOOPS = Number(__ENV.VISIT_LOOPS || 5);
 // Secure cookie name when testing an https deployment.
 const COOKIE_NAME = BASE_URL.startsWith("https://") ? "__Secure-authjs.session-token" : "authjs.session-token";
 
-const seed = JSON.parse(open("./users.json"));
-const users = new SharedArray("users", () => seed.users);
-const actions = seed.actions || {};
+// SharedArray: parsed once and shared read-only by every VU. A plain
+// JSON.parse(open(...)) here runs once *per VU* (init code is per-VU in k6),
+// which at 400+ VUs got k6 itself killed for memory.
+const users = new SharedArray("users", () => JSON.parse(open("./users.json")).users);
+const actions = new SharedArray("actions", () => [JSON.parse(open("./users.json")).actions || {}])[0];
 
 export const options = {
   scenarios: {
