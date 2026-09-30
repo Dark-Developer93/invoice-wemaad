@@ -11,7 +11,17 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Graph, ChartType } from "@/components/graph/Graph";
+import dynamic from "next/dynamic";
+import type { ChartType } from "@/components/graph/Graph";
+
+// The charting library (recharts) is most of this page's JavaScript. Load it
+// in parallel with the chart-data fetch instead of up front: the chart area
+// shows this same skeleton while data loads anyway, so nothing looks
+// different, but the dashboard's initial JS is much smaller.
+const Graph = dynamic(() => import("@/components/graph/Graph").then((m) => m.Graph), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[300px] w-full" />,
+});
 
 interface DataPoint {
   date: number;
