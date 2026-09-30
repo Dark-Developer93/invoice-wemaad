@@ -1,4 +1,4 @@
-import { InvoiceListSkeleton } from "@/components/invoice-list/InvoiceList";
+import { InvoiceListSkeleton } from "@/components/invoice-list/InvoiceListSkeleton";
 import {
   Card,
   CardContent,

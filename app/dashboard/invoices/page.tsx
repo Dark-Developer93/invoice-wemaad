@@ -1,14 +1,10 @@
-import { Suspense } from "react";
 import { PlusIcon } from "lucide-react";
 import { unstable_cache } from "next/cache";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { redirect } from "next/navigation";
 
-import {
-  InvoiceList,
-  InvoiceListSkeleton,
-} from "@/components/invoice-list/InvoiceList";
+import { InvoiceListClient } from "@/components/invoice-list/InvoiceListClient";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -99,9 +95,10 @@ export default async function InvoicesRoute({
         </div>
       </CardHeader>
       <CardContent>
-        <Suspense key={page} fallback={<InvoiceListSkeleton />}>
-          <InvoiceList
+        {/* The list loads as JSON (/api/invoices) so this page stays a light shell. */}
+        <InvoiceListClient
             page={page}
+            renderedAt={Date.now()}
             emptyButton={
               <InvoiceDialog
                 trigger={
@@ -113,7 +110,6 @@ export default async function InvoicesRoute({
               />
             }
           />
-        </Suspense>
       </CardContent>
     </Card>
   );
