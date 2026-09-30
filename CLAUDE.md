@@ -220,6 +220,17 @@ avoid a value that could silently contradict the monthly price.
   payload for hydration. That was most of the invoice page's CPU. The server
   still renders identical HTML. Pre-format dates/amounts on the server and
   pass strings, so the browser can't render a different timezone than SSR did.
+- **Lists that grow without bound are paginated on the server**
+  (`lib/pagination.ts` + `components/pagination-controls/`): the invoice
+  list (20/page), admin users (25/page) and the reports outstanding list
+  (10/page). Fetch with `skip`/`take` plus a `COUNT`, clamp the page with
+  `getPageInfo` (stale links show the last page, never an empty table), and
+  always add an `id` tiebreaker to `orderBy` so a row can't appear on two
+  pages. Summary numbers above a paginated list (e.g. admin user totals)
+  must come from `COUNT` queries, not from the current page. Measured with
+  400 invoices: 231 → 62 ms per request; admin users at 3,000 users:
+  1,455 ms / 2 MB → 69 ms / 33 KB. Small, plan-capped lists (clients,
+  recurring templates) aren't paginated server-side.
 - **Invoice PDFs are cached by a hash of their exact inputs**
   (`renderInvoicePDF` in `lib/invoicePdf.tsx`). Any change to what's printed
   changes the key, so there's nothing to invalidate. When you add a prop to
@@ -258,7 +269,7 @@ Every query is a network round trip to Neon, so count them.
 
 ## Testing
 
-- `npm run test` — Vitest, currently 88 tests, all in `__tests__` folders
+- `npm run test` — Vitest, currently 126 tests, all in `__tests__` folders
   next to the code they cover.
 - When mocking `next/cache` in a test, mock **both** `revalidatePath` and
   `revalidateTag` — an action that calls the one you didn't mock will
@@ -283,7 +294,8 @@ invoice list, PDF).
 
 Covers the golden paths a unit test can't: auth guard redirects, invoice
 CRUD, client CRUD, the row menus (view/download invoice, quick-view client,
-create invoice from a client row), the public invoice share link opened
+create invoice from a client row), server-side pagination (invoice list,
+admin users), the public invoice share link opened
 with no session, and the billing-upgrade request/approve/reject flow
 (including a regression test for the `requestPlanUpgrade` race fix — see
 pattern 3).

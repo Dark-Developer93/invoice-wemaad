@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import { InvoiceDialog } from "@/components/invoice-dialog/InvoiceDialog";
 import { cacheTags } from "@/lib/cache";
+import { parsePageParam } from "@/lib/pagination";
 
 // Cached until invalidated by revalidateTag(cacheTags.clients(userId)) in
 // every client-mutating action — no time-based staleness.
@@ -65,7 +66,12 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function InvoicesRoute() {
+export default async function InvoicesRoute({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string | string[] }>;
+}) {
+  const page = parsePageParam((await searchParams).page);
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -93,8 +99,9 @@ export default async function InvoicesRoute() {
         </div>
       </CardHeader>
       <CardContent>
-        <Suspense fallback={<InvoiceListSkeleton />}>
+        <Suspense key={page} fallback={<InvoiceListSkeleton />}>
           <InvoiceList
+            page={page}
             emptyButton={
               <InvoiceDialog
                 trigger={

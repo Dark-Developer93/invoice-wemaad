@@ -115,6 +115,18 @@ where the first host's passed), but the ratio held on both: **about 3× as
 many concurrent active users on the same core** (~50 → ~150 on the first
 host, <50 → ~125 on the second). Always compare builds on the same machine.
 
+### Pagination (same machine, sequential requests, warm cache)
+
+| Page | Before | After |
+|---|---:|---:|
+| Invoice list, user with 400 invoices | 231 ms, 41 KB gzipped | 62 ms, 20 KB |
+| Invoice list, user with 40 invoices | 57 ms | 47 ms |
+| Admin users, 3,000 users | 1,455 ms, 2 MB gzipped | 69 ms, 33 KB |
+| Reports, user with 400 invoices | 74 ms | 44 ms |
+
+Before pagination these pages got slower with every invoice (or user) added;
+now their cost stays flat.
+
 ### Max throughput per endpoint (raw mode, one core)
 
 | Endpoint | Before structural changes | After |

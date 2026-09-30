@@ -10,10 +10,26 @@ import { ReactNode } from "react";
 import { unstable_cache } from "next/cache";
 import { cacheTags } from "@/lib/cache";
 import { formatDate } from "@/lib/formatDate";
+import { getPageInfo, PAGE_SIZES } from "@/lib/pagination";
+import { PaginationControls } from "@/components/pagination-controls/PaginationControls";
 
-// Cached until invalidated by revalidateTag(cacheTags.invoices(userId)) in
-// every invoice-mutating action — no time-based staleness.
-async function getData(userId: string) {
+// Paginated: a user's invoice list grows without bound, and every row is
+// rendered twice (mobile cards + desktop table), so rendering them all made
+// this page slower with every invoice. Both reads are cached until
+// invalidated by revalidateTag(cacheTags.invoices(userId)) in every
+// invoice-mutating action — no time-based staleness.
+function getInvoiceCount(userId: string) {
+  return unstable_cache(
+    () => prisma.invoice.count({ where: { userId } }),
+    ["invoice-count", userId],
+    { tags: [cacheTags.invoices(userId)] }
+  )();
+}
+
+async function getData(userId: string, requestedPage: number) {
+  const totalCount = await getInvoiceCount(userId);
+  const pageInfo = getPageInfo(requestedPage, totalCount, PAGE_SIZES.invoices);
+
   const data = await unstable_cache(
     () =>
       prisma.invoice.findMany({
@@ -34,11 +50,12 @@ async function getData(userId: string) {
             },
           },
         },
-        orderBy: {
-          createdAt: "desc",
-        },
+        // id breaks createdAt ties, so a row can't appear on two pages.
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        skip: pageInfo.skip,
+        take: pageInfo.take,
       }),
-    ["invoice-list", userId],
+    ["invoice-list", userId, String(pageInfo.page), String(PAGE_SIZES.invoices)],
     { tags: [cacheTags.invoices(userId)] }
   )();
 
@@ -46,12 +63,13 @@ async function getData(userId: string) {
   // ISO strings on a cache hit — normalize back to Date so callers always
   // get the same shape regardless of cache hit/miss (new Date() is a no-op
   // on an already-real Date).
-  return data.map((invoice) => ({
+  const invoices = data.map((invoice) => ({
     ...invoice,
     date: new Date(invoice.date),
     createdAt: new Date(invoice.createdAt),
     updatedAt: new Date(invoice.updatedAt),
   }));
+  return { invoices, pageInfo, totalCount };
 }
 
 function InvoiceListSkeleton() {
@@ -105,12 +123,18 @@ function InvoiceListSkeleton() {
 
 export { InvoiceListSkeleton };
 
-export async function InvoiceList({ emptyButton }: { emptyButton?: ReactNode }) {
+export async function InvoiceList({
+  emptyButton,
+  page = 1,
+}: {
+  emptyButton?: ReactNode;
+  page?: number;
+}) {
   const session = await requireUser();
-  const data = await getData(session.user?.id as string);
+  const { invoices: data, pageInfo, totalCount } = await getData(session.user?.id as string, page);
   return (
     <>
-      {data.length === 0 ? (
+      {totalCount === 0 ? (
         <EmptyState
           title="No invoices found"
           description="Create an invoice to get started"
@@ -130,6 +154,11 @@ export async function InvoiceList({ emptyButton }: { emptyButton?: ReactNode }) 
           }))}
         />
       )}
+      <PaginationControls
+        page={pageInfo.page}
+        pageCount={pageInfo.pageCount}
+        hrefForPage={(p) => (p === 1 ? "/dashboard/invoices" : `/dashboard/invoices?page=${p}`)}
+      />
     </>
   );
 }
