@@ -1,0 +1,30 @@
+---
+description: Security — data ownership, auth boundaries, secrets, admin safety
+alwaysApply: true
+---
+
+# Security
+
+## Data ownership
+- Every user-scoped Prisma query: `where: { id, userId }` (or scoped via relation)
+
+## Auth in actions and pages
+- `getRequiredUserId()` / `requireUser()` / `requireAdmin()` from `@/lib/session`
+
+## Auth in API routes
+- `auth()` from `@/lib/auth` only — never `requireUser()` (redirect breaks JSON)
+
+## PDF exception
+- `generateInvoicePDF(id, true)` only after HMAC/token verification in `app/api/invoice/[invoiceId]/route.ts`
+
+## Secrets
+- No `process.env` outside `lib/env.ts`
+
+## Admin safety
+- Admin deletes/mutations: `isAdmin: false` in `where` when affecting users; `requireAdmin()` on all `app/admin` surfaces
+
+## Cron
+- `POST /api/cron/recurring-invoices` — Bearer `CRON_SECRET` only
+
+## Email limits
+- Count/limit via `getUserUsage` / `isEmailLimitOk` — never raw `EmailLog` counts in actions

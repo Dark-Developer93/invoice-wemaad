@@ -1,0 +1,39 @@
+---
+description: Technology stack rules — Next.js 15, React 19, shadcn, Prisma 6, NextAuth v5, Vitest
+alwaysApply: true
+---
+
+# Tech Stack
+
+## Next.js 15 App Router
+- Server Components by default — add `"use client"` only when interactivity is needed
+- `params` and `searchParams` are Promises in Next.js 15 — always `await params` in dynamic routes
+- Never `fetch()` to own API routes for mutations — use Server Actions
+- Cache invalidation: `revalidatePath(path)` after mutations · `unstable_cache` for expensive reads
+- New pages need `export const metadata: Metadata = { title: "... | WeMaAd Invoice" }`
+- Wrap async data fetching in `<Suspense>` with a `loading.tsx` sibling
+
+## React 19
+- No `forwardRef` needed — refs are regular props
+- This codebase uses React Hook Form + `toFormData`, not `useActionState`
+
+## shadcn/ui
+- Install components: `pnpm dlx shadcn@latest add <component-name>`
+- Never edit files in `components/ui/` — they are generated; customize via Tailwind class props
+- Icons: `lucide-react` — match icon style of existing components
+
+## Prisma 6
+- After any schema change: `pnpm prisma migrate dev --name <description>` (client auto-regenerates)
+- No soft deletes — hard delete with `onDelete: Cascade` on all user-scoped relations
+- New models need `@@index([userId])` and `@@index` on any field used in `where` filters
+
+## NextAuth v5 (beta)
+- Email magic-link only — no OAuth providers, no passwords in this project
+- `auth()` → Server Components and API route handlers
+- `requireUser()` / `requireAdmin()` → dashboard pages and Server Actions (redirect on failure)
+
+## Vitest
+- Environment: node · `@/*` alias resolves to project root
+- Test files: `app/actions/__tests__/<domain>.test.ts`
+- Run: `pnpm test` · watch: `pnpm test:watch`
+- Standard mock: `vi.mock("@/lib/db", () => ({ default: { model: { fn: vi.fn() } } }))`
