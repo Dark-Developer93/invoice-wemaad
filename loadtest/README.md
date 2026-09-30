@@ -10,15 +10,28 @@ One VU = one seeded user with a real session, running this loop forever:
 
 | Step | Request | Notes |
 |---|---|---|
-| 1 | `GET /dashboard` + `GET /api/dashboard/chart-data` | the chart fetch is what the dashboard's client makes on load |
+| 1 | open the dashboard + `GET /api/dashboard/chart-data` | the chart fetch is what the dashboard's client makes on load |
 | 2 | think 3–7s | |
-| 3 | `GET /dashboard/invoices` | |
+| 3 | open the invoice list | |
 | 4 | think 3–8s | |
-| 5 | 25% `GET /dashboard/clients` · 10% PDF download · 8% `markAsPaid` · 3% `createInvoice` | the two writes are real server-action calls, so cache invalidation is exercised |
+| 5 | 25% open clients · 10% PDF download · 8% `markAsPaid` · 3% `createInvoice` | the two writes are real server-action calls, so cache invalidation is exercised |
 | 6 | think 5–15s, loop | |
 
 That's roughly **0.12 requests/second per active user**. "Active" means
 clicking around at that moment. It doesn't mean registered or daily-active.
+
+"Open" depends on `MODE`:
+
+- **`browser` (default)** sends what a real browser sends. A visit starts
+  with one full page load, plus the six link prefetches the sidebar
+  triggers (`Next-Router-Prefetch: 1`). After that, `VISIT_LOOPS` (default
+  5) loops of in-app navigations follow (`RSC: 1` + the router state tree,
+  as recorded from Chromium). A server action's response already carries the
+  re-rendered page, so no extra fetch follows it.
+- **`fullpage`** does a full HTML page load on every step. That's what
+  someone refreshing every page would cost, so it's the pessimistic bound.
+  (`realistic` is an alias, kept for older commands.)
+- **`raw`** hits one endpoint with no think time, for max throughput.
 
 ## Pass/fail bar
 
@@ -62,7 +75,10 @@ node loadtest/cleanup.mjs
 ```
 
 Options (`-e NAME=value`): `BASE_URL`, `VUS`, `DURATION` (hold time),
-`RAMP` (ramp-up time), `MODE` (`realistic` | `raw`), `ENDPOINT` (raw mode only).
+`RAMP` (ramp-up time), `MODE` (`browser` | `fullpage` | `raw`),
+`VISIT_LOOPS` (browser mode), `ENDPOINT` (raw mode only). Use `RAMP=2m`
+for 300+ VUs: a 30 s ramp puts hundreds of first-page loads in the same
+few seconds, which no real traffic does.
 
 Against an **https** deployment the scenario automatically uses the
 `__Secure-authjs.session-token` cookie name. Only run it against a
@@ -114,6 +130,55 @@ Absolute capacity depends heavily on the CPU (this host's `main` fails
 where the first host's passed), but the ratio held on both: **about 3× as
 many concurrent active users on the same core** (~50 → ~150 on the first
 host, <50 → ~125 on the second). Always compare builds on the same machine.
+
+### Browser mode: what a real browser costs (2026-09-30)
+
+The tables above use `fullpage` mode. `browser` mode is the more truthful
+number, because in-app navigations are cheaper than full page loads.
+Measured on one core of a third host, `RAMP=2m`, 3,000 users × 40 invoices:
+
+| Request | Server time (unloaded) |
+|---|---:|
+| full page load | 37–41 ms |
+| in-app navigation (RSC) | 12–17 ms |
+| link prefetch (×6 per visit) | 4–10 ms each |
+| chart data (JSON) | 7 ms |
+
+| Mode | Active users | median | p95 | p99 | Result |
+|---|---:|---:|---:|---:|---|
+| fullpage | 150 | 45 ms | 174 ms | 313 ms | PASS |
+| browser | 300 | 35 ms | 149 ms | 324 ms | PASS (CPU ~48%) |
+| browser | 400 | 63–79 ms | 557–1,046 ms | 1.3–1.8 s | FAIL (3 of 3 runs) |
+
+So **one core handles ~300 real-browser active users** (~2× the `fullpage`
+figure on the same host). At 400 the tail is set by PDF downloads: each
+uncached render is a few hundred ms of CPU on the one event loop, and under
+load their p95 reached 7–17 s, dragging every request queued behind them.
+Moving PDF rendering off the request thread (a worker thread, or
+pre-rendering when an invoice is saved) is the next lever if 400+ is needed.
+
+### Experiment: invoice list as a static shell + JSON fetch (not adopted)
+
+The JSON-API-style approach the load-testing video used was tried on the invoice page only. The page renders
+its header/actions, and a client component fetches the rows from a new
+`/api/invoices?page=N` route. Kept on branch `claude/invoices-json-prototype`.
+
+- Per visit it's **slower**, not faster: shell 14.8 ms + JSON 6.8 ms =
+  21.6 ms vs 12.2 ms for the current RSC navigation. The rows were already
+  cheap once pagination landed; splitting them adds a second request.
+- Under mixed load it was **somewhat better**. At 400 users (alternating
+  runs, fresh data each): p95 746/559 ms vs 1,046/601 ms; median 51/46 ms vs
+  79/76 ms; `markAsPaid` median 300–340 ms vs 680–820 ms. The win comes from
+  mutations, which re-render only the shell instead of the 20-row table.
+- At 400 the prototype passed 1 of 3 runs (p95 254 ms). The current
+  build passed 0 of 3. So the prototype moves the edge a little, not a tier. The
+  video's 10× numbers come from its responses being public and cacheable by
+  nginx; ours are per-user and need a session lookup on every request.
+
+Not adopted: the gain is ~15–25% on one page. It costs a second
+request, a loading state on the list after every navigation, and a second
+data path to keep in sync with the RSC one. Revisit only if mutations on the
+invoice page become the bottleneck.
 
 ### Pagination (same machine, sequential requests, warm cache)
 
@@ -200,8 +265,10 @@ Neon cold start), so fewer round trips is where users will feel it.
 
 Rules for this workload, from the runs above:
 
-- **One Node process uses one core** and handles **~125–150 concurrent active
-  users** (depending on how fast the core is) (~20 req/s). Extra cores don't speed up a single `next start`.
+- **One Node process uses one core** and handles **~300 concurrent active
+  users clicking around in a browser** (`browser` mode), or ~125–150 if every
+  click were a full page load (`fullpage` mode, the pessimistic bound). It
+  depends on how fast the core is. Extra cores don't speed up a single `next start`.
 - **Don't run several Next processes (PM2 cluster, multiple containers)
   without a shared cache.** Next's data cache (`unstable_cache` +
   `revalidateTag`, which this app relies on everywhere) is per process by
@@ -214,7 +281,7 @@ Rules for this workload, from the runs above:
 | Size | Example | What to expect |
 |---|---|---|
 | 1 vCPU / 2 GB | DigitalOcean $12, Hetzner CX22-class | Works, tight. Node and Postgres share the core, so expect ~100 active users. Add 2 GB swap, set Postgres `shared_buffers = 128MB` and `NODE_OPTIONS=--max-old-space-size=768`. |
-| **2 vCPU / 4 GB (recommended)** | DigitalOcean $24, Hetzner CPX21-class | A full core for Node and one for Postgres, nginx/Caddy and the OS. ~125–150 active users (CPU-dependent), with room for PDF bursts. |
+| **2 vCPU / 4 GB (recommended)** | DigitalOcean $24, Hetzner CPX21-class | A full core for Node and one for Postgres, nginx/Caddy and the OS. ~300 active users (~150 worst case), with room for PDF bursts. |
 | 4 vCPU / 8 GB | | Only worth it with a Redis `cacheHandler` and 2–3 Node processes behind nginx, or Postgres moved off the box. |
 
 Disk: 40 GB SSD is plenty (the DB grows ~0.7 KB per invoice).
@@ -231,7 +298,7 @@ does now:
 
 "Active" means clicking around right now. How many daily users that
 supports depends on how many are online at once at peak. At a typical 5–10%
-peak concurrency, 150 active users is on the order of 1,500–3,000 daily
+peak concurrency, 300 active users is on the order of 3,000–6,000 daily
 users.
 
 These are *relative* numbers for one core on a dev box. Run the scenario

@@ -231,6 +231,12 @@ avoid a value that could silently contradict the monthly price.
   400 invoices: 231 → 62 ms per request; admin users at 3,000 users:
   1,455 ms / 2 MB → 69 ms / 33 KB. Small, plan-capped lists (clients,
   recurring templates) aren't paginated server-side.
+- **Don't split pages into a shell + JSON API for speed.** Tried on the
+  invoice list (branch `claude/invoices-json-prototype`, results in
+  `loadtest/README.md`). Each visit got slower (two requests instead of one
+  cheap paginated RSC render), and the gain under load was ~15–25%, not a
+  capacity tier. At ~400 users/core the tail comes from PDF renders on the
+  event loop, so that's the next thing to move.
 - **Invoice PDFs are cached by a hash of their exact inputs**
   (`renderInvoicePDF` in `lib/invoicePdf.tsx`). Any change to what's printed
   changes the key, so there's nothing to invalidate. When you add a prop to
