@@ -5,6 +5,9 @@ import { Prisma } from "@prisma/client";
 import { pdf } from "@react-pdf/renderer";
 import { InvoicePDF } from "@/components/pdf/InvoicePDF";
 import prisma from "@/lib/db";
+import { getPlanConfig } from "@/lib/planConfig";
+import { PlanType } from "@/lib/plans";
+import { getBaseUrl } from "@/lib/urls";
 
 // Deliberately NOT a "use server" module. Everything exported from a server
 // action file is callable by any client with arbitrary arguments — this used
@@ -23,6 +26,9 @@ const invoicePdfInclude = {
   },
   User: {
     select: {
+      // The owner's plan decides the PDF's branding level (growth-loop
+      // footer: shown / minimal / hidden).
+      plan: true,
       companyName: true,
       companyEmail: true,
       companyAddress: true,
@@ -58,7 +64,7 @@ export function loadInvoiceForPdf(
 
 // Bump when InvoicePDF's layout changes, so PDFs rendered by the old template
 // aren't served from cache after a deploy.
-const PDF_TEMPLATE_VERSION = "1";
+const PDF_TEMPLATE_VERSION = "2"; // 2: plan-based branding footer + pagination fix
 
 async function renderUncached(props: ComponentProps<typeof InvoicePDF>): Promise<ArrayBuffer> {
   const blob = await pdf(<InvoicePDF {...props} />).toBlob();
@@ -75,9 +81,19 @@ async function renderUncached(props: ComponentProps<typeof InvoicePDF>): Promise
 // (Known gap: replacing a logo/stamp image *at the same URL* shows up only
 // once something else on the invoice changes. Uploads get new URLs.)
 export async function renderInvoicePDF(invoice: InvoiceWithRelations): Promise<ArrayBuffer> {
-  const props: ComponentProps<typeof InvoicePDF> = { invoice };
+  const planConfig = await getPlanConfig((invoice.User?.plan as PlanType) ?? "FREE");
+  const props: ComponentProps<typeof InvoicePDF> = { invoice, brandingLevel: planConfig.brandingLevel };
+  // Everything the PDF prints must be in the key. baseUrl: the branding
+  // footer links back to the app; year: the copyright line.
   const key = createHash("sha256")
-    .update(JSON.stringify({ v: PDF_TEMPLATE_VERSION, year: new Date().getFullYear(), props }))
+    .update(
+      JSON.stringify({
+        v: PDF_TEMPLATE_VERSION,
+        year: new Date().getFullYear(),
+        baseUrl: getBaseUrl(),
+        props,
+      })
+    )
     .digest("hex");
 
   const base64 = await unstable_cache(

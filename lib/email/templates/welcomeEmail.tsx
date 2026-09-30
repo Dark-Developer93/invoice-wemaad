@@ -10,7 +10,7 @@ import {
   Button,
 } from "@react-email/components";
 
-import { EmailFooter } from "../components/EmailFooter";
+import { PlainEmailFooter } from "../components/EmailFooter";
 import { EmailHeader } from "../components/EmailHeader";
 import { container, content, main } from "../components/emailStyles";
 
@@ -74,7 +74,7 @@ export default function WelcomeEmail({ url }: WelcomeEmailProps) {
               </div>
             </div>
 
-            <EmailFooter />
+            <PlainEmailFooter />
           </Section>
         </Container>
       </Body>

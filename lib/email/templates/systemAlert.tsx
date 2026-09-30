@@ -11,7 +11,7 @@ import {
 } from "@react-email/components";
 
 import { SystemAlertEmailProps } from "@/types";
-import { EmailFooter } from "../components/EmailFooter";
+import { PlainEmailFooter } from "../components/EmailFooter";
 import { EmailHeader } from "../components/EmailHeader";
 import { container, content, details, main, text } from "../components/emailStyles";
 import { getBaseUrl } from "@/lib/urls";
@@ -51,7 +51,7 @@ export default function SystemAlertEmail({
               </div>
             )}
 
-            <EmailFooter />
+            <PlainEmailFooter />
           </div>
         </Container>
       </Body>

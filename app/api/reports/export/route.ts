@@ -2,11 +2,22 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { parseInvoiceItems } from "@/lib/invoiceItems";
+import { getUserUsage } from "@/lib/usage";
+import { getPlanConfig } from "@/lib/planConfig";
 
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const usage = await getUserUsage(session.user.id);
+  const planConfig = await getPlanConfig(usage.plan);
+  if (planConfig.analyticsLevel !== "ADVANCED") {
+    return NextResponse.json(
+      { error: "CSV export requires the Pro plan or above." },
+      { status: 403 }
+    );
   }
 
   try {
