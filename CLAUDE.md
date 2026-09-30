@@ -40,6 +40,8 @@ lib/
   planConfig.ts        Cached DB-backed reader for admin-editable plan config
   monitoring.ts       recordCronRun / alertAdmins
   retention.ts        Data-retention pruning (see pattern 9)
+  invoicePdf.tsx      Invoice PDF load + render — deliberately not a server
+                      action (see pattern 10)
   rateLimit.ts         In-memory best-effort rate limiter
   env.ts              Zod-validated env access
   email/              Transport + templates
@@ -202,9 +204,78 @@ need a code change to update. Yearly pricing is always computed as
 `monthly price × 10` (2 months free) rather than stored separately, to
 avoid a value that could silently contradict the monthly price.
 
+### 10. Hot-path rendering rules (found by load testing)
+
+- **Never construct `Intl.NumberFormat` / `Intl.DateTimeFormat` per call.**
+  Construction is expensive; use `formatCurrency()` / `getCurrencyFormatter()`
+  (`lib/formatCurrency.ts`, cached per currency) and `formatDate`
+  (`lib/formatDate.ts`). A per-call `new Intl.NumberFormat` was the single
+  hottest function in the server CPU profile under load.
+- **Per-row dialogs mount on first open** (`useMountOnFirstOpen` in
+  `lib/hooks/`). Rendering N closed dialogs per table meant building a
+  full dialog tree per row on every server render and hydration.
+- **Long repeated lists render in a client component fed plain data**
+  (`components/invoice-list/InvoiceListView.tsx`). As a server component,
+  every row's markup was sent twice: once as HTML and again inside the RSC
+  payload for hydration. That was most of the invoice page's CPU. The server
+  still renders identical HTML. Pre-format dates/amounts on the server and
+  pass strings, so the browser can't render a different timezone than SSR did.
+- **Lists that grow without bound are paginated on the server**
+  (`lib/pagination.ts` + `components/pagination-controls/`): the invoice
+  list (20/page), admin users (25/page) and the reports outstanding list
+  (10/page). Fetch with `skip`/`take` plus a `COUNT`, clamp the page with
+  `getPageInfo` (stale links show the last page, never an empty table), and
+  always add an `id` tiebreaker to `orderBy` so a row can't appear on two
+  pages. Summary numbers above a paginated list (e.g. admin user totals)
+  must come from `COUNT` queries, not from the current page. Measured with
+  400 invoices: 231 → 62 ms per request; admin users at 3,000 users:
+  1,455 ms / 2 MB → 69 ms / 33 KB. Small, plan-capped lists (clients,
+  recurring templates) aren't paginated server-side.
+- **Don't split pages into a shell + JSON API for speed.** Tried on the
+  invoice list (branch `claude/invoices-json-prototype`, results in
+  `loadtest/README.md`). Each visit got slower (two requests instead of one
+  cheap paginated RSC render), and the gain under load was ~15–25%, not a
+  capacity tier. At ~400 users/core the tail comes from PDF renders on the
+  event loop, so that's the next thing to move.
+- **Invoice PDFs are cached by a hash of their exact inputs**
+  (`renderInvoicePDF` in `lib/invoicePdf.tsx`). Any change to what's printed
+  changes the key, so there's nothing to invalidate. When you add a prop to
+  `InvoicePDF`, pass it through `renderInvoicePDF`'s props so it's part of
+  the hash. Bump `PDF_TEMPLATE_VERSION` when the layout changes.
+- **Public marketing pages stay static.** Don't call `auth()` in `/`,
+  `/privacy`, `/terms` or anything they render — it makes the page dynamic
+  (a Node render + DB session lookup per visit instead of CDN-served HTML).
+  Use `useIsAuthenticated()` on the client for logged-in-only links.
+- **Server-action arguments are attacker-controlled.** Never give an
+  exported `"use server"` function a parameter that weakens its own auth
+  check (the old `generateInvoicePDF(id, skipAuthCheck)` let any logged-in
+  user download anyone's invoice PDF). Put shared internals in `lib/` and
+  let each caller authorize — see `lib/invoicePdf.tsx`.
+
+### 11. Database round trips
+
+Every query is a network round trip to Neon, so count them.
+
+- **The signed-in user's row: `getCurrentUser()`** (`lib/session.ts`,
+  `React.cache`, one query per request). Don't `prisma.user.findUnique` the
+  current user again in a page or layout, and don't call `getUserUsage()`
+  just to learn the plan. Pass `knownPlan` to `getUserUsage()` when you
+  already have it, except inside a limit-check transaction (pattern 3),
+  which must read the plan under its lock.
+- **`relationJoins` is enabled**, so `include` loads relations in the same
+  statement. Exception: list queries whose rows each include a *to-many*
+  relation (invoice → client → addresses) are much slower as one JOIN.
+  Give those `relationLoadStrategy: "query"`, and benchmark if unsure (see
+  `loadtest/README.md`).
+- **Invoice-email links are opened by customers with no account.** The
+  public PDF route is authorized only by its HMAC token and must never sit
+  behind a session. `e2e/invoice-share-link.spec.ts` (@smoke) guards that.
+  `getBaseUrl()` uses the stable production domain on Vercel, never the
+  per-deployment URL, because emailed links must keep working.
+
 ## Testing
 
-- `npm run test` — Vitest, currently 65 tests, all in `__tests__` folders
+- `npm run test` — Vitest, currently 126 tests, all in `__tests__` folders
   next to the code they cover.
 - When mocking `next/cache` in a test, mock **both** `revalidatePath` and
   `revalidateTag` — an action that calls the one you didn't mock will
@@ -215,12 +286,36 @@ avoid a value that could silently contradict the monthly price.
   against a real browser, a real Postgres database, and a real `next
   start` server — see "E2E tests" below.
 
+### Load tests (`loadtest/`)
+
+A k6 scenario simulating realistic users (dashboard → invoice list →
+occasional PDF / markAsPaid / createInvoice, with think time), judged on
+p95 < 500 ms, p99 < 1 s, < 1% errors. It seeds its own users and sessions
+(same session-token bypass as E2E) and must only ever run against a
+throwaway database. `loadtest/README.md` covers running, profiling, and the
+last recorded results — re-run it after changing hot pages (dashboard,
+invoice list, PDF).
+
 ### E2E tests (`e2e/`, `playwright.config.ts`)
 
 Covers the golden paths a unit test can't: auth guard redirects, invoice
-CRUD, client CRUD, and the billing-upgrade request/approve/reject flow
+CRUD, client CRUD, the row menus (view/download invoice, quick-view client,
+create invoice from a client row), server-side pagination (invoice list,
+admin users), the public invoice share link opened
+with no session, and the billing-upgrade request/approve/reject flow
 (including a regression test for the `requestPlanUpgrade` race fix — see
 pattern 3).
+
+Writing specs that stay reliable (each of these caused real flakes here):
+- **Create test data through the app**, not by inserting rows with Prisma,
+  when a page will display it. Lists are served from Next's data cache, and
+  only the app's own mutations invalidate it. (Deleting in `afterAll` via
+  Prisma is fine.)
+- **Assert on visible elements** (`.filter({ visible: true })`) for text
+  that sits inside a streamed/Suspense section. React can leave a hidden
+  copy in the DOM, so plain `getByText` may match twice and fail strict mode.
+- Before judging a spec flaky, run it with `--repeat-each 10 --retries 0`.
+  Retries in CI can hide a real race.
 
 - **Requires a real Postgres database** — `DATABASE_URL` pointed at a
   disposable database with migrations applied (`npx prisma migrate
@@ -274,6 +369,52 @@ here so they're not rediscovered from scratch:
   user count — see the capacity discussion the team has separately for the
   reasoning and the plan for watching actual usage via Neon's dashboard
   once live.
+- **`PlanConfig.teamCollaboration`, `apiAccessLevel`, and `multiUser` are
+  sold but not built.** All three are real, admin-editable, correctly
+  differentiated per plan (see pattern 9 and `PricingSection.tsx`'s
+  Compare Plans table), but nothing in the app actually checks them —
+  there is no team-invite flow, no API key system or `/api/v1` surface,
+  and no multi-user-per-account model. A paying Pro/Business customer who
+  tries to use "Team collaboration" or "API access" today gets nothing,
+  because there's nothing to get. This needs to be either built or
+  removed from the pricing page before real paying customers land on
+  those tiers — don't let it ship silently past launch.
+  - **Team collaboration and multi-user are the same underlying feature**,
+    not two separate builds. Both mean "more than one person can access
+    this account's data." The natural implementation is one team-
+    membership mechanism (either a `TeamMembership` join table granting a
+    second `User` access to an owner's data, or a heavier `Organization`
+    model that `Invoice`/`Client` belong to instead of `User` directly)
+    gated by a **seat count** rather than by two separate booleans — e.g.
+    a `maxSeats: number | null` field on `PlanConfig` (Pro caps at a
+    handful of seats, Business unlimited). That collapses "Team
+    collaboration ✓/✗" and "Multi-user access ✓/✗" into one number, and
+    fixes a real gap in the current lineup: there's no self-serve tier
+    between $29 Pro and "Contact Sales" Business for a 2-3 person team.
+  - Building this touches every ownership check in `app/actions/*.ts`
+    (pattern 2's `where: { id, userId }` shape), since a second user
+    needs to pass that check too — budget for that, not just the
+    invite-flow UI.
+  - **API access is a separate, standalone build** — a public REST
+    surface (`/api/v1/...`) authenticated by API key instead of session
+    cookie, its own rate limiting, and ongoing docs/versioning
+    commitment. Don't bundle it into the team-seats work; it's a
+    different kind of feature (external system integration, not more
+    humans on one account) and a much larger standing maintenance cost
+    relative to how small this app's audience is. Build it only once a
+    real customer asks for it, not speculatively.
+
+- **Billing "Request Upgrade" can occasionally keep showing the old view.**
+  The request is always saved and the action's response is correct, but
+  sometimes Next's client router can't apply the response to the current
+  page ("segment mismatch" in its server-action reducer) and falls back to
+  a full navigation that leaves the pre-request view up until the next
+  load. It reproduces on main too. Things that did *not* fix it (each
+  measured over 25–60 instrumented runs): uncaching the pending-request
+  read, ending the action with `redirect()`, waiting for network-idle
+  before clicking. Worth rechecking after a Next.js upgrade. The E2E spec
+  asserts on the saved state after a fresh load for this reason (see the
+  comment in `e2e/billing-upgrade.spec.ts`).
 
 ## Common pitfalls when extending this codebase
 

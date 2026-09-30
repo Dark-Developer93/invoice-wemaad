@@ -15,6 +15,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { Currency } from "@/types";
 import { calculateInvoiceTotal, InvoiceItem } from "@/lib/invoiceItems";
 import { useControllableOpenState } from "@/lib/hooks/useControllableOpenState";
+import { formatDate } from "@/lib/formatDate";
 
 interface ViewInvoiceDialogProps {
   invoice: {
@@ -233,15 +234,11 @@ export function ViewInvoiceDialog({
               <div className="space-y-1 text-sm">
                 <div>
                   <span className="text-muted-foreground">Invoice Date: </span>
-                  {new Intl.DateTimeFormat("en-US", {
-                    dateStyle: "long",
-                  }).format(new Date(invoice.date))}
+                  {formatDate.long(new Date(invoice.date))}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Due Date: </span>
-                  {new Intl.DateTimeFormat("en-US", {
-                    dateStyle: "long",
-                  }).format(dueDate)}
+                  {formatDate.long(dueDate)}
                 </div>
               </div>
             </div>

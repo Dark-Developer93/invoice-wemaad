@@ -1,102 +1,25 @@
 "use server";
 
-import { Prisma } from "@prisma/client";
-import { pdf } from "@react-pdf/renderer";
-import { InvoicePDF } from "@/components/pdf/InvoicePDF";
-import prisma from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { loadInvoiceForPdf, renderInvoicePDF } from "@/lib/invoicePdf";
 
-export type InvoiceWithRelations = Prisma.InvoiceGetPayload<{
-  include: {
-    client: {
-      include: {
-        addresses: true;
-        contactPersons: true;
-      };
-    };
-    User: {
-      select: {
-        companyName: true;
-        companyEmail: true;
-        companyAddress: true;
-        companyTaxId: true;
-        companyLogoUrl: true;
-        stampsUrl: true;
-        bankName: true;
-        bankAccountName: true;
-        bankAccountNumber: true;
-        bankSwiftCode: true;
-        bankIBAN: true;
-        bankAddress: true;
-      };
-    };
-  };
-}>;
-
-export async function generateInvoicePDF(
-  invoiceId: string,
-  skipAuthCheck: boolean = false
-) {
+// Callable from the browser (the invoice list's "Download" action), so its
+// arguments are attacker-controlled: it must always authorize via the session
+// and scope the lookup to the caller's own invoices. The public signed-link
+// route uses lib/invoicePdf directly instead of going through this action.
+export async function generateInvoicePDF(invoiceId: string) {
   try {
-    let userId: string | undefined;
-
-    if (!skipAuthCheck) {
-      const session = await auth();
-      if (!session?.user?.id) {
-        throw new Error("Unauthorized");
-      }
-      userId = session.user.id;
+    const session = await auth();
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
     }
 
-    const data = (await prisma.invoice.findUnique({
-      where: {
-        id: invoiceId,
-        ...(userId ? { userId } : {}),
-      },
-      include: {
-        client: {
-          include: {
-            addresses: {
-              where: {
-                isDefault: true,
-              },
-              take: 1,
-            },
-            contactPersons: {
-              where: {
-                isPrimary: true,
-              },
-              take: 1,
-            },
-          },
-        },
-        User: {
-          select: {
-            companyName: true,
-            companyEmail: true,
-            companyAddress: true,
-            companyTaxId: true,
-            companyLogoUrl: true,
-            stampsUrl: true,
-            bankName: true,
-            bankAccountName: true,
-            bankAccountNumber: true,
-            bankSwiftCode: true,
-            bankIBAN: true,
-            bankAddress: true,
-          },
-        },
-      },
-    })) as InvoiceWithRelations | null;
-
-    if (!data) {
+    const invoice = await loadInvoiceForPdf(invoiceId, session.user.id);
+    if (!invoice) {
       throw new Error("Invoice not found");
     }
 
-    const pdfDoc = await pdf(<InvoicePDF invoice={data} />);
-    const blob = await pdfDoc.toBlob();
-    const arrayBuffer = await blob.arrayBuffer();
-    return arrayBuffer;
+    return await renderInvoicePDF(invoice);
   } catch (error) {
     console.error("[GENERATE_INVOICE_PDF]", error);
     throw error;

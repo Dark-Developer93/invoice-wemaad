@@ -11,49 +11,33 @@ import { cacheTags } from "@/lib/cache";
 function getDashboardMetrics(userId: string) {
   return unstable_cache(
     async () => {
-      const [data, openInvoices, paidinvoices] = await Promise.all([
-        prisma.invoice.findMany({
-          where: {
-            userId: userId,
-          },
-          select: {
-            total: true,
-          },
-        }),
-        prisma.invoice.findMany({
-          where: {
-            userId: userId,
-            status: "PENDING",
-          },
-          select: {
-            id: true,
-          },
-        }),
-        prisma.invoice.findMany({
-          where: {
-            userId: userId,
-            status: "PAID",
-          },
-          select: {
-            id: true,
-          },
-        }),
-      ]);
+      // One aggregate query instead of loading every invoice row (three
+      // times) just to count and sum them in JS.
+      const byStatus = await prisma.invoice.groupBy({
+        by: ["status"],
+        where: { userId },
+        _count: { _all: true },
+        _sum: { total: true },
+      });
+
+      const countFor = (status: "PAID" | "PENDING") =>
+        byStatus.find((row) => row.status === status)?._count._all ?? 0;
 
       return {
-        data,
-        openInvoices,
-        paidinvoices,
+        totalRevenue: byStatus.reduce((acc, row) => acc + Number(row._sum.total ?? 0), 0),
+        totalCount: byStatus.reduce((acc, row) => acc + row._count._all, 0),
+        paidCount: countFor("PAID"),
+        pendingCount: countFor("PENDING"),
       };
     },
-    ["dashboard-metrics", userId],
+    ["dashboard-metrics-v2", userId],
     { tags: [cacheTags.invoices(userId)] }
   )();
 }
 
 export async function DashboardBlocks() {
   const session = await requireUser();
-  const { data, openInvoices, paidinvoices } = await getDashboardMetrics(
+  const { totalRevenue, totalCount, paidCount, pendingCount } = await getDashboardMetrics(
     session.user?.id as string
   );
 
@@ -67,7 +51,7 @@ export async function DashboardBlocks() {
         <CardContent>
           <h2 className="text-2xl font-bold">
             {formatCurrency({
-              amount: data.reduce((acc, invoice) => acc + Number(invoice.total), 0),
+              amount: totalRevenue,
               currency: "USD",
             })}
           </h2>
@@ -82,7 +66,7 @@ export async function DashboardBlocks() {
           <Users className="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <h2 className="text-2xl font-bold">+{data.length}</h2>
+          <h2 className="text-2xl font-bold">+{totalCount}</h2>
           <p className="text-xs text-muted-foreground">Total Invoices Isued!</p>
         </CardContent>
       </Card>
@@ -92,7 +76,7 @@ export async function DashboardBlocks() {
           <CreditCard className="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <h2 className="text-2xl font-bold">+{paidinvoices.length}</h2>
+          <h2 className="text-2xl font-bold">+{paidCount}</h2>
           <p className="text-xs text-muted-foreground">
             Total Invoices which have been paid!
           </p>
@@ -106,7 +90,7 @@ export async function DashboardBlocks() {
           <Activity className="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <h2 className="text-2xl font-bold">+{openInvoices.length}</h2>
+          <h2 className="text-2xl font-bold">+{pendingCount}</h2>
           <p className="text-xs text-muted-foreground">
             Invoices which are currently pending!
           </p>

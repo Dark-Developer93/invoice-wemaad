@@ -17,7 +17,9 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { adminGetAllUsers, adminGetPendingUpgradeRequests } from "@/app/actions/admin";
+import { adminGetUsersPage, adminGetPendingUpgradeRequests } from "@/app/actions/admin";
+import { parsePageParam } from "@/lib/pagination";
+import { PaginationControls } from "@/components/pagination-controls/PaginationControls";
 import { AdminUsersContentSkeleton } from "./_skeleton";
 
 const PLAN_COLORS: Record<string, string> = {
@@ -27,16 +29,14 @@ const PLAN_COLORS: Record<string, string> = {
   BUSINESS: "destructive",
 };
 
-async function AdminUsersContent() {
-  const [users, pendingRequests] = await Promise.all([
-    adminGetAllUsers(),
+async function AdminUsersContent({ page }: { page: number }) {
+  const [{ users, pageInfo, totals }, pendingRequests] = await Promise.all([
+    adminGetUsersPage(page),
     adminGetPendingUpgradeRequests(),
   ]);
 
-  const totalUsers = users.length;
-  const activeUsers = users.filter((u) => u.isActive).length;
-  const inactiveUsers = users.filter((u) => !u.isActive).length;
-  const paidUsers = users.filter((u) => u.plan !== "FREE").length;
+  // Platform-wide counts (COUNT queries), not just the visible page.
+  const { totalUsers, activeUsers, inactiveUsers, paidUsers } = totals;
 
   return (
     <>
@@ -204,13 +204,23 @@ async function AdminUsersContent() {
               <div className="text-center py-12 text-muted-foreground">No users found.</div>
             )}
           </div>
+          <PaginationControls
+            page={pageInfo.page}
+            pageCount={pageInfo.pageCount}
+            hrefForPage={(p) => (p === 1 ? "/admin/users" : `/admin/users?page=${p}`)}
+          />
         </CardContent>
       </Card>
     </>
   );
 }
 
-export default function AdminUsersPage() {
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string | string[] }>;
+}) {
+  const page = parsePageParam((await searchParams).page);
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -219,8 +229,8 @@ export default function AdminUsersPage() {
           Manage all users, their plans, and account status.
         </p>
       </div>
-      <Suspense fallback={<AdminUsersContentSkeleton />}>
-        <AdminUsersContent />
+      <Suspense key={page} fallback={<AdminUsersContentSkeleton />}>
+        <AdminUsersContent page={page} />
       </Suspense>
     </div>
   );

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 vi.mock("@/lib/env", () => ({
   env: {
@@ -12,7 +12,7 @@ vi.mock("@/lib/env", () => ({
 delete process.env.VERCEL_URL;
 process.env.NEXT_PUBLIC_APP_URL = "https://example.com";
 
-import { getInvoiceUrl, verifyInvoiceToken } from "../urls";
+import { getBaseUrl, getInvoiceUrl, verifyInvoiceToken } from "../urls";
 
 describe("getInvoiceUrl", () => {
   it("includes the invoiceId in the URL path", () => {
@@ -65,5 +65,38 @@ describe("verifyInvoiceToken", () => {
 
   it("rejects an empty string token", () => {
     expect(verifyInvoiceToken("invoice-xyz", "")).toBe(false);
+  });
+});
+
+describe("getBaseUrl", () => {
+  const saved = { ...process.env };
+  afterEach(() => {
+    process.env = { ...saved };
+  });
+
+  // Invoice emails are opened by customers without an account, possibly long
+  // after sending — they must point at the stable production domain, never
+  // at a per-deployment URL that can be protected or deleted.
+  it("uses the stable production domain in Vercel production", () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "invoices.example.com";
+    process.env.VERCEL_URL = "invoice-wemaad-abc123.vercel.app";
+    expect(getBaseUrl()).toBe("https://invoices.example.com");
+    expect(getInvoiceUrl("inv-1")).toMatch(/^https:\/\/invoices\.example\.com\/api\/invoice\/inv-1\?token=/);
+  });
+
+  it("uses the deployment's own URL on previews", () => {
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "invoices.example.com";
+    process.env.VERCEL_URL = "invoice-wemaad-git-branch.vercel.app";
+    expect(getBaseUrl()).toBe("https://invoice-wemaad-git-branch.vercel.app");
+  });
+
+  it("falls back to NEXT_PUBLIC_APP_URL off Vercel", () => {
+    delete process.env.VERCEL_ENV;
+    delete process.env.VERCEL_URL;
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000/";
+    expect(getBaseUrl()).toBe("http://localhost:3000");
   });
 });

@@ -8,15 +8,27 @@ import { requireAdmin } from "@/lib/session";
 import { cacheTags } from "@/lib/cache";
 import { getPlanConfigs } from "@/lib/planConfig";
 import { PLAN_ORDER, PlanType } from "@/lib/plans";
+import { getPageInfo, PAGE_SIZES } from "@/lib/pagination";
 
 const planSchema = z.enum(["FREE", "STARTER", "PRO", "BUSINESS"]);
 
 const ADMIN_NOTE_MAX_LENGTH = 1000;
 
-export async function adminGetAllUsers() {
+// One page of users plus platform-wide totals. The list used to load every
+// user on every visit (5 MB of HTML at 3,000 users); the summary cards now
+// come from COUNT queries so they still describe the whole platform, not
+// just the visible page.
+export async function adminGetUsersPage(requestedPage: number) {
   await requireAdmin();
 
-  return prisma.user.findMany({
+  const [totalUsers, activeUsers, paidUsers] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { isActive: true } }),
+    prisma.user.count({ where: { plan: { not: "FREE" } } }),
+  ]);
+  const pageInfo = getPageInfo(requestedPage, totalUsers, PAGE_SIZES.adminUsers);
+
+  const users = await prisma.user.findMany({
     select: {
       id: true,
       firstName: true,
@@ -32,8 +44,17 @@ export async function adminGetAllUsers() {
         select: { invoices: true, clients: true },
       },
     },
-    orderBy: { createdAt: "desc" },
+    // id breaks createdAt ties, so a user can't appear on two pages.
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip: pageInfo.skip,
+    take: pageInfo.take,
   });
+
+  return {
+    users,
+    pageInfo,
+    totals: { totalUsers, activeUsers, inactiveUsers: totalUsers - activeUsers, paidUsers },
+  };
 }
 
 export async function adminGetUser(userId: string) {
@@ -279,21 +300,22 @@ export async function adminGetPlanConfigs() {
 const MAX_LIMIT_VALUE = 1_000_000;
 const MAX_PRICE_VALUE = 100_000;
 const MAX_DESCRIPTION_LENGTH = 200;
-const MAX_FEATURE_LENGTH = 200;
-const MAX_FEATURES_COUNT = 20;
 
 const planConfigSchema = z.object({
   price: z.coerce.number().int().min(0).max(MAX_PRICE_VALUE).nullable(),
   invoiceLimit: z.coerce.number().int().min(1).max(MAX_LIMIT_VALUE).nullable(),
   emailLimit: z.coerce.number().int().min(1).max(MAX_LIMIT_VALUE).nullable(),
+  clientLimit: z.coerce.number().int().min(1).max(MAX_LIMIT_VALUE).nullable(),
   recurringInvoices: z.boolean(),
-  analytics: z.boolean(),
-  customBranding: z.boolean(),
+  analyticsLevel: z.enum(["NONE", "BASIC", "ADVANCED"]),
+  brandingLevel: z.enum(["SHOWN", "MINIMAL", "HIDDEN"]),
   teamCollaboration: z.boolean(),
-  apiAccess: z.boolean(),
+  apiAccessLevel: z.enum(["NONE", "BASIC", "ADVANCED"]),
   multiUser: z.boolean(),
+  customIntegrations: z.boolean(),
+  supportLevel: z.enum(["STANDARD", "PRIORITY", "DEDICATED"]),
+  slaGuarantee: z.boolean(),
   description: z.string().max(MAX_DESCRIPTION_LENGTH),
-  extraFeatures: z.array(z.string().min(1).max(MAX_FEATURE_LENGTH)).max(MAX_FEATURES_COUNT),
   popular: z.boolean(),
 });
 
@@ -341,7 +363,7 @@ export interface PlatformInsights {
 // price x subscriber count) — nothing derived from any user's invoices.
 //
 // Not cached, unlike user-facing reads — admin pages read straight from the
-// DB like the rest of the admin panel (adminGetAllUsers, etc.), and this is
+// DB like the rest of the admin panel (adminGetUsersPage, etc.), and this is
 // low-traffic enough that the extra query cost doesn't matter.
 export async function adminGetPlatformInsights(): Promise<PlatformInsights> {
   await requireAdmin();

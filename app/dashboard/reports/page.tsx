@@ -1,19 +1,22 @@
 import { Suspense } from "react";
 import { subMonths, format } from "date-fns";
 import { unstable_cache } from "next/cache";
-import { requireUser } from "@/lib/session";
+import { getCurrentUser, requireUser } from "@/lib/session";
 import prisma from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RevenueSummaryCard } from "@/components/reports/RevenueSummaryCard";
+import { RevenueTotalsCard } from "@/components/reports/RevenueTotalsCard";
 import { StatusBreakdownCard } from "@/components/reports/StatusBreakdownCard";
 import { ClientRevenueTable } from "@/components/reports/ClientRevenueTable";
 import { OutstandingInvoicesCard } from "@/components/reports/OutstandingInvoicesCard";
 import { UpgradePrompt } from "@/components/upgrade-prompt/UpgradePrompt";
-import { getUserUsage } from "@/lib/usage";
 import { getPlanConfig } from "@/lib/planConfig";
+import { AnalyticsLevel, PlanType } from "@/lib/plans";
 import { cacheTags } from "@/lib/cache";
+import { getPageInfo, PAGE_SIZES, parsePageParam } from "@/lib/pagination";
+import { PaginationControls } from "@/components/pagination-controls/PaginationControls";
 
 export const metadata = {
   title: "Reports",
@@ -40,8 +43,11 @@ async function getReportInvoices(userId: string) {
           clientId: true,
           client: { select: { id: true, name: true } },
         },
+        // Deterministic order: the outstanding list below is paginated, and
+        // without it a row could land on two pages (or none).
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       }),
-    ["report-invoices", userId],
+    ["report-invoices-v2", userId],
     { tags: [cacheTags.invoices(userId)] }
   )();
 
@@ -55,7 +61,15 @@ async function getReportInvoices(userId: string) {
   }));
 }
 
-async function ReportsContent({ userId }: { userId: string }) {
+async function ReportsContent({
+  userId,
+  analyticsLevel,
+  outstandingPage,
+}: {
+  userId: string;
+  analyticsLevel: AnalyticsLevel;
+  outstandingPage: number;
+}) {
   const now = new Date();
 
   const allInvoices = await getReportInvoices(userId);
@@ -100,7 +114,9 @@ async function ReportsContent({ userId }: { userId: string }) {
     .sort((a, b) => b.total - a.total)
     .slice(0, 10);
 
-  const outstanding = allInvoices
+  // Paginated: every pending invoice is listed, which grows without bound.
+  // Totals above still use all of them; only the list is paged.
+  const allOutstanding = allInvoices
     .filter((i) => i.status === "PENDING")
     .map((i) => ({
       id: i.id,
@@ -111,8 +127,46 @@ async function ReportsContent({ userId }: { userId: string }) {
       dueDate: i.dueDate,
       clientName: i.client?.name ?? null,
     }));
+  const outstandingPageInfo = getPageInfo(
+    outstandingPage,
+    allOutstanding.length,
+    PAGE_SIZES.outstandingInvoices
+  );
+  const outstanding = allOutstanding.slice(
+    outstandingPageInfo.skip,
+    outstandingPageInfo.skip + outstandingPageInfo.take
+  );
+  const outstandingCard = (
+    <OutstandingInvoicesCard
+      invoices={outstanding}
+      totalCount={allOutstanding.length}
+      pagination={
+        <PaginationControls
+          page={outstandingPageInfo.page}
+          pageCount={outstandingPageInfo.pageCount}
+          hrefForPage={(p) =>
+            p === 1 ? "/dashboard/reports" : `/dashboard/reports?outstandingPage=${p}`
+          }
+        />
+      }
+    />
+  );
 
   const defaultCurrency = allInvoices[0]?.currency ?? "USD";
+
+  if (analyticsLevel === "BASIC") {
+    return (
+      <div className="grid grid-cols-1 gap-6">
+        <RevenueTotalsCard
+          ytdTotal={ytdTotal}
+          paid={paidTotal}
+          pending={pendingTotal}
+          currency={defaultCurrency}
+        />
+        {outstandingCard}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -130,7 +184,7 @@ async function ReportsContent({ userId }: { userId: string }) {
       />
       <ClientRevenueTable data={clientRevenue} currency={defaultCurrency} />
       <div className="lg:col-span-2">
-        <OutstandingInvoicesCard invoices={outstanding} />
+        {outstandingCard}
       </div>
     </div>
   );
@@ -178,12 +232,19 @@ function ReportsContentSkeleton() {
   );
 }
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ outstandingPage?: string | string[] }>;
+}) {
+  const outstandingPage = parsePageParam((await searchParams).outstandingPage);
   const session = await requireUser();
-  const usage = await getUserUsage(session.user!.id!);
-  const planConfig = await getPlanConfig(usage.plan);
+  // Only the plan is needed here — this used to run getUserUsage(), i.e. two
+  // monthly COUNT queries plus a plan lookup, before rendering anything.
+  const user = await getCurrentUser();
+  const planConfig = await getPlanConfig(user.plan as PlanType);
 
-  if (!planConfig.analytics) {
+  if (planConfig.analyticsLevel === "NONE") {
     return (
       <UpgradePrompt
         title="Reports"
@@ -203,16 +264,26 @@ export default async function ReportsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Reports</h1>
-          <p className="text-muted-foreground">Financial insights and analytics</p>
+          <p className="text-muted-foreground">
+            {planConfig.analyticsLevel === "BASIC"
+              ? "Revenue totals — upgrade to Pro for trend charts, top clients, and CSV export"
+              : "Financial insights and analytics"}
+          </p>
         </div>
-        <Button variant="outline" asChild className="w-full sm:w-auto">
-          <a href="/api/reports/export?format=csv" download="invoices.csv">
-            Export CSV
-          </a>
-        </Button>
+        {planConfig.analyticsLevel === "ADVANCED" && (
+          <Button variant="outline" asChild className="w-full sm:w-auto">
+            <a href="/api/reports/export?format=csv" download="invoices.csv">
+              Export CSV
+            </a>
+          </Button>
+        )}
       </div>
       <Suspense fallback={<ReportsContentSkeleton />}>
-        <ReportsContent userId={session.user!.id!} />
+        <ReportsContent
+          userId={session.user!.id!}
+          analyticsLevel={planConfig.analyticsLevel}
+          outstandingPage={outstandingPage}
+        />
       </Suspense>
     </div>
   );

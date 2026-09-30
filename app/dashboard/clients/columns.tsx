@@ -16,9 +16,24 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ClientDialog } from "@/components/client-form/clientDialog";
 import { useRouter } from "next/navigation";
-import { InvoiceDialog } from "@/components/invoice-dialog/InvoiceDialog";
-import { ViewClientDialog } from "@/components/client-dialog/ViewClientDialog";
+import dynamic from "next/dynamic";
 import { openAfterMenuCloses } from "@/lib/openAfterMenuCloses";
+import { useMountOnFirstOpen } from "@/lib/hooks/useMountOnFirstOpen";
+
+// These dialogs only mount once a row's menu item is picked, so their code
+// (the invoice form, with its date picker and form libraries, is most of this
+// page's JavaScript) loads on demand. Opening a row menu starts the download,
+// so it's normally ready before the user picks an item.
+const loadInvoiceDialog = () => import("@/components/invoice-dialog/InvoiceDialog");
+const loadViewClientDialog = () => import("@/components/client-dialog/ViewClientDialog");
+const InvoiceDialog = dynamic(() => loadInvoiceDialog().then((m) => m.InvoiceDialog));
+const ViewClientDialog = dynamic(() => loadViewClientDialog().then((m) => m.ViewClientDialog));
+function preloadRowDialogs(open: boolean) {
+  if (open) {
+    void loadInvoiceDialog();
+    void loadViewClientDialog();
+  }
+}
 
 export type Client = {
   id: string;
@@ -73,6 +88,11 @@ export function ActionCell({ client, allClients }: ActionCellProps) {
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const [editClientOpen, setEditClientOpen] = useState(false);
   const [createInvoiceOpen, setCreateInvoiceOpen] = useState(false);
+  // One ActionCell per table row — don't build three closed dialogs per row
+  // (the create-invoice one maps over every client, so N rows made it O(N²)).
+  const quickViewMounted = useMountOnFirstOpen(quickViewOpen);
+  const editClientMounted = useMountOnFirstOpen(editClientOpen);
+  const createInvoiceMounted = useMountOnFirstOpen(createInvoiceOpen);
 
   const clientWithRequiredFields = {
     ...client,
@@ -81,7 +101,7 @@ export function ActionCell({ client, allClients }: ActionCellProps) {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu onOpenChange={preloadRowDialogs}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
             <span className="sr-only">Open menu</span>
@@ -116,31 +136,37 @@ export function ActionCell({ client, allClients }: ActionCellProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <ViewClientDialog
-        client={client}
-        open={quickViewOpen}
-        onOpenChange={setQuickViewOpen}
-      />
-      <ClientDialog
-        client={clientWithRequiredFields}
-        open={editClientOpen}
-        onOpenChange={setEditClientOpen}
-        onSuccess={() => router.refresh()}
-      />
-      <InvoiceDialog
-        open={createInvoiceOpen}
-        onOpenChange={setCreateInvoiceOpen}
-        clients={allClients.map((c) => ({
-          ...c,
-          addresses: c.addresses
-            .filter((addr) => addr.id)
-            .map((addr) => ({ ...addr, id: addr.id! })),
-          contactPersons: c.contactPersons
-            .filter((contact) => contact.id)
-            .map((contact) => ({ ...contact, id: contact.id! })),
-        }))}
-        defaultClientId={client.id}
-      />
+      {quickViewMounted && (
+        <ViewClientDialog
+          client={client}
+          open={quickViewOpen}
+          onOpenChange={setQuickViewOpen}
+        />
+      )}
+      {editClientMounted && (
+        <ClientDialog
+          client={clientWithRequiredFields}
+          open={editClientOpen}
+          onOpenChange={setEditClientOpen}
+          onSuccess={() => router.refresh()}
+        />
+      )}
+      {createInvoiceMounted && (
+        <InvoiceDialog
+          open={createInvoiceOpen}
+          onOpenChange={setCreateInvoiceOpen}
+          clients={allClients.map((c) => ({
+            ...c,
+            addresses: c.addresses
+              .filter((addr) => addr.id)
+              .map((addr) => ({ ...addr, id: addr.id! })),
+            contactPersons: c.contactPersons
+              .filter((contact) => contact.id)
+              .map((contact) => ({ ...contact, id: contact.id! })),
+          }))}
+          defaultClientId={client.id}
+        />
+      )}
     </>
   );
 }

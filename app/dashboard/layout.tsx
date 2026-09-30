@@ -18,29 +18,15 @@ import { DashboardLinks } from "@/components/dashboard-links/DashboardLinks";
 import { NavSheet } from "@/components/nav-sheet/NavSheet";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { signOut } from "@/lib/auth";
-import prisma from "@/lib/db";
-import { getRequiredUserId } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { UserProvider } from "@/components/providers/UserProvider";
 
-async function getUser(userId: string) {
-  const data = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      firstName: true,
-      lastName: true,
-      address: true,
-      email: true,
-      companyName: true,
-      companyEmail: true,
-      companyAddress: true,
-      isAdmin: true,
-    },
-  });
+async function getUser() {
+  // Shared per-request with the page below (see getCurrentUser).
+  const data = await getCurrentUser();
 
-  if (!data?.firstName || !data.lastName || !data.address) {
+  if (!data.firstName || !data.lastName || !data.address) {
     redirect("/onboarding");
   }
 
@@ -52,8 +38,7 @@ export default async function DashboardLayout({
 }: {
   children: ReactNode;
 }) {
-  const userId = await getRequiredUserId();
-  const userData = await getUser(userId);
+  const userData = await getUser();
 
   return (
     <>

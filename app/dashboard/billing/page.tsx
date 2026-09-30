@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -10,7 +9,7 @@ export const metadata: Metadata = {
 };
 import { format } from "date-fns";
 
-import { requireUser } from "@/lib/session";
+import { getCurrentUser, requireUser } from "@/lib/session";
 import { getUserUsage } from "@/lib/usage";
 import { PLAN_NAMES, PlanType, PLAN_ORDER } from "@/lib/plans";
 import { getPlanConfigs } from "@/lib/planConfig";
@@ -65,28 +64,31 @@ function UsageBar({
 }
 
 async function BillingContent({ userId }: { userId: string }) {
-  const [usage, userData, pendingRequest, planConfigs] = await Promise.all([
-    getUserUsage(userId),
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { plan: true, planUpdatedAt: true },
-    }),
+  // Already loaded by the dashboard layout in this request.
+  const userData = await getCurrentUser();
+  const [usage, pendingRequest, planConfigs, clientsCount] = await Promise.all([
+    getUserUsage(userId, undefined, userData.plan as PlanType),
     getUserPendingUpgradeRequest(),
     getPlanConfigs(),
+    prisma.client.count({ where: { userId } }),
   ]);
-
-  if (!userData) notFound();
 
   const currentPlan = userData.plan as PlanType;
   const currentFeatures = planConfigs[currentPlan];
 
   const lockedFeatures: string[] = [];
   if (!currentFeatures.recurringInvoices) lockedFeatures.push("Recurring invoices");
-  if (!currentFeatures.analytics) lockedFeatures.push("Analytics & reports");
-  if (!currentFeatures.customBranding) lockedFeatures.push("Custom branding");
+  if (currentFeatures.analyticsLevel === "NONE") lockedFeatures.push("Analytics & reports");
+  if (currentFeatures.analyticsLevel === "BASIC") lockedFeatures.push("Advanced analytics (charts + export)");
+  if (currentFeatures.brandingLevel !== "HIDDEN") lockedFeatures.push("Fully white-labeled invoices");
   if (!currentFeatures.teamCollaboration) lockedFeatures.push("Team collaboration");
-  if (!currentFeatures.apiAccess) lockedFeatures.push("API access");
+  if (currentFeatures.apiAccessLevel === "NONE") lockedFeatures.push("API access");
+  if (currentFeatures.apiAccessLevel === "BASIC") lockedFeatures.push("Advanced API access");
   if (!currentFeatures.multiUser) lockedFeatures.push("Multi-user access");
+  if (currentFeatures.supportLevel === "STANDARD") lockedFeatures.push("Priority support");
+  if (currentFeatures.supportLevel === "PRIORITY") lockedFeatures.push("Dedicated support");
+  if (!currentFeatures.customIntegrations) lockedFeatures.push("Custom integrations");
+  if (!currentFeatures.slaGuarantee) lockedFeatures.push("SLA guarantee");
 
   return (
     <>
@@ -124,7 +126,7 @@ async function BillingContent({ userId }: { userId: string }) {
             · Active since {format(new Date(userData.planUpdatedAt), "MMM d, yyyy")}
           </p>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
+        <CardContent className="grid gap-4 sm:grid-cols-3">
           <UsageBar
             label="Invoices this month"
             used={usage.invoicesThisMonth}
@@ -134,6 +136,11 @@ async function BillingContent({ userId }: { userId: string }) {
             label="Emails this month"
             used={usage.emailsThisMonth}
             limit={usage.emailLimit}
+          />
+          <UsageBar
+            label="Clients"
+            used={clientsCount}
+            limit={currentFeatures.clientLimit}
           />
         </CardContent>
       </Card>
@@ -177,6 +184,7 @@ async function BillingContent({ userId }: { userId: string }) {
                 <CardContent className="flex-1 text-sm text-muted-foreground space-y-1.5">
                   <p>{planConfig.invoiceLimit ?? "Unlimited"} invoices/mo</p>
                   <p>{planConfig.emailLimit ?? "Unlimited"} emails/mo</p>
+                  <p>{planConfig.clientLimit ?? "Unlimited"} clients</p>
                   <p className="flex items-center gap-1">
                     {planConfig.recurringInvoices ? (
                       <CheckCircle2 className="size-3.5 text-emerald-500" />
@@ -186,20 +194,26 @@ async function BillingContent({ userId }: { userId: string }) {
                     Recurring invoices
                   </p>
                   <p className="flex items-center gap-1">
-                    {planConfig.analytics ? (
+                    {planConfig.analyticsLevel !== "NONE" ? (
                       <CheckCircle2 className="size-3.5 text-emerald-500" />
                     ) : (
                       <XCircle className="size-3.5 text-muted-foreground/50" />
                     )}
-                    Analytics & reports
+                    {planConfig.analyticsLevel === "ADVANCED"
+                      ? "Advanced analytics"
+                      : planConfig.analyticsLevel === "BASIC"
+                        ? "Basic reports"
+                        : "Analytics & reports"}
                   </p>
                   <p className="flex items-center gap-1">
-                    {planConfig.customBranding ? (
+                    {planConfig.brandingLevel === "HIDDEN" ? (
                       <CheckCircle2 className="size-3.5 text-emerald-500" />
                     ) : (
                       <XCircle className="size-3.5 text-muted-foreground/50" />
                     )}
-                    Custom branding
+                    {planConfig.brandingLevel === "MINIMAL"
+                      ? "Minimal branding"
+                      : "Fully white-labeled"}
                   </p>
                   <p className="flex items-center gap-1">
                     {planConfig.teamCollaboration ? (
@@ -275,8 +289,8 @@ function BillingContentSkeleton() {
           </div>
           <Skeleton className="h-4 w-48 mt-1" />
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          {[...Array(2)].map((_, i) => (
+        <CardContent className="grid gap-4 sm:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
             <div key={i} className="space-y-2">
               <div className="flex justify-between">
                 <Skeleton className="h-4 w-36" />
@@ -297,7 +311,7 @@ function BillingContentSkeleton() {
                 <Skeleton className="h-8 w-16 mt-2" />
               </CardHeader>
               <CardContent className="flex-1 space-y-2">
-                {[...Array(4)].map((_, j) => (
+                {[...Array(6)].map((_, j) => (
                   <Skeleton key={j} className="h-4 w-full" />
                 ))}
               </CardContent>

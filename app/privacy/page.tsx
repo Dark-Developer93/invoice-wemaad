@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
-import { auth } from "@/lib/auth";
 import { getBaseUrl } from "@/lib/urls";
 
 export const metadata: Metadata = {
@@ -21,9 +20,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default async function PrivacyPolicyPage() {
-  const session = await auth();
-  const isAuthenticated = !!session;
+export default function PrivacyPolicyPage() {
   const baseUrl = getBaseUrl();
 
   return (
@@ -155,7 +152,7 @@ export default async function PrivacyPolicyPage() {
           </Section>
         </div>
       </main>
-      <Footer isAuthenticated={isAuthenticated} />
+      <Footer />
     </div>
   );
 }

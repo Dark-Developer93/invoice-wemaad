@@ -78,6 +78,7 @@ export async function createInvoice(
       if (client?.contactPersons[0]) {
         dispatchInvoiceEmail({
           userId,
+          plan: usage.plan,
           clientName: client.name,
           contactEmail: client.contactPersons[0].email,
           templateName: "newInvoice",
@@ -139,6 +140,7 @@ export async function editInvoice(
       if (client?.contactPersons[0] && isEmailLimitOk(usage)) {
         dispatchInvoiceEmail({
           userId,
+          plan: usage.plan,
           clientName: client.name,
           contactEmail: client.contactPersons[0].email,
           templateName: "updatedInvoice",
@@ -205,6 +207,7 @@ export async function sendReminderEmail(invoiceId: string) {
 
   await dispatchInvoiceEmail({
     userId,
+    plan: usage.plan,
     clientName: invoiceData.client.name,
     contactEmail: invoiceData.client.contactPersons[0].email,
     templateName: "reminderInvoice",

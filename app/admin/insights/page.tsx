@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminGetPlatformInsights } from "@/app/actions/admin";
 import { SignupsChart } from "./SignupsChart";
 import { PlanDistributionCard } from "./PlanDistributionCard";
+import { getCurrencyFormatter } from "@/lib/formatCurrency";
 
 export const metadata: Metadata = {
   title: "Admin – Insights",
@@ -39,7 +40,7 @@ export default async function AdminInsightsPage() {
   const insights = await adminGetPlatformInsights();
 
   const fmt = (v: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v);
+    getCurrencyFormatter("USD").format(v);
 
   return (
     <div className="flex flex-col gap-6">

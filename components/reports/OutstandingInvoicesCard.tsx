@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { format } from "date-fns";
 import {
   Card,
@@ -7,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getCurrencyFormatter } from "@/lib/formatCurrency";
 
 interface OutstandingInvoice {
   id: string;
@@ -19,11 +21,20 @@ interface OutstandingInvoice {
 }
 
 interface OutstandingInvoicesCardProps {
+  // The current page of outstanding invoices.
   invoices: OutstandingInvoice[];
+  // All outstanding invoices, across every page (for the header count).
+  totalCount?: number;
+  // Pager rendered under the list (the list is paginated on the server).
+  pagination?: ReactNode;
 }
 
-export function OutstandingInvoicesCard({ invoices }: OutstandingInvoicesCardProps) {
-  if (invoices.length === 0) {
+export function OutstandingInvoicesCard({
+  invoices,
+  totalCount = invoices.length,
+  pagination,
+}: OutstandingInvoicesCardProps) {
+  if (totalCount === 0) {
     return (
       <Card>
         <CardHeader>
@@ -42,7 +53,7 @@ export function OutstandingInvoicesCard({ invoices }: OutstandingInvoicesCardPro
       <CardHeader>
         <CardTitle>Outstanding Invoices</CardTitle>
         <CardDescription>
-          {invoices.length} unpaid invoice{invoices.length !== 1 ? "s" : ""}
+          {totalCount} unpaid invoice{totalCount !== 1 ? "s" : ""}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -51,10 +62,7 @@ export function OutstandingInvoicesCard({ invoices }: OutstandingInvoicesCardPro
             const due = new Date(inv.date);
             due.setDate(due.getDate() + inv.dueDate);
             const isOverdue = due < new Date();
-            const fmt = new Intl.NumberFormat("en-US", {
-              style: "currency",
-              currency: inv.currency,
-            }).format(inv.total);
+            const fmt = getCurrencyFormatter(inv.currency).format(inv.total);
 
             return (
               <li key={inv.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-3">
@@ -72,6 +80,7 @@ export function OutstandingInvoicesCard({ invoices }: OutstandingInvoicesCardPro
             );
           })}
         </ul>
+        {pagination}
       </CardContent>
     </Card>
   );

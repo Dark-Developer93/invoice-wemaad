@@ -27,6 +27,7 @@ import { generateInvoicePDF } from "@/app/actions/generate-invoice";
 import { sendReminderEmail } from "@/app/actions/invoices";
 import { parseInvoiceItems } from "@/lib/invoiceItems";
 import { openAfterMenuCloses } from "@/lib/openAfterMenuCloses";
+import { useMountOnFirstOpen } from "@/lib/hooks/useMountOnFirstOpen";
 
 interface iAppProps {
   invoice: Prisma.InvoiceGetPayload<{
@@ -47,6 +48,13 @@ export function InvoiceActions({ invoice }: iAppProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  // Every invoice row renders one of these menus, so mounting both dialogs
+  // eagerly meant building a full view dialog + edit form per row on every
+  // server render and hydration (the second-hottest function in the server
+  // CPU profile under load). Mount each on first open instead, then keep it
+  // mounted so its close animation still plays.
+  const viewMounted = useMountOnFirstOpen(viewOpen);
+  const editMounted = useMountOnFirstOpen(editOpen);
 
   const handleSendReminder = () => {
     toast.promise(sendReminderEmail(invoice.id), {
@@ -117,16 +125,20 @@ export function InvoiceActions({ invoice }: iAppProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <ViewInvoiceDialog
-        open={viewOpen}
-        onOpenChange={setViewOpen}
-        invoice={{
-          ...invoice,
-          total: Number(invoice.total),
-          items: parseInvoiceItems(invoice.items),
-        }}
-      />
-      <InvoiceDialog open={editOpen} onOpenChange={setEditOpen} invoice={invoice} />
+      {viewMounted && (
+        <ViewInvoiceDialog
+          open={viewOpen}
+          onOpenChange={setViewOpen}
+          invoice={{
+            ...invoice,
+            total: Number(invoice.total),
+            items: parseInvoiceItems(invoice.items),
+          }}
+        />
+      )}
+      {editMounted && (
+        <InvoiceDialog open={editOpen} onOpenChange={setEditOpen} invoice={invoice} />
+      )}
     </>
   );
 }

@@ -5,7 +5,6 @@ import Navbar from "@/components/navbar/Navbar";
 import PricingSection from "@/components/pricing/PricingSection";
 import ContactSection from "@/components/contact/ContactSection";
 import Footer from "@/components/footer/Footer";
-import { auth } from "@/lib/auth";
 import { getBaseUrl } from "@/lib/urls";
 import { getPlanConfigs } from "@/lib/planConfig";
 import { PLAN_ORDER, PLAN_NAMES } from "@/lib/plans";
@@ -81,10 +80,11 @@ const jsonLd = {
   ],
 };
 
+// Static: rendered at build time and served from the CDN, re-rendered only
+// when an admin edits plans (adminUpdatePlanConfig revalidates the
+// planConfig tag that getPlanConfigs() is cached under). Logged-in state is
+// resolved client-side — see lib/hooks/useIsAuthenticated.ts.
 const Home = async () => {
-  const session = await auth();
-  const isAuthenticated = !!session;
-
   const planConfigs = await getPlanConfigs();
   const plans = PLAN_ORDER.map((plan) => ({
     plan,
@@ -108,12 +108,12 @@ const Home = async () => {
         <div className="max-w-full overflow-x-hidden">
           <section id="hero"><Hero /></section>
           <section id="features"><Features /></section>
-          <section id="pricing"><PricingSection plans={plans} isAuthenticated={isAuthenticated} /></section>
+          <section id="pricing"><PricingSection plans={plans} /></section>
           <section id="contact"><ContactSection /></section>
         </div>
       </main>
 
-      <Footer isAuthenticated={isAuthenticated} />
+      <Footer />
     </div>
   );
 };

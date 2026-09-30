@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getCurrencyFormatter } from "@/lib/formatCurrency";
 
 interface ClientRevenue {
   clientId: string;
@@ -28,7 +29,7 @@ interface ClientRevenueTableProps {
 
 export function ClientRevenueTable({ data, currency = "USD" }: ClientRevenueTableProps) {
   const fmt = (v: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency }).format(v);
+    getCurrencyFormatter(currency).format(v);
 
   return (
     <Card>

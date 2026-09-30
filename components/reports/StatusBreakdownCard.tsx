@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { getCurrencyFormatter } from "@/lib/formatCurrency";
 
 interface StatusBreakdownCardProps {
   paid: number;
@@ -31,7 +32,7 @@ export function StatusBreakdownCard({
   currency = "USD",
 }: StatusBreakdownCardProps) {
   const fmt = (v: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency }).format(v);
+    getCurrencyFormatter(currency).format(v);
 
   const data = [
     { name: "Paid", value: paid },

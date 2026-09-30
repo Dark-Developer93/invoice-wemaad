@@ -22,6 +22,7 @@ async function getClients(userId: string) {
   const clients = await unstable_cache(
     () =>
       prisma.client.findMany({
+        relationLoadStrategy: "query", // nested to-many lists: see prisma/schema.prisma
         where: { userId },
         select: {
           id: true,

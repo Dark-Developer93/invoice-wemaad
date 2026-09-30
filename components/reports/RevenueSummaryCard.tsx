@@ -15,6 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { getCurrencyFormatter } from "@/lib/formatCurrency";
 
 interface MonthlyRevenue {
   month: string;
@@ -32,10 +33,7 @@ export function RevenueSummaryCard({
   ytdTotal,
   currency = "USD",
 }: RevenueSummaryCardProps) {
-  const formatted = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-  }).format(ytdTotal);
+  const formatted = getCurrencyFormatter(currency).format(ytdTotal);
 
   return (
     <Card>
@@ -76,10 +74,7 @@ export function RevenueSummaryCard({
                     <div className="rounded-lg border bg-background p-2 shadow-sm text-sm">
                       <p className="font-medium">{payload[0].payload.month}</p>
                       <p>
-                        {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency,
-                        }).format(payload[0].value as number)}
+                        {getCurrencyFormatter(currency).format(payload[0].value as number)}
                       </p>
                     </div>
                   );
