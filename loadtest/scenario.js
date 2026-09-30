@@ -25,7 +25,14 @@ const BASE_URL = __ENV.BASE_URL || "http://localhost:3200";
 const VUS = Number(__ENV.VUS || 50);
 const DURATION = __ENV.DURATION || "3m";
 const RAMP = __ENV.RAMP || "30s";
-const MODE = __ENV.MODE || "realistic"; // "realistic" | "raw"
+// "browser" (default): requests exactly as a real browser makes them — see
+//   the recording notes below. "fullpage": a full page load on every step
+//   (the original scenario; more pessimistic). "raw": one endpoint, no think
+//   time. ("realistic" is kept as an alias of "fullpage" for old commands.)
+const MODE = __ENV.MODE === "realistic" ? "fullpage" : __ENV.MODE || "browser";
+// browser mode: loops per visit. Each visit starts with a full page load
+// (plus the link prefetches it triggers); the rest are in-app navigations.
+const VISIT_LOOPS = Number(__ENV.VISIT_LOOPS || 5);
 // Secure cookie name when testing an https deployment.
 const COOKIE_NAME = BASE_URL.startsWith("https://") ? "__Secure-authjs.session-token" : "authjs.session-token";
 
@@ -53,6 +60,10 @@ export const options = {
     // No-op thresholds, only so the end-of-run summary breaks latency down
     // per endpoint — that's what tells you *which* request to optimize.
     "http_req_duration{name:page:/dashboard}": [],
+    "http_req_duration{name:nav:/dashboard}": [],
+    "http_req_duration{name:nav:/dashboard/invoices}": [],
+    "http_req_duration{name:nav:/dashboard/clients}": [],
+    "http_req_duration{name:prefetch}": [],
     "http_req_duration{name:page:/dashboard/invoices}": [],
     "http_req_duration{name:page:/dashboard/clients}": [],
     "http_req_duration{name:api:chart-data}": [],
@@ -145,6 +156,77 @@ function markAsPaid(user) {
   return callAction(user, "action:markAsPaid", actions.markAsPaid, JSON.stringify([invoice.id]), "text/plain;charset=UTF-8");
 }
 
+// ── browser mode ─────────────────────────────────────────────────────────────
+// Recorded from a real Chromium session (Playwright) doing this loop:
+// - landing on /dashboard = full HTML page + chart-data fetch + one prefetch
+//   per sidebar link (Next preloads visible <Link>s), sent together;
+// - every later click = an RSC request (`RSC: 1`) carrying the router state
+//   tree, which lets the server skip re-rendering the shared layout.
+// The trees are generic route shapes (no user/session data).
+const TREE = {
+  landing: encodeURIComponent('["",{"children":["dashboard",{"children":["__PAGE__",{},null,null]},null,null]},null,null,true]'),
+  toDashboard: encodeURIComponent('["",{"children":["dashboard",{"children":["__PAGE__",{},null,"refetch"]},null,null]},null,null]'),
+  toInvoices: encodeURIComponent('["",{"children":["dashboard",{"children":["invoices",{"children":["__PAGE__",{},null,"refetch"]},null,null]},null,null]},null,null]'),
+  toClients: encodeURIComponent('["",{"children":["dashboard",{"children":["clients",{"children":["__PAGE__",{},null,"refetch"]},null,null]},null,null]},null,null]'),
+};
+const PREFETCHED_LINKS = ["/", "/dashboard/invoices", "/dashboard/clients", "/dashboard/billing", "/dashboard/recurring-invoices", "/dashboard/reports"];
+
+function rscId() {
+  return Math.random().toString(36).slice(2, 7);
+}
+
+function navigate(user, path, tree, name) {
+  const res = http.get(
+    `${BASE_URL}${path}${path.includes("?") ? "&" : "?"}_rsc=${rscId()}`,
+    params(user, name, { RSC: "1", "Next-Router-State-Tree": tree })
+  );
+  ok(res, name);
+  return res;
+}
+
+function landOnDashboard(user) {
+  ok(http.get(`${BASE_URL}/dashboard`, params(user, "page:/dashboard")), "dashboard");
+  const batch = [
+    ["GET", `${BASE_URL}/api/dashboard/chart-data?range=30&status=PAID`, null, params(user, "api:chart-data")],
+    ...PREFETCHED_LINKS.map((p) => [
+      "GET",
+      `${BASE_URL}${p}?_rsc=${rscId()}`,
+      null,
+      params(user, "prefetch", { RSC: "1", "Next-Router-Prefetch": "1", "Next-Router-State-Tree": TREE.landing }),
+    ]),
+  ];
+  for (const res of http.batch(batch)) ok(res, "landing");
+}
+
+let loopsInVisit = 0; // per VU (each VU has its own JS runtime)
+
+function browserLoop(user) {
+  if (loopsInVisit % VISIT_LOOPS === 0) {
+    landOnDashboard(user);
+  } else {
+    navigate(user, "/dashboard", TREE.toDashboard, "nav:/dashboard");
+    ok(http.get(`${BASE_URL}/api/dashboard/chart-data?range=30&status=PAID`, params(user, "api:chart-data")), "chart");
+  }
+  loopsInVisit++;
+  think(3, 7);
+
+  navigate(user, "/dashboard/invoices", TREE.toInvoices, "nav:/dashboard/invoices");
+  think(3, 8);
+
+  const r = Math.random();
+  if (r < 0.25) {
+    navigate(user, "/dashboard/clients", TREE.toClients, "nav:/dashboard/clients");
+  } else if (r < 0.35) {
+    const invoice = pick(user.invoices);
+    ok(http.get(`${BASE_URL}/api/invoice/${invoice.id}?token=${invoice.pdfToken}`, params(user, "api:invoice-pdf")), "pdf");
+  } else if (r < 0.43 && actions.markAsPaid) {
+    markAsPaid(user);
+  } else if (r < 0.46 && actions.createInvoice) {
+    createInvoice(user);
+  }
+  think(5, 15);
+}
+
 export default function () {
   // __VU is 1-based. Wrap so more VUs than seeded users still works.
   const user = users[(__VU - 1) % users.length];
@@ -162,6 +244,12 @@ export default function () {
     return;
   }
 
+  if (MODE === "browser") {
+    browserLoop(user);
+    return;
+  }
+
+  // fullpage mode: a full page load on every step.
   ok(http.get(`${BASE_URL}/dashboard`, params(user, "page:/dashboard")), "dashboard");
   ok(http.get(`${BASE_URL}/api/dashboard/chart-data?range=30&status=PAID`, params(user, "api:chart-data")), "chart");
   think(3, 7);
