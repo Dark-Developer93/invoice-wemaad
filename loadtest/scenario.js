@@ -66,6 +66,7 @@ export const options = {
     "http_req_duration{name:nav:/dashboard/invoices}": [],
     "http_req_duration{name:nav:/dashboard/clients}": [],
     "http_req_duration{name:prefetch}": [],
+    "http_req_duration{name:api:invoices}": [],
     "http_req_duration{name:page:/dashboard/invoices}": [],
     "http_req_duration{name:page:/dashboard/clients}": [],
     "http_req_duration{name:api:chart-data}": [],
@@ -213,6 +214,8 @@ function browserLoop(user) {
   think(3, 7);
 
   navigate(user, "/dashboard/invoices", TREE.toInvoices, "nav:/dashboard/invoices");
+  // The invoices page is a shell; the browser then loads the list as JSON.
+  ok(http.get(`${BASE_URL}/api/invoices?page=1`, params(user, "api:invoices")), "api:invoices");
   think(3, 8);
 
   const r = Math.random();
