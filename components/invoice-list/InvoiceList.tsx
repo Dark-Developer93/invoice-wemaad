@@ -1,17 +1,8 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { InvoiceActions } from "@/components/invoice-actions/InvoiceActions";
+import { InvoiceListView } from "./InvoiceListView";
 import prisma from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { calculateInvoiceTotal, parseInvoiceItems } from "@/lib/invoiceItems";
-import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state/EmptyState";
 import { Currency } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -128,78 +119,16 @@ export async function InvoiceList({ emptyButton }: { emptyButton?: ReactNode }) 
           href="/dashboard/invoices"
         />
       ) : (
-        <>
-          {/* Mobile: card list */}
-          <div className="md:hidden space-y-3">
-            {data.map((invoice) => (
-              <div
-                key={invoice.id}
-                className="rounded-lg border bg-card p-4 flex flex-col gap-2"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">#{invoice.invoiceNumber}</span>
-                  <Badge>{invoice.status}</Badge>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {invoice.client?.name || "—"}
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span>
-                    {formatCurrency({
-                      amount: calculateInvoiceTotal(parseInvoiceItems(invoice.items)),
-                      currency: invoice.currency as Currency,
-                    })}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate.short(invoice.createdAt)}
-                  </span>
-                </div>
-                <div className="flex justify-end pt-1">
-                  <InvoiceActions invoice={invoice} />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop: table */}
-          <div className="hidden md:block overflow-x-auto -mx-1">
-            <Table className="min-w-[540px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Invoice ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell>#{invoice.invoiceNumber}</TableCell>
-                    <TableCell>{invoice.client?.name || "—"}</TableCell>
-                    <TableCell>
-                      {formatCurrency({
-                        amount: calculateInvoiceTotal(parseInvoiceItems(invoice.items)),
-                        currency: invoice.currency as Currency,
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <Badge>{invoice.status}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {formatDate.short(invoice.createdAt)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <InvoiceActions invoice={invoice} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </>
+        <InvoiceListView
+          rows={data.map((invoice) => ({
+            invoice,
+            amountLabel: formatCurrency({
+              amount: calculateInvoiceTotal(parseInvoiceItems(invoice.items)),
+              currency: invoice.currency as Currency,
+            }),
+            dateLabel: formatDate.short(invoice.createdAt),
+          }))}
+        />
       )}
     </>
   );

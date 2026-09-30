@@ -214,6 +214,17 @@ avoid a value that could silently contradict the monthly price.
 - **Per-row dialogs mount on first open** (`useMountOnFirstOpen` in
   `lib/hooks/`). Rendering N closed dialogs per table meant building a
   full dialog tree per row on every server render and hydration.
+- **Long repeated lists render in a client component fed plain data**
+  (`components/invoice-list/InvoiceListView.tsx`). As a server component,
+  every row's markup was sent twice: once as HTML and again inside the RSC
+  payload for hydration. That was most of the invoice page's CPU. The server
+  still renders identical HTML. Pre-format dates/amounts on the server and
+  pass strings, so the browser can't render a different timezone than SSR did.
+- **Invoice PDFs are cached by a hash of their exact inputs**
+  (`renderInvoicePDF` in `lib/invoicePdf.tsx`). Any change to what's printed
+  changes the key, so there's nothing to invalidate. When you add a prop to
+  `InvoicePDF`, pass it through `renderInvoicePDF`'s props so it's part of
+  the hash. Bump `PDF_TEMPLATE_VERSION` when the layout changes.
 - **Public marketing pages stay static.** Don't call `auth()` in `/`,
   `/privacy`, `/terms` or anything they render — it makes the page dynamic
   (a Node render + DB session lookup per visit instead of CDN-served HTML).
@@ -247,7 +258,7 @@ Every query is a network round trip to Neon, so count them.
 
 ## Testing
 
-- `npm run test` — Vitest, currently 84 tests, all in `__tests__` folders
+- `npm run test` — Vitest, currently 88 tests, all in `__tests__` folders
   next to the code they cover.
 - When mocking `next/cache` in a test, mock **both** `revalidatePath` and
   `revalidateTag` — an action that calls the one you didn't mock will
@@ -271,9 +282,22 @@ invoice list, PDF).
 ### E2E tests (`e2e/`, `playwright.config.ts`)
 
 Covers the golden paths a unit test can't: auth guard redirects, invoice
-CRUD, client CRUD, and the billing-upgrade request/approve/reject flow
+CRUD, client CRUD, the row menus (view/download invoice, quick-view client,
+create invoice from a client row), the public invoice share link opened
+with no session, and the billing-upgrade request/approve/reject flow
 (including a regression test for the `requestPlanUpgrade` race fix — see
 pattern 3).
+
+Writing specs that stay reliable (each of these caused real flakes here):
+- **Create test data through the app**, not by inserting rows with Prisma,
+  when a page will display it. Lists are served from Next's data cache, and
+  only the app's own mutations invalidate it. (Deleting in `afterAll` via
+  Prisma is fine.)
+- **Assert on visible elements** (`.filter({ visible: true })`) for text
+  that sits inside a streamed/Suspense section. React can leave a hidden
+  copy in the DOM, so plain `getByText` may match twice and fail strict mode.
+- Before judging a spec flaky, run it with `--repeat-each 10 --retries 0`.
+  Retries in CI can hide a real race.
 
 - **Requires a real Postgres database** — `DATABASE_URL` pointed at a
   disposable database with migrations applied (`npx prisma migrate
@@ -327,6 +351,18 @@ here so they're not rediscovered from scratch:
   user count — see the capacity discussion the team has separately for the
   reasoning and the plan for watching actual usage via Neon's dashboard
   once live.
+
+- **Billing "Request Upgrade" can occasionally keep showing the old view.**
+  The request is always saved and the action's response is correct, but
+  sometimes Next's client router can't apply the response to the current
+  page ("segment mismatch" in its server-action reducer) and falls back to
+  a full navigation that leaves the pre-request view up until the next
+  load. It reproduces on main too. Things that did *not* fix it (each
+  measured over 25–60 instrumented runs): uncaching the pending-request
+  read, ending the action with `redirect()`, waiting for network-idle
+  before clicking. Worth rechecking after a Next.js upgrade. The E2E spec
+  asserts on the saved state after a fresh load for this reason (see the
+  comment in `e2e/billing-upgrade.spec.ts`).
 
 ## Common pitfalls when extending this codebase
 
